@@ -1,0 +1,26 @@
+{
+  "name": "nexus-cloud",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Lynx Cloud — Next.js-витрина разработчика (имя пакета nexus-cloud — совместимость с путями в репо)",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "worker": "tsx worker/build-worker.ts"
+  },
+  "dependencies": {
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.4.1",
+    "next": "^14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
+}

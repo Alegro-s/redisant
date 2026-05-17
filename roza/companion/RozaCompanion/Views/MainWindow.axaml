@@ -1,0 +1,1089 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RozaCompanion.ViewModels"
+        xmlns:v="using:RozaCompanion.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:m="using:RozaCompanion.Models"
+        xmlns:conv="using:RozaCompanion.Converters"
+        xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="1160" d:DesignHeight="700"
+        x:Class="RozaCompanion.Views.MainWindow"
+        x:Name="MainRoot"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/roza-icon.png"
+        Title="Roza AI"
+        Width="1180" Height="760"
+        MinWidth="880" MinHeight="580"
+        Background="{DynamicResource RzBg}"
+        FontFamily="Segoe UI Variable, Segoe UI, Roboto, Inter">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://RozaCompanion/Themes/GeminiDark.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <conv:IntEqualsConverter x:Key="ShellEq" />
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.22" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.MacGhost">
+            <Setter Property="Background" Value="{DynamicResource RzElevated}" />
+            <Setter Property="Foreground" Value="{DynamicResource RzText}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource RzBorder}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="Button.MacGhost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzHover}" />
+        </Style>
+        <Style Selector="Button.MacPrimary">
+            <Setter Property="Background" Value="{DynamicResource AccentUi}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccent}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Hairline}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.MacPrimary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentUiHover}" />
+        </Style>
+        <Style Selector="Button.MacSend">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="{DynamicResource RozaAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource RzText}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Hairline}" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.MacSend:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RozaAccentHoverBrush}" />
+        </Style>
+        <Style Selector="TextBox.MacField">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="Padding" Value="3,6" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="ListBox#SessionList">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBox#SessionList ListBoxItem">
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBox#SessionList ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzHover}" />
+        </Style>
+        <Style Selector="ListBox#SessionList ListBoxItem:selected">
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBox#SessionList ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzNavSel}" />
+        </Style>
+        <Style Selector="ListBox#SessionList ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzNavSel}" />
+        </Style>
+        <Style Selector="Button.SidebarNavBtn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="Button.SidebarNavBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzHover}" />
+        </Style>
+        <Style Selector="Button.PillNewChat">
+            <Setter Property="Background" Value="{DynamicResource FillSoft}" />
+            <Setter Property="Foreground" Value="{DynamicResource RzText}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Hairline}" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="Button.PillNewChat:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzHover}" />
+        </Style>
+        <Style Selector="ListBox#SettingsCatList">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBox#SettingsCatList ListBoxItem">
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox#SettingsCatList ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzHover}" />
+        </Style>
+        <Style Selector="ListBox#SettingsCatList ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzNavSel}" />
+        </Style>
+        <Style Selector="ListBox#SettingsCatList ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzNavSel}" />
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Background" Value="{DynamicResource RzElevated}" />
+            <Setter Property="Foreground" Value="{DynamicResource RzText}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource RzBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="Button.StarterChip">
+            <Setter Property="Background" Value="{DynamicResource GeminiChipBg}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GeminiChipBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="Button.StarterChip:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RzHover}" />
+        </Style>
+        <Style Selector="TextBox.StarterComposer">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Padding" Value="8,12" />
+        </Style>
+    </Window.Styles>
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Grid>
+        <DockPanel Margin="0">
+        <Border DockPanel.Dock="Bottom" Padding="12,3,12,6" Background="Transparent">
+            <TextBlock Text="{Binding StatusText}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       MaxWidth="900"
+                       Foreground="{DynamicResource TextMuted}"
+                       FontSize="11" />
+        </Border>
+
+        <Grid ColumnDefinitions="232,*" Margin="0">
+            <!-- Sidebar: только оттенок фона, без вертикальной полосы -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource RzPanel}"
+                    BorderThickness="0"
+                    Padding="10,12,10,10">
+                <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" RowSpacing="0">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                        <Border Width="28" Height="28" CornerRadius="6" Background="#000000" ClipToBounds="True">
+                            <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="4" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="0">
+                            <TextBlock Text="{x:Static vm:MainWindowViewModel.BrandName}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource RzText}" />
+                            <TextBlock Text="{x:Static vm:MainWindowViewModel.BrandSubtitle}" FontSize="10" Foreground="{DynamicResource RzMuted}" TextWrapping="Wrap" MaxWidth="150" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Button Grid.Row="1" Margin="0,10,0,0" Classes="PillNewChat"
+                            Command="{Binding NewChatCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE710;" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                            <TextBlock Text="Новый чат" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <DockPanel Grid.Row="2" Margin="0,12,0,0">
+                        <TextBlock DockPanel.Dock="Top" Text="Недавнее" FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="4,0,0,6" />
+                        <ListBox x:Name="SessionList"
+                                 ItemsSource="{Binding Sessions}"
+                                 SelectedItem="{Binding SelectedSession}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="m:SessionEntryVm">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+                                        <StackPanel Grid.Column="0" Spacing="1">
+                                            <TextBlock Text="{Binding Title}" FontSize="12" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding UpdatedLabel}" FontSize="10" Foreground="{DynamicResource TextMuted}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Classes="MacGhost"
+                                                Padding="6,2"
+                                                VerticalAlignment="Center"
+                                                Content="×"
+                                                ToolTip.Tip="Удалить чат"
+                                                Command="{Binding DataContext.DeleteSessionCommand, ElementName=MainRoot}"
+                                                CommandParameter="{Binding}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+
+                    <Border Grid.Row="3" Height="1" Background="{DynamicResource Hairline}" Opacity="0.35" Margin="4,10,4,8" />
+
+                    <StackPanel Grid.Row="4" Spacing="2">
+                        <Button Classes="SidebarNavBtn" Command="{Binding NavChatCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Panel>
+                                <Border CornerRadius="8" Background="{DynamicResource RzNavSel}" IsHitTestVisible="False"
+                                        IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=0}" />
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="10,8" IsHitTestVisible="False">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE8F2;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                    <TextBlock Text="Чат" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource RzText}" />
+                                </StackPanel>
+                            </Panel>
+                        </Button>
+                        <Button Classes="SidebarNavBtn" Command="{Binding NavStudioCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Panel>
+                                <Border CornerRadius="8" Background="{DynamicResource RzNavSel}" IsHitTestVisible="False"
+                                        IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=1}" />
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="10,8" IsHitTestVisible="False">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE90F;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                    <TextBlock Text="Студия" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource RzText}" />
+                                </StackPanel>
+                            </Panel>
+                        </Button>
+                        <Button Classes="SidebarNavBtn" Command="{Binding NavFilesCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Panel>
+                                <Border CornerRadius="8" Background="{DynamicResource RzNavSel}" IsHitTestVisible="False"
+                                        IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=3}" />
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="10,8" IsHitTestVisible="False">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE8B7;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                    <TextBlock Text="Обзор" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource RzText}" />
+                                </StackPanel>
+                            </Panel>
+                        </Button>
+                    </StackPanel>
+
+                    <Button Grid.Row="5" Classes="SidebarNavBtn" Command="{Binding NavSettingsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,6,0,0">
+                        <Panel>
+                            <Border CornerRadius="8" Background="{DynamicResource RzNavSel}" IsHitTestVisible="False"
+                                    IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=2}" />
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="10,8" IsHitTestVisible="False">
+                                <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE713;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                <TextBlock Text="Настройки" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource RzText}" />
+                            </StackPanel>
+                        </Panel>
+                    </Button>
+
+                    <TextBlock Grid.Row="6"
+                               Margin="4,10,4,0"
+                               Text="{Binding ConnectionSummary}"
+                               TextWrapping="Wrap"
+                               FontSize="10"
+                               Foreground="{DynamicResource TextMuted}"
+                               LineHeight="14" />
+                </Grid>
+            </Border>
+
+            <!-- Основная область: белая/плоская, без рамки вокруг всего полотна -->
+            <Border Grid.Column="1"
+                    Margin="0"
+                    Padding="0"
+                    CornerRadius="0"
+                    Background="{DynamicResource RzMainSurface}"
+                    BorderThickness="0"
+                    ClipToBounds="True">
+                <Panel>
+                    <!-- Чат -->
+                    <Grid IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=0}"
+                          RowDefinitions="Auto,*,12,Auto">
+                        <StackPanel Grid.Row="0"
+                                    IsVisible="{Binding ChatHasMessages}"
+                                    Spacing="8"
+                                    Margin="8,8,8,0">
+                            <TextBlock Text="{Binding SessionContextLine}"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource RzMuted}"
+                                       LineHeight="17" />
+                            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                                <Image Width="24" Height="24" Source="/Assets/roza-icon.png" Stretch="Uniform" ToolTip.Tip="Модель Roza AI" />
+                                <ComboBox MinWidth="220" SelectedIndex="{Binding ChatTargetIndex}">
+                                    <ComboBoxItem Content="Сервер Roza" />
+                                    <ComboBoxItem Content="Внешний OpenAI-совместимый API" />
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Panel Grid.Row="1" Margin="8,0,8,0">
+                            <Border IsVisible="{Binding ChatHasMessages}"
+                                    Background="{DynamicResource Card}"
+                                    CornerRadius="20"
+                                    BorderBrush="{DynamicResource Hairline}"
+                                    BorderThickness="1"
+                                    Padding="4,6,4,10"
+                                    BoxShadow="0 1 4 0 #18000000">
+                                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding ChatLines}" Margin="12,4,12,4">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="m:ChatLineVm">
+                                                <Border Margin="0,0,0,10"
+                                                        CornerRadius="16"
+                                                        Background="{DynamicResource FillSoft}"
+                                                        BorderBrush="{DynamicResource Hairline}"
+                                                        BorderThickness="1"
+                                                        Padding="14,10"
+                                                        BoxShadow="0 1 2 0 #10000000">
+                                                    <StackPanel Spacing="6">
+                                                        <Grid ColumnDefinitions="*,Auto">
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="{Binding Role}"
+                                                                       FontSize="11"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource TextMuted}" />
+                                                            <Button Grid.Column="1"
+                                                                    Classes="MacGhost"
+                                                                    Padding="8,2"
+                                                                    FontSize="11"
+                                                                    Content="Копировать"
+                                                                    Command="{Binding DataContext.CopyChatLineCommand, ElementName=MainRoot}"
+                                                                    CommandParameter="{Binding Text}" />
+                                                        </Grid>
+                                                        <md:MarkdownScrollViewer IsVisible="{Binding IsMarkdownBubble}"
+                                                                                 Markdown="{Binding Text}"
+                                                                                 MaxHeight="480"
+                                                                                 VerticalAlignment="Top" />
+                                                        <TextBlock IsVisible="{Binding !IsMarkdownBubble}"
+                                                                   Text="{Binding Text}"
+                                                                   TextWrapping="Wrap"
+                                                                   FontSize="14"
+                                                                   LineHeight="21"
+                                                                   Foreground="{DynamicResource TextPrimary}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+
+                            <Border IsVisible="{Binding !ChatHasMessages}" Background="Transparent">
+                                <StackPanel VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"
+                                            MaxWidth="720"
+                                            Spacing="20"
+                                            Margin="20,12">
+                                    <TextBlock Text="Привет! Я Roza AI"
+                                               FontSize="22"
+                                               FontWeight="Light"
+                                               Foreground="{DynamicResource TextPrimary}"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               MaxWidth="640" />
+                                    <TextBlock Text="Помогу с документами, безопасностью ПК и обучением. На бесплатном тарифе — лимит токенов в день."
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               FontSize="13"
+                                               Foreground="{DynamicResource RzMuted}"
+                                               MaxWidth="560" />
+                                    <TextBlock Text="{Binding TokenQuotaLine}"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextMuted}" />
+                                    <TextBlock Text="{Binding SessionContextLine}"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               FontSize="14"
+                                               Foreground="{DynamicResource RzMuted}"
+                                               LineHeight="20" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12"
+                                                HorizontalAlignment="Center"
+                                                Margin="0,4,0,0">
+                                        <Image Width="32" Height="32" Source="/Assets/roza-icon.png" Stretch="Uniform" ToolTip.Tip="Модель Roza AI" />
+                                        <ComboBox MinWidth="280" SelectedIndex="{Binding ChatTargetIndex}">
+                                            <ComboBoxItem Content="Roza AI (сервер)" />
+                                            <ComboBoxItem Content="Внешний API (подписка)" IsEnabled="{Binding ExternalApiUnlocked}" />
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <TextBlock Text="Идеи для старта — нажмите, текст появится в поле ввода снизу."
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextMuted}" />
+                                    <WrapPanel HorizontalAlignment="Center" MaxWidth="700">
+                                        <Button Classes="StarterChip"
+                                                Margin="0,0,10,10"
+                                                Content="Разобрать документ"
+                                                Command="{Binding ApplyStarterPromptCommand}"
+                                                CommandParameter="Помоги разобрать документ: выдели главное, риски и что сделать дальше." />
+                                        <Button Classes="StarterChip"
+                                                Margin="0,0,10,10"
+                                                Content="Безопасность ПК"
+                                                Command="{Binding ApplyStarterPromptCommand}"
+                                                CommandParameter="Проверь типичные риски безопасности на этом ПК и дай чек-лист действий." />
+                                        <Button Classes="StarterChip"
+                                                Margin="0,0,10,10"
+                                                Content="Обучение"
+                                                Command="{Binding ApplyStarterPromptCommand}"
+                                                CommandParameter="Составь короткий план обучения по теме, которую укажу в следующем сообщении." />
+                                        <Button Classes="StarterChip"
+                                                Margin="0,0,10,10"
+                                                Content="Репозиторий"
+                                                Command="{Binding ApplyStarterPromptCommand}"
+                                                CommandParameter="Я прикреплю снимок репозитория — подготовь список файлов, которые стоит открыть первыми." />
+                                        <Button Classes="StarterChip"
+                                                Margin="0,0,10,10"
+                                                Content="Подписка"
+                                                Command="{Binding OpenSubscriptionInBrowserCommand}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+                        </Panel>
+
+                        <StackPanel Grid.Row="3" Spacing="10" Margin="12,0,12,12">
+                            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
+                                <ComboBox Grid.Column="0"
+                                          MinWidth="200"
+                                          SelectedIndex="{Binding ChatTargetIndex}">
+                                    <ComboBoxItem Content="Roza AI" />
+                                    <ComboBoxItem Content="Внешний API" IsEnabled="{Binding ExternalApiUnlocked}" />
+                                </ComboBox>
+                                <Button Grid.Column="1"
+                                        Classes="MacPrimary"
+                                        Content="Подключить"
+                                        Command="{Binding ConnectCommand}"
+                                        IsEnabled="{Binding !IsBusy}"
+                                        ToolTip.Tip="Проверить /api/health и при необходимости открыть WebSocket" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding LastTokenUsageText}"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextMuted}" />
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Button Classes="MacGhost"
+                                            Content="Репозиторий…"
+                                            Command="{Binding AttachRepositoryFolderCommand}"
+                                            ToolTip.Tip="Снимок дерева и текстовых файлов во вложения" />
+                                    <Button Classes="MacGhost"
+                                            Content="Вложения…"
+                                            Command="{Binding AttachChatDocumentsCommand}"
+                                            ToolTip.Tip="Прикрепить текстовые файлы" />
+                                </StackPanel>
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding PendingChatAttachments}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ChatAttachmentItemVm">
+                                        <Border Margin="0,0,8,6"
+                                                Padding="8,4"
+                                                CornerRadius="8"
+                                                Background="{DynamicResource FillSoft}"
+                                                BorderBrush="{DynamicResource Hairline}"
+                                                BorderThickness="1">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding Summary}" FontSize="11" VerticalAlignment="Center" />
+                                                <Button Content="×"
+                                                        Padding="6,0"
+                                                        Classes="MacGhost"
+                                                        Command="{Binding RemoveCommand}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                                <CheckBox Content="Агент" IsChecked="{Binding AgentMode}" />
+                                <CheckBox Content="WebSocket"
+                                          IsChecked="{Binding UseWebSocket}"
+                                          ToolTip.Tip="При включении ответы идут по постоянному каналу с той же серверной сессией, что и HTTP (session_id). После смены чата нажмите «Подключить», если поток оборвался." />
+                                <Button Classes="MacGhost" Content="Сброс" Command="{Binding ResetChatCommand}" />
+                            </StackPanel>
+
+                            <Border CornerRadius="28"
+                                    Background="{DynamicResource Card}"
+                                    BorderBrush="{DynamicResource Hairline}"
+                                    BorderThickness="1"
+                                    Padding="8,6,10,6"
+                                    MinHeight="56"
+                                    BoxShadow="0 4 16 0 #18000000">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBox Grid.Column="0"
+                                             Classes="MacField StarterComposer"
+                                             x:Name="ChatInputBox"
+                                             Text="{Binding ChatInput}"
+                                             PlaceholderText="Спросите про код, план, текст или анализ… (Enter — отправить, Shift+Enter — новая строка)"
+                                             AcceptsReturn="True"
+                                             MinHeight="44"
+                                             MaxHeight="160"
+                                             VerticalContentAlignment="Center" />
+                                    <Button Grid.Column="1"
+                                            Classes="MacSend"
+                                            Command="{Binding SendCommand}"
+                                            IsEnabled="{Binding !IsBusy}"
+                                            ToolTip.Tip="Отправить">
+                                        <TextBlock Text="&#xE724;"
+                                                   FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol"
+                                                   FontSize="15"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock HorizontalAlignment="Center"
+                                       FontSize="10"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       Text="Проверяйте важные ответы. ИИ может ошибаться." />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- База обучения -->
+                    <Grid IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=1}"
+                          RowDefinitions="Auto,*">
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Студия и обучение"
+                                           FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Датасеты, журнал, пресеты HF и ссылки в веб-Studio. Карточки ниже — справочные подсказки, не метрики с сервера."
+                                           FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                                <Button Classes="MacPrimary" Content="Studio" Command="{Binding OpenStudioCommand}" />
+                                <Button Classes="MacGhost" Content="Обновить" Command="{Binding RefreshTrainingCatalogCommand}" />
+                            </StackPanel>
+                        </Grid>
+                        <ScrollViewer Grid.Row="1"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="10">
+                                <Border Background="{DynamicResource Card}"
+                                        CornerRadius="14"
+                                        BorderBrush="{DynamicResource Hairline}"
+                                        BorderThickness="1"
+                                        Padding="14,12"
+                                        BoxShadow="0 2 12 0 #28000000">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Карта знаний (схема)"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" />
+                                        <TextBlock Text="Статическая схема для ориентира. Живые данные — в разделе «Обзор» и в /api/health."
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   TextWrapping="Wrap"
+                                                   LineHeight="17" />
+                                        <v:KnowledgeMapView />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Card}"
+                                        CornerRadius="14"
+                                        BorderBrush="{DynamicResource Hairline}"
+                                        BorderThickness="1"
+                                        Padding="14,12"
+                                        BoxShadow="0 2 12 0 #28000000">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Сценарии и режимы"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimary}" />
+                                            <TextBlock Text="Текстовые ориентиры без процентов прогресса — не путать с реальной аналитикой."
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="17" />
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{Binding LearningTracks}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="vm:LearningTrackVm">
+                                                    <Border Margin="0,0,0,8"
+                                                            Background="{DynamicResource RzElevated}"
+                                                            CornerRadius="12"
+                                                            BorderBrush="{DynamicResource Hairline}"
+                                                            BorderThickness="1"
+                                                            Padding="12,10">
+                                                        <StackPanel Spacing="6">
+                                                            <TextBlock Text="{Binding Title}"
+                                                                       FontSize="13"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource TextPrimary}" />
+                                                            <TextBlock Text="{Binding Subtitle}"
+                                                                       FontSize="11"
+                                                                       Foreground="{DynamicResource RzMuted}"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBlock Text="{Binding Body}"
+                                                                       FontSize="11"
+                                                                       Foreground="{DynamicResource TextPrimary}"
+                                                                       TextWrapping="Wrap"
+                                                                       LineHeight="16" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Card}"
+                                        CornerRadius="12"
+                                        BorderBrush="{DynamicResource Hairline}"
+                                        BorderThickness="1"
+                                        Padding="12,10"
+                                        BoxShadow="0 1 8 0 #22000000">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Аналитика обучения" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                            <Ellipse Width="10" Height="10" VerticalAlignment="Center" Fill="{Binding LearningLedBrush}" />
+                                            <TextBlock Text="{Binding LearningLedCaption}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource TextPrimary}" />
+                                        </StackPanel>
+                                        <CheckBox Content="Запись в журнал обучения (override сессии)"
+                                                  IsChecked="{Binding LearningRecordingEnabled}" />
+                                        <TextBlock Text="{Binding LearningAnalyticsText}"
+                                                   TextWrapping="Wrap"
+                                                   FontFamily="Consolas,Courier New,monospace"
+                                                   FontSize="11"
+                                                   LineHeight="16"
+                                                   Foreground="{DynamicResource TextPrimary}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Card}"
+                                        CornerRadius="12"
+                                        BorderBrush="{DynamicResource Hairline}"
+                                        BorderThickness="1"
+                                        Padding="12,10"
+                                        BoxShadow="0 1 8 0 #22000000">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Модель (hf_local)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                        <TextBlock Text="{Binding LlmPresetHint}"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMuted}" />
+                                        <WrapPanel Orientation="Horizontal">
+                                            <Button Classes="MacGhost" Margin="0,0,8,6" Content="Лёгкая" Command="{Binding ApplyLlmPresetLightCommand}" />
+                                            <Button Classes="MacGhost" Margin="0,0,8,6" Content="Усиленная" Command="{Binding ApplyLlmPresetStrongCommand}" />
+                                            <Button Classes="MacGhost" Margin="0,0,0,6" Content="По config" Command="{Binding ApplyLlmPresetDefaultCommand}" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Card}"
+                                        CornerRadius="12"
+                                        BorderBrush="{DynamicResource Hairline}"
+                                        BorderThickness="1"
+                                        Padding="12,10"
+                                        BoxShadow="0 1 8 0 #22000000">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Датасеты" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                        <Button Classes="MacPrimary" Content="Загрузить файл…" Command="{Binding UploadTrainingDatasetCommand}" HorizontalAlignment="Left" />
+                                        <TextBlock Text="{Binding TrainingDatasetsText}"
+                                                   TextWrapping="Wrap"
+                                                   FontFamily="Consolas,Courier New,monospace"
+                                                   FontSize="11"
+                                                   LineHeight="16"
+                                                   Foreground="{DynamicResource TextPrimary}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Card}"
+                                        CornerRadius="12"
+                                        BorderBrush="{DynamicResource Hairline}"
+                                        BorderThickness="1"
+                                        Padding="12,10"
+                                        BoxShadow="0 1 8 0 #22000000">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Навыки / метрики (JSON)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                        <TextBlock Text="{Binding TrainingSkillsText}"
+                                                   TextWrapping="Wrap"
+                                                   FontFamily="Consolas,Courier New,monospace"
+                                                   FontSize="11"
+                                                   LineHeight="16"
+                                                   Foreground="{DynamicResource TextPrimary}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Настройки: как модальное окно слева категории, справа строки -->
+                    <Border IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=2}"
+                            Margin="20,16,24,20"
+                            Padding="0"
+                            CornerRadius="16"
+                            Background="{DynamicResource RzElevated}"
+                            BorderBrush="{DynamicResource Hairline}"
+                            BorderThickness="1"
+                            BoxShadow="0 12 40 0 #28000000"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Stretch"
+                            MaxWidth="920">
+                        <Grid RowDefinitions="Auto,*" ColumnDefinitions="216,*">
+                            <Button Grid.Row="0" Grid.Column="0"
+                                    Classes="MacGhost"
+                                    Width="36" Height="36"
+                                    Padding="0"
+                                    CornerRadius="999"
+                                    HorizontalAlignment="Left"
+                                    Margin="12,12,0,8"
+                                    Command="{Binding NavChatCommand}"
+                                    ToolTip.Tip="Закрыть">
+                                <TextBlock Text="&#xE711;"
+                                           FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol"
+                                           FontSize="12"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Button>
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding SettingsCategoryTitle}"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       TextAlignment="Left"
+                                       Margin="8,8,20,16" />
+
+                            <ListBox x:Name="SettingsCatList"
+                                     Grid.Row="1" Grid.Column="0"
+                                     Margin="8,0,4,12"
+                                     SelectedIndex="{Binding SettingsCategoryIndex, Mode=TwoWay}"
+                                     Background="Transparent">
+                                <ListBoxItem>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE771;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                        <TextBlock Text="Общее" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </ListBoxItem>
+                                <ListBoxItem>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE703;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                        <TextBlock Text="Сервер" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </ListBoxItem>
+                                <ListBoxItem>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE8FD;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                        <TextBlock Text="Внешний API" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </ListBoxItem>
+                                <ListBoxItem>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE77B;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                        <TextBlock Text="Аккаунт" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </ListBoxItem>
+                                <ListBoxItem>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE8C8;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                        <TextBlock Text="Контекст" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </ListBoxItem>
+                                <ListBoxItem>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE756;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                        <TextBlock Text="Roza" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </ListBoxItem>
+                                <ListBoxItem>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock FontFamily="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" Text="&#xE946;" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource RzText}" />
+                                        <TextBlock Text="Прочее" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </ListBoxItem>
+                            </ListBox>
+
+                            <ScrollViewer Grid.Row="1" Grid.Column="1"
+                                          Margin="4,0,16,12"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Auto">
+                                <StackPanel Spacing="0" MaxWidth="620">
+                                    <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=0}" Spacing="18">
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Тема оформления" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock Text="Тёмная, светлая или как в системе — монохром Stanza." FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="360" />
+                                            </StackPanel>
+                                            <ComboBox Grid.Column="1"
+                                                      MinWidth="200"
+                                                      VerticalAlignment="Center"
+                                                      SelectedIndex="{Binding UiThemeIndex}">
+                                                <ComboBoxItem Content="Тёмная" />
+                                                <ComboBoxItem Content="Светлая" />
+                                                <ComboBoxItem Content="Как в системе" />
+                                            </ComboBox>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=1}" Spacing="12">
+                                        <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="Подключение к серверу" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock Text="Базовый URL веб-интерфейса Roza (health, чат, Studio)." FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding ServerUrl}" PlaceholderText="http://127.0.0.1:8765" />
+                                                </Border>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <Button Classes="MacPrimary" Content="Подключить" Command="{Binding ConnectCommand}" IsEnabled="{Binding !IsBusy}" />
+                                                    <Button Classes="MacGhost" Content="Откл. WebSocket" Command="{Binding DisconnectCommand}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=2}" Spacing="12">
+                                        <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="Внешний LLM (OpenAI-совместимый)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock Text="Для Gemini: endpoint …/v1beta/openai и модель, например gemini-2.0-flash." FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding ExternalOpenAiBaseUrl}" PlaceholderText="https://…/v1beta/openai" />
+                                                </Border>
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding ExternalOpenAiApiKey}" PasswordChar="•" PlaceholderText="API key" />
+                                                </Border>
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding ExternalOpenAiModel}" PlaceholderText="gemini-2.0-flash" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=3}" Spacing="12">
+                                        <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="Яндекс ID (локальный вход)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock Text="{Binding YandexLoginHint}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding YandexClientId}" PlaceholderText="Client ID" />
+                                                </Border>
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding YandexClientSecret}" PasswordChar="•" PlaceholderText="Client Secret (если требуется)" />
+                                                </Border>
+                                                <Button Classes="MacPrimary" Content="Войти через браузер…" Command="{Binding LoginYandexCommand}" HorizontalAlignment="Left" IsEnabled="{Binding !IsBusy}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=4}" Spacing="12">
+                                        <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="Контекст для чата" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock Text="Ключ и markdown попадают в серверный контекст перед следующим сообщением." FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding ContextKey}" PlaceholderText="ключ контекста" />
+                                                </Border>
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding IntegrationToken}" PasswordChar="•" PlaceholderText="Bearer (опционально)" />
+                                                </Border>
+                                                <Border CornerRadius="10" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="4,4" MinHeight="80">
+                                                    <TextBox Classes="MacField" Text="{Binding IntegrationMarkdown}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="72" PlaceholderText="Markdown…" />
+                                                </Border>
+                                                <Button Classes="MacGhost" Content="Передать контекст на сервер" Command="{Binding PushIntegrationCommand}" HorizontalAlignment="Left" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=5}" Spacing="12">
+                                        <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="Запуск Roza из каталога проекта" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock Text="Каталог с pyproject.toml — отсюда выполняется python -m roza …" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding RozaProjectPath}" PlaceholderText="например D:\PO\roza" />
+                                                </Border>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <Button Classes="MacPrimary" Content="roza web" Command="{Binding StartRozaWebCommand}" />
+                                                    <Button Classes="MacGhost" Content="roza desktop" Command="{Binding StartRozaDesktopCommand}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=6}" Spacing="12">
+                                        <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="HTTP API (для скриптов и интеграций)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="17" Foreground="{DynamicResource TextPrimary}" FontFamily="Consolas,Courier New,monospace">
+                                                    <Run Text="GET " /><Run Text="/api/health" /><Run Text=" — состояние LLM&#x0a;" />
+                                                    <Run Text="POST " /><Run Text="/api/chat" /><Run Text=" JSON { text, agent, session_id }&#x0a;" />
+                                                    <Run Text="POST " /><Run Text="/api/llm/preset" /><Run Text=" { preset: light|strong|default }&#x0a;" />
+                                                    <Run Text="GET " /><Run Text="/api/learning/stats" /><Run Text=" · POST " /><Run Text="/api/learning/enabled" /><Run Text=" { enabled }&#x0a;" />
+                                                    <Run Text="POST " /><Run Text="/api/studio/datasets/upload" /><Run Text=" multipart file" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="Дашборд (локальная папка)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                                                    <TextBox Classes="MacField" Text="{Binding DashboardPath}" PlaceholderText="путь к frontend" />
+                                                </Border>
+                                                <Button Classes="MacGhost" Content="Открыть в проводнике" Command="{Binding OpenDashboardFolderCommand}" HorizontalAlignment="Left" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                    <!-- Файлы -->
+                    <ScrollViewer IsVisible="{Binding ShellSection, Converter={StaticResource ShellEq}, ConverterParameter=3}"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Margin="12,10,14,12">
+                        <StackPanel Spacing="10" MaxWidth="880" HorizontalAlignment="Left">
+                            <TextBlock Text="Обзор сервера" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,2" />
+                            <Border Background="{DynamicResource Card}"
+                                    CornerRadius="10"
+                                    BorderBrush="{DynamicResource Hairline}"
+                                    BorderThickness="1"
+                                    Padding="12,10"
+                                    BoxShadow="0 1 4 0 #12000000">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Состояние" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="{Binding HealthDetailText}"
+                                               TextWrapping="Wrap"
+                                               FontSize="12"
+                                               LineHeight="17"
+                                               Foreground="{DynamicResource TextPrimary}" />
+                                    <Button Classes="MacGhost" Content="Обновить" Command="{Binding RefreshInsightsCommand}" HorizontalAlignment="Left" Padding="10,4" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="{DynamicResource Card}"
+                                    CornerRadius="10"
+                                    BorderBrush="{DynamicResource Hairline}"
+                                    BorderThickness="1"
+                                    Padding="12,10"
+                                    BoxShadow="0 1 4 0 #12000000">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Workspace" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="{Binding WorkspaceInsightText}"
+                                               TextWrapping="Wrap"
+                                               FontSize="11"
+                                               LineHeight="16"
+                                               Foreground="{DynamicResource TextPrimary}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="{DynamicResource Card}"
+                                    CornerRadius="10"
+                                    BorderBrush="{DynamicResource Hairline}"
+                                    BorderThickness="1"
+                                    Padding="12,10"
+                                    BoxShadow="0 1 4 0 #12000000">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Режимы" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="{Binding BrainModesText}"
+                                               TextWrapping="Wrap"
+                                               FontSize="12"
+                                               LineHeight="17"
+                                               Foreground="{DynamicResource TextPrimary}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="{DynamicResource Card}"
+                                    CornerRadius="10"
+                                    BorderBrush="{DynamicResource Hairline}"
+                                    BorderThickness="1"
+                                    Padding="14,12"
+                                    BoxShadow="0 1 4 0 #12000000">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Изменения в репозитории" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="{Binding ChangesPanelHint}"
+                                               TextWrapping="Wrap"
+                                               FontSize="12"
+                                               LineHeight="18"
+                                               Foreground="{DynamicResource TextPrimary}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                </Panel>
+            </Border>
+        </Grid>
+    </DockPanel>
+
+        <!-- Старт: готовность и внешние API -->
+        <Border ZIndex="50"
+                IsVisible="{Binding ShowStartupWizard}"
+                Background="{DynamicResource OverlayScrim}">
+            <Border Margin="40"
+                    Padding="22,18"
+                    MaxWidth="560"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource RzElevated}"
+                    CornerRadius="16"
+                    BorderBrush="{DynamicResource Hairline}"
+                    BorderThickness="1"
+                    BoxShadow="0 12 48 0 #38000000">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Перед началом работы"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}" />
+                    <TextBlock TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextMuted}"
+                               LineHeight="18"
+                               Text="Проверьте доступность сервера Roza и при желании укажите OpenAI-совместимый endpoint (например Google Gemini). Ключ и URL хранятся локально в %LocalAppData%\RozaCompanion\companion_settings.json." />
+                    <TextBlock Text="URL сервера" FontSize="11" Foreground="{DynamicResource TextMuted}" />
+                    <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                        <TextBox Classes="MacField" Text="{Binding ServerUrl}" />
+                    </Border>
+                    <TextBlock Text="Внешний API (опционально)" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,6,0,0" />
+                    <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                        <TextBox Classes="MacField" Text="{Binding ExternalOpenAiBaseUrl}" PlaceholderText="https://…/v1beta/openai" />
+                    </Border>
+                    <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                        <TextBox Classes="MacField" Text="{Binding ExternalOpenAiApiKey}" PasswordChar="•" PlaceholderText="API key" />
+                    </Border>
+                    <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
+                        <TextBox Classes="MacField" Text="{Binding ExternalOpenAiModel}" PlaceholderText="gemini-2.0-flash" />
+                    </Border>
+                    <TextBlock Text="{Binding StartupProbeText}"
+                               TextWrapping="Wrap"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextPrimary}"
+                               LineHeight="17" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="MacGhost" Content="Проверить" Command="{Binding ProbeStartupCommand}" IsEnabled="{Binding !IsBusy}" />
+                        <Button Classes="MacPrimary" Content="Готово к работе" Command="{Binding CompleteStartupWizardCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

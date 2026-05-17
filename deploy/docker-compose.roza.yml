@@ -1,0 +1,16 @@
+# Roza AI API + зависимость от auth (из docker-compose.split.yml)
+#   docker compose -f deploy/docker-compose.split.yml -f deploy/docker-compose.roza.yml up -d --build
+
+services:
+  roza-api:
+    build:
+      context: ../roza
+      dockerfile: Dockerfile
+    environment:
+      ROZA_ALLOW_GUEST: "0"
+      ROZA_AUTH_API_URL: http://auth-api:8090
+    ports:
+      - "8765:8765"
+    depends_on:
+      auth-api:
+        condition: service_started

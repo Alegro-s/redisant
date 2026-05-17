@@ -1,0 +1,19 @@
+# Скопируйте в components.yaml и отредактируйте под свою машину.
+# Выполняются ТОЛЬКО действия из этого файла — произвольные команды модель запустить не может.
+
+components:
+  # Пример: локальный сервис через скрипты (пути и команды замените на свои)
+  demo_echo:
+    title: Demo echo
+    actions:
+      start: { command: ["cmd", "/c", "echo", "start demo"] }
+      stop: { command: ["cmd", "/c", "echo", "stop demo"] }
+      status: { command: ["cmd", "/c", "echo", "status ok"] }
+
+  # Рутина (Windows): дата/время; git — см. python -m roza.routine_snapshot в components.yaml проекта
+  # nginx:
+  #   title: Nginx
+  #   actions:
+  #     start: { command: ["sudo", "systemctl", "start", "nginx"] }
+  #     stop: { command: ["sudo", "systemctl", "stop", "nginx"] }
+  #     status: { command: ["systemctl", "is-active", "nginx"] }

@@ -1,0 +1,90 @@
+# Три отдельных API + одна БД. Сборка из D:\PO\platform\server
+#   docker compose -f deploy/docker-compose.split.yml up -d --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: waypoint
+      POSTGRES_PASSWORD: waypoint
+      POSTGRES_DB: waypoint
+    volumes:
+      - waypoint_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U waypoint -d waypoint"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-api:
+    build:
+      context: ../platform/server
+      dockerfile: Dockerfile
+      args:
+        PO_BIN: auth-api
+    environment:
+      PO_SERVICE: auth
+      RUN_MIGRATIONS: "1"
+      BIND_ADDRESS: 0.0.0.0:8090
+      DATABASE_URL: postgres://waypoint:waypoint@db:5432/waypoint
+      JWT_SECRET: ${JWT_SECRET:-local-docker-dev-only-min-32-chars-not-for-public-vps}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:3001,http://127.0.0.1:5175}
+      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-}
+      ADMIN_OPEN_REGISTRATION: ${ADMIN_OPEN_REGISTRATION:-1}
+    ports:
+      - "8090:8090"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  waypoint-api:
+    build:
+      context: ../platform/server
+      dockerfile: Dockerfile
+      args:
+        PO_BIN: waypoint-api
+    environment:
+      PO_SERVICE: waypoint
+      RUN_MIGRATIONS: "0"
+      BIND_ADDRESS: 0.0.0.0:8080
+      DATABASE_URL: postgres://waypoint:waypoint@db:5432/waypoint
+      JWT_SECRET: ${JWT_SECRET:-local-docker-dev-only-min-32-chars-not-for-public-vps}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://127.0.0.1:3000,http://127.0.0.1:5173}
+      AUTH_PUBLIC_URL: ${AUTH_PUBLIC_URL:-http://127.0.0.1:8090}
+    ports:
+      - "8080:8080"
+    volumes:
+      - waypoint_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      auth-api:
+        condition: service_started
+
+  lynx-api:
+    build:
+      context: ../platform/server
+      dockerfile: Dockerfile
+      args:
+        PO_BIN: lynx-api
+    environment:
+      PO_SERVICE: lynx
+      RUN_MIGRATIONS: "0"
+      BIND_ADDRESS: 0.0.0.0:8082
+      DATABASE_URL: postgres://waypoint:waypoint@db:5432/waypoint
+      JWT_SECRET: ${JWT_SECRET:-local-docker-dev-only-min-32-chars-not-for-public-vps}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://127.0.0.1:3001,http://127.0.0.1:5175}
+      AUTH_PUBLIC_URL: ${AUTH_PUBLIC_URL:-http://127.0.0.1:8090}
+    ports:
+      - "8082:8082"
+    volumes:
+      - waypoint_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      auth-api:
+        condition: service_started
+
+volumes:
+  waypoint_pg_data:
+  waypoint_uploads:

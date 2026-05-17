@@ -1,0 +1,79 @@
+# Postgres + auth-api + SMTP relay
+# Запуск: docker compose -f docker-compose.auth.yml --env-file ../ecosystem/smtp.env up -d --build
+
+name: waypoint-auth
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: waypoint-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: waypoint
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-waypoint_prod_change_me}
+      POSTGRES_DB: waypoint
+    volumes:
+      - auth_pg_data:/var/lib/postgresql/data
+    networks:
+      - waypoint_net
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U waypoint -d waypoint']
+      interval: 5s
+      timeout: 5s
+      retries: 8
+
+  auth-api:
+    container_name: waypoint-auth-api
+    build:
+      context: ../../platform/server
+      dockerfile: Dockerfile
+      args:
+        PO_BIN: auth-api
+    restart: unless-stopped
+    environment:
+      PO_SERVICE: auth
+      BIND_ADDRESS: 0.0.0.0:8090
+      DATABASE_URL: postgres://waypoint:${POSTGRES_PASSWORD:-waypoint_prod_change_me}@db:5432/waypoint
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-}
+      ADMIN_OPEN_REGISTRATION: ${ADMIN_OPEN_REGISTRATION:-1}
+      RUN_MIGRATIONS: "1"
+      OTP_WEBHOOK_URL: ${OTP_WEBHOOK_URL}
+      OTP_WEBHOOK_SECRET: ${OTP_WEBHOOK_SECRET}
+      OTP_LOG_CODES: ${OTP_LOG_CODES:-0}
+      PUBLIC_WEB_BASE_URL: ${PUBLIC_WEB_BASE_URL}
+    ports:
+      - '127.0.0.1:8090:8090'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - waypoint_net
+
+  email-relay:
+    image: python:3.12-slim
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./scripts/email-webhook-smtp.py:/app/server.py:ro
+    command: ['python', '/app/server.py']
+    environment:
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_TLS: ${SMTP_TLS:-1}
+      OTP_WEBHOOK_SECRET: ${OTP_WEBHOOK_SECRET}
+      BIND: 0.0.0.0:8025
+    networks:
+      - waypoint_net
+
+networks:
+  waypoint_net:
+    name: waypoint_net
+    driver: bridge
+
+volumes:
+  auth_pg_data:

@@ -1,0 +1,37 @@
+# Задачи для оценки качества кода (статические проверки ответа модели).
+# Запуск: python -m roza.eval  (из корня проекта, с рабочей Ollama)
+
+meta:
+  description: >
+    Оценка «насколько хорошо пишет код» здесь — приближённая: по ключевым фрагментам в ответе.
+    Для строгих метрик подключайте HumanEval/MBPP и песочницу выполнения отдельно.
+
+tasks:
+  - id: python_sum
+    prompt: |
+      Напиши на Python функцию add(a, b), возвращающую сумму двух чисел. Только код функции и кратко без лишней воды.
+    must_contain:
+      - "def add"
+      - "return"
+
+  - id: type_hints
+    prompt: |
+      Напиши на Python сигнатуру функции parse_int(s: str) -> int с docstring в одну строку.
+    must_contain:
+      - "def parse_int"
+      - "str"
+      - "int"
+
+  - id: error_handling
+    prompt: |
+      Покажи на Python как безопасно открыть файл для чтения с обработкой FileNotFoundError (короткий пример).
+    must_contain:
+      - "FileNotFoundError"
+      - "open"
+
+  - id: json_parse
+    prompt: |
+      Напиши на Python функцию load_json(path: str) -> dict, читающую UTF-8 JSON из файла. Используй стандартную библиотеку.
+    must_contain:
+      - "json"
+      - "def load_json"

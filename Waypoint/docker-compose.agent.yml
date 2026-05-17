@@ -1,0 +1,17 @@
+
+services:
+  nexus-agent:
+    build:
+      context: ./integrations/agent
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:9847:9847"
+    environment:
+      DATABASE_URL: "${AGENT_DATABASE_URL:-postgresql://nexus:nexus@host.docker.internal:5432/nexus}"
+      NEXUS_AGENT_KEY: "${NEXUS_AGENT_KEY:-change-me}"
+      NEXUS_AGENT_BIND: "0.0.0.0:9847"
+      NEXUS_HEARTBEAT_URL: "${NEXUS_HEARTBEAT_URL:-}"
+      NEXUS_HEARTBEAT_INTERVAL_SECS: "${NEXUS_HEARTBEAT_INTERVAL_SECS:-120}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

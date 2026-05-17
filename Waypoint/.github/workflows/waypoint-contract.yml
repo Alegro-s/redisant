@@ -1,0 +1,26 @@
+name: Waypoint API contract
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remote contract (optional)
+        env:
+          WAYPOINT_CONTRACT_BASE: ${{ secrets.WAYPOINT_CONTRACT_BASE }}
+        run: |
+          set -e
+          if [ -z "${WAYPOINT_CONTRACT_BASE:-}" ]; then
+            echo "Пропуск: добавьте secret WAYPOINT_CONTRACT_BASE для проверки живого API."
+            exit 0
+          fi
+          chmod +x scripts/contract_check_waypoint.sh
+          scripts/contract_check_waypoint.sh

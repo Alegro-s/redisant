@@ -1,0 +1,416 @@
+/* Lynx Hub — кинематографичная витрина движка (Rockstar-inspired) */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+.lynx-app.lynx-rs-theme {
+  --lynx-bg: #080808;
+  --lynx-surface: #111;
+  --lynx-card: #161616;
+  --lynx-border: #2a2a2a;
+  --lynx-text: #f5f5f5;
+  --lynx-muted: #9a9a9a;
+  --lynx-body: #c8c8c8;
+  --lynx-accent: #f5c518;
+  --lynx-accent-soft: #ffd84d;
+  --lynx-accent-dim: rgba(245, 197, 24, 0.12);
+  --lynx-accent-border: rgba(245, 197, 24, 0.35);
+  --lynx-rs-font-display: 'Bebas Neue', Impact, sans-serif;
+  background: var(--lynx-bg);
+  background-image:
+    linear-gradient(180deg, rgba(245, 197, 24, 0.04) 0%, transparent 35%),
+    radial-gradient(ellipse 90% 60% at 80% 0%, rgba(196, 30, 58, 0.08), transparent 55%);
+}
+
+.lynx-rs-theme .lynx-app-header-hub {
+  background: rgba(8, 8, 8, 0.55);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.85rem 2rem;
+}
+
+.lynx-rs-theme .lynx-app-brand-text {
+  font-family: var(--lynx-rs-font-display);
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lynx-rs-theme .lynx-app-hub-tag {
+  color: var(--lynx-accent);
+}
+
+.lynx-rs-theme .lynx-app-nav a {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lynx-rs-theme .lynx-app-nav a.active {
+  color: var(--lynx-accent);
+}
+
+.lynx-rs-theme .lynx-app-cta {
+  background: var(--lynx-accent);
+  color: #111;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+
+.lynx-rs-theme .lynx-app-cta:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 24px rgba(245, 197, 24, 0.35);
+}
+
+.lynx-rs-theme .lynx-app-cta-ghost {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--lynx-text);
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.lynx-rs-theme .lynx-app-main {
+  max-width: 76rem;
+  padding-top: 0;
+}
+
+/* Hero */
+.lynx-rs-hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 2rem;
+  align-items: center;
+  min-height: min(78vh, 720px);
+  padding: 3rem 0 2rem;
+  border-bottom: 3px solid var(--lynx-accent);
+}
+
+@media (max-width: 900px) {
+  .lynx-rs-hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+}
+
+.lynx-rs-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lynx-accent);
+  margin: 0 0 1rem;
+}
+
+.lynx-rs-hero h1 {
+  font-family: var(--lynx-rs-font-display);
+  font-size: clamp(3.5rem, 11vw, 6.5rem);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  color: #fff;
+  margin: 0 0 1.25rem;
+  text-transform: uppercase;
+}
+
+.lynx-rs-hero h1 span {
+  color: var(--lynx-accent);
+  display: block;
+}
+
+.lynx-rs-lead {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--lynx-muted);
+  max-width: 34rem;
+  margin: 0 0 1.75rem;
+}
+
+.lynx-rs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.lynx-rs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 3px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.lynx-rs-btn-gold {
+  background: var(--lynx-accent);
+  color: #111;
+}
+
+.lynx-rs-btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(245, 197, 24, 0.4);
+}
+
+.lynx-rs-btn-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.lynx-rs-btn-ghost:hover {
+  border-color: var(--lynx-accent);
+  color: var(--lynx-accent);
+}
+
+/* Showcase frames */
+.lynx-rs-showcase {
+  position: relative;
+  height: min(420px, 50vw);
+  min-height: 280px;
+}
+
+.lynx-rs-frame {
+  position: absolute;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+}
+
+.lynx-rs-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.55));
+}
+
+.lynx-rs-frame-label {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font-family: var(--lynx-rs-font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  color: #fff;
+  z-index: 1;
+}
+
+.lynx-rs-frame-a {
+  width: 52%;
+  height: 58%;
+  top: 0;
+  left: 0;
+  background: linear-gradient(145deg, #1a3a5c, #0d1f33);
+}
+
+.lynx-rs-frame-b {
+  width: 48%;
+  height: 52%;
+  top: 18%;
+  right: 0;
+  background: linear-gradient(145deg, #3d1f4a, #1a0f22);
+  z-index: 2;
+}
+
+.lynx-rs-frame-c {
+  width: 44%;
+  height: 40%;
+  bottom: 0;
+  left: 22%;
+  background: linear-gradient(145deg, #1f3d2a, #0f1f14);
+  z-index: 3;
+}
+
+.lynx-rs-strip {
+  position: absolute;
+  bottom: -8px;
+  right: 0;
+  padding: 0.35rem 0.85rem;
+  background: var(--lynx-accent);
+  color: #111;
+  font-family: var(--lynx-rs-font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.15em;
+  z-index: 4;
+}
+
+.lynx-rs-band {
+  background: #111;
+  border-bottom: 1px solid var(--lynx-border);
+  text-align: center;
+  padding: 0.85rem 1rem;
+}
+
+.lynx-rs-band p {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lynx-muted);
+}
+
+.lynx-rs-section {
+  padding: 3.5rem 0;
+  border-bottom: 1px solid var(--lynx-border);
+}
+
+.lynx-rs-section-head {
+  margin-bottom: 2rem;
+}
+
+.lynx-rs-tag {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--lynx-accent);
+  margin-bottom: 0.5rem;
+}
+
+.lynx-rs-section-head h2 {
+  font-family: var(--lynx-rs-font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+}
+
+.lynx-rs-section-sub {
+  margin: 0.5rem 0 0;
+  color: var(--lynx-muted);
+  font-size: 0.95rem;
+}
+
+.lynx-rs-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .lynx-rs-engine-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lynx-rs-card {
+  padding: 1.5rem;
+  background: var(--lynx-card);
+  border: 1px solid var(--lynx-border);
+  border-left: 3px solid var(--lynx-accent);
+}
+
+.lynx-rs-card-num {
+  font-family: var(--lynx-rs-font-display);
+  font-size: 1.5rem;
+  color: var(--lynx-accent);
+  opacity: 0.7;
+}
+
+.lynx-rs-card h3 {
+  margin: 0.5rem 0 0.5rem;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.lynx-rs-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--lynx-muted);
+}
+
+.lynx-rs-pipeline-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 700px) {
+  .lynx-rs-pipeline-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lynx-rs-pipe {
+  padding: 1.5rem;
+  background: linear-gradient(180deg, #141414, #0c0c0c);
+  border: 1px solid var(--lynx-border);
+  text-align: center;
+}
+
+.lynx-rs-pipe-step {
+  font-family: var(--lynx-rs-font-display);
+  font-size: 2rem;
+  color: var(--lynx-accent);
+  letter-spacing: 0.08em;
+}
+
+.lynx-rs-pipe h3 {
+  margin: 0.35rem 0;
+  color: #fff;
+}
+
+.lynx-rs-pipe p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--lynx-muted);
+}
+
+.lynx-rs-showcase-soon {
+  padding: 3rem;
+  text-align: center;
+  border: 1px dashed var(--lynx-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lynx-rs-showcase-soon p {
+  margin: 0;
+  font-family: var(--lynx-rs-font-display);
+  font-size: 1.75rem;
+  letter-spacing: 0.15em;
+  color: var(--lynx-muted);
+}
+
+.lynx-rs-cta-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 3rem 0 4rem;
+}
+
+.lynx-rs-cta-block h2 {
+  font-family: var(--lynx-rs-font-display);
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0 0 0.5rem;
+}
+
+.lynx-rs-cta-block > div > p {
+  margin: 0;
+  color: var(--lynx-muted);
+  max-width: 28rem;
+  line-height: 1.55;
+}
+
+.lynx-rs-cta-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.lynx-rs-theme .lynx-app-footer {
+  border-top: 1px solid var(--lynx-border);
+  color: var(--lynx-muted);
+  font-size: 0.8rem;
+}

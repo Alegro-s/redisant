@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Roza</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="roza-ai">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Навигация">
+      <div class="sidebar-brand">
+        <span class="sidebar-logo" aria-hidden="true"></span>
+        <div>
+          <div class="sidebar-name">Roza</div>
+          <div class="sidebar-tag">Консультант</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" role="navigation">
+        <button type="button" class="side-nav-item active" data-module="chat" aria-current="page">
+          <span class="sni-ico" aria-hidden="true">◉</span>
+          <span>Чат</span>
+        </button>
+        <button type="button" class="side-nav-item" data-module="studio">
+          <span class="sni-ico" aria-hidden="true">⌗</span>
+          <span>Студия</span>
+        </button>
+        <button type="button" class="side-nav-item" data-module="settings">
+          <span class="sni-ico" aria-hidden="true">⚙</span>
+          <span>Настройки</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <button type="button" class="btn-new-chat" id="btnNewChat">+ Новый чат</button>
+
+      <div class="sidebar-section-label">Диалоги</div>
+      <p class="sidebar-hint">Сохраняются в этом окне (localStorage).</p>
+      <ul id="sessionList" class="session-list"></ul>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-status" aria-label="Статус">
+        <span class="status-led" id="ledWs" title="Сервер"></span>
+        <span class="status-led" id="ledLlm" title="LLM"></span>
+        <span class="sidebar-status-txt">WS · LLM</span>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="main-topbar">
+        <h1 class="main-title" id="mainTitle">Чат</h1>
+        <div class="main-topbar-actions">
+          <button type="button" class="btn-icon-ghost" id="btnReset" title="Сбросить текущий диалог на сервере" aria-label="Сбросить диалог">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div id="banner" class="banner" hidden>
+        <p class="banner-text" id="bannerText"></p>
+        <button type="button" class="banner-close" id="btnBannerClose" aria-label="Закрыть">×</button>
+      </div>
+
+      <div class="main-panels">
+        <section id="module-chat" class="module-pane active" role="tabpanel">
+          <div class="chat-card">
+            <div class="chat-scroll-wrap">
+              <div class="chat" id="chat" aria-live="polite"></div>
+            </div>
+            <div class="composer-pill">
+              <input type="text" id="input" class="composer-input" placeholder="Сообщение для Roza…" autocomplete="off" />
+              <button type="button" class="composer-send" id="btnSend" title="Отправить" aria-label="Отправить">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </div>
+            <p class="composer-disclaimer">Roza может ошибаться. Проверяйте важную информацию.</p>
+          </div>
+        </section>
+
+        <section id="module-studio" class="module-pane module-studio" role="tabpanel" hidden>
+          <iframe class="studio-iframe" title="Студия" src="/studio?embed=1"></iframe>
+        </section>
+
+        <section id="module-settings" class="module-pane" role="tabpanel" hidden>
+          <div class="settings-stack">
+            <label class="setting-row">
+              <span class="setting-ico" aria-hidden="true">
+                <svg class="ico" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+              </span>
+              <div class="setting-text">
+                <span class="setting-title">Режим агента</span>
+                <span class="setting-desc">Инструменты list_dir / read_file по workspace</span>
+              </div>
+              <input type="checkbox" id="agentMode" class="toggle-switch" checked />
+            </label>
+            <button type="button" class="setting-action" id="btnResetUi">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.96 7.96 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.96 7.96 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+              Сбросить настройки интерфейса
+            </button>
+            <p class="settings-note">Агент: whitelist действий в <code>components.yaml</code>.</p>
+
+            <div class="workspace-panel" id="workspacePanel">
+              <h3 class="ws-title">Проект (workspace)</h3>
+              <p class="settings-note" id="workspaceCloudHint"></p>
+              <p class="ws-roots-caption">Корни <code>workspace.roots</code>:</p>
+              <ul id="workspaceRootsList" class="ws-roots"></ul>
+              <div class="ws-toolbar">
+                <code id="wsBrowsePath" class="ws-curpath">.</code>
+                <button type="button" class="setting-action" id="btnWsUp">Вверх</button>
+                <button type="button" class="setting-action" id="btnWsRefresh">Обновить</button>
+              </div>
+              <ul id="wsEntriesList" class="ws-entries"></ul>
+              <p class="ws-preview-caption">Просмотр файла:</p>
+              <pre id="wsFilePreview" class="ws-preview" hidden></pre>
+            </div>
+
+            <div class="settings-api-panel">
+              <h3 class="ws-title">HTTP API</h3>
+              <p class="settings-note">Тот же сервер, что и веб-интерфейс. Примеры для скриптов и внешних клиентов.</p>
+              <pre class="settings-api-pre">GET  /api/health
+POST /api/chat          JSON: { "text", "agent", "session_id", "context_key" }
+POST /api/llm/preset    JSON: { "preset": "light" | "strong" | "default" }
+GET  /api/learning/stats
+POST /api/learning/enabled  JSON: { "enabled": true }
+POST /api/studio/datasets/upload  multipart: поле file</pre>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <aside class="insights-column" aria-label="Аналитика и карта знаний">
+      <div class="insight-card">
+        <h2 class="insight-title">Аналитика</h2>
+        <div id="healthDetail" class="health-detail">Загрузка…</div>
+        <div class="chart-wrap">
+          <canvas id="latencyCanvas" width="260" height="80" aria-label="Задержка ответа"></canvas>
+        </div>
+        <p class="insight-foot">Время ответа (мс), последние запросы в этом окне.</p>
+      </div>
+
+      <div class="insight-card insight-card-kg">
+        <h2 class="insight-title">Карта знаний</h2>
+        <p class="insight-foot insight-foot-top">Связи сущностей (как в ER): поток от вас к модели и данным.</p>
+        <div class="kg-frame">
+          <svg class="kg-svg" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <filter id="kgShadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.1"/>
+              </filter>
+            </defs>
+
+            <g class="kg-edges" fill="none" stroke-width="2" stroke-linecap="round" stroke="#c8c8d0">
+              <path d="M62 52 C 90 70, 110 85, 128 108"/>
+              <path d="M188 52 C 165 75, 148 92, 152 108"/>
+              <path d="M152 152 C 152 170, 155 188, 70 210"/>
+              <path d="M188 152 C 210 175, 225 195, 248 212"/>
+              <path d="M218 128 C 248 118, 268 108, 278 88"/>
+            </g>
+
+            <g filter="url(#kgShadow)">
+              <rect x="12" y="24" width="88" height="40" rx="12" fill="#ffffff" stroke="#e5e5ea" stroke-width="1.2"/>
+              <text x="56" y="49" text-anchor="middle" class="kg-txt">Пользователь</text>
+
+              <rect x="152" y="16" width="96" height="40" rx="12" fill="#ffffff" stroke="#e5e5ea" stroke-width="1.2"/>
+              <text x="200" y="41" text-anchor="middle" class="kg-txt">Сессия</text>
+
+              <rect x="96" y="108" width="112" height="48" rx="14" fill="#0a84ff" stroke="#0a84ff" stroke-width="1.2"/>
+              <text x="152" y="137" text-anchor="middle" class="kg-txt kg-txt-light">Roza</text>
+
+              <rect x="208" y="108" width="84" height="40" rx="12" fill="#ffffff" stroke="#e5e5ea" stroke-width="1.2"/>
+              <text x="250" y="133" text-anchor="middle" class="kg-txt">LLM</text>
+
+              <rect x="16" y="200" width="104" height="40" rx="12" fill="#ffffff" stroke="#e5e5ea" stroke-width="1.2"/>
+              <text x="68" y="225" text-anchor="middle" class="kg-txt">Workspace</text>
+
+              <rect x="176" y="200" width="108" height="40" rx="12" fill="#ffffff" stroke="#e5e5ea" stroke-width="1.2"/>
+              <text x="230" y="225" text-anchor="middle" class="kg-txt">Инструменты</text>
+            </g>
+          </svg>
+        </div>
+        <div class="kg-learning-panel" aria-label="Обучение и данные">
+          <h3 class="kg-learning-title">Обучение и данные</h3>
+          <div class="learning-row">
+            <span id="learningIndicator" class="learning-led" title="Журнал обучения"></span>
+            <span id="learningStatusText" class="learning-status">…</span>
+          </div>
+          <pre id="learningStatsDetail" class="learning-stats-pre"></pre>
+          <label class="learning-toggle"><input type="checkbox" id="learningToggle" /> Запись в журнал (override сессии)</label>
+          <div class="llm-preset-row" id="llmPresetRow" hidden>
+            <span class="preset-label">HF-модель:</span>
+            <button type="button" class="btn-preset" data-preset="light">Лёгкая</button>
+            <button type="button" class="btn-preset" data-preset="strong">Усиленная</button>
+            <button type="button" class="btn-preset btn-preset-ghost" data-preset="default">По config</button>
+          </div>
+          <p class="kg-api-hint">Загрузка датасета на сервер (multipart). Форматы: .jsonl .json .txt .yaml .yml</p>
+          <div class="dataset-upload-row">
+            <input type="file" id="datasetFile" accept=".jsonl,.json,.txt,.yaml,.yml" class="visually-hidden" />
+            <button type="button" class="btn-dataset" id="btnDatasetPick">Загрузить датасет…</button>
+          </div>
+          <p class="kg-api-hint kg-api-hint-mono">POST /api/learning/enabled · POST /api/llm/preset · POST /api/studio/datasets/upload</p>
+        </div>
+      </div>
+
+      <div class="insight-card insight-brain">
+        <h2 class="insight-title">Режимы рассуждения</h2>
+        <ul id="brainFlags" class="brain-list"></ul>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

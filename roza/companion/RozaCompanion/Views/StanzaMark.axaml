@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="RozaCompanion.Views.StanzaMark"
+             Width="28"
+             Height="28">
+  <Viewbox Stretch="Uniform">
+    <Canvas Width="24" Height="24">
+      <!-- Три строки «станцы» + точка — монохром, без градиента -->
+      <Rectangle Canvas.Left="3" Canvas.Top="6" Width="14" Height="2" Fill="{DynamicResource RzText}" Opacity="0.85" />
+      <Rectangle Canvas.Left="3" Canvas.Top="11" Width="18" Height="2" Fill="{DynamicResource RzText}" Opacity="0.65" />
+      <Rectangle Canvas.Left="3" Canvas.Top="16" Width="11" Height="2" Fill="{DynamicResource RzText}" Opacity="0.45" />
+      <Border Canvas.Left="17" Canvas.Top="4" Width="4" Height="4" CornerRadius="1"
+              Background="{DynamicResource RzText}" />
+    </Canvas>
+  </Viewbox>
+</UserControl>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roza — студия</title>
+  <link rel="stylesheet" href="/static/studio.css" />
+  <script>
+    (function () {
+      if (/\bembed=1\b/.test(location.search)) document.documentElement.classList.add("studio-embed");
+    })();
+  </script>
+</head>
+<body>
+  <header class="studio-top">
+    <h1>Roza — студия данных и умений</h1>
+    <div style="display:flex;align-items:center;gap:14px">
+      <span id="healthStatus" class="health-pill">LLM: …</span>
+      <a href="/">← Диалог</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>Дерево умений</h2>
+      <p style="margin:0 0 10px;font-size:0.8rem;color:var(--muted)">
+        Статусы после бенчмарка: зелёный — задача пройдена, красный — нет, жёлтый — ещё не проверяли.
+      </p>
+      <div id="treeRoot" class="tree"></div>
+      <div class="legend">
+        Настройка: <code>skills.yaml</code> в корне проекта (рядом с config.yaml). Связь с задачами: поле <code>eval_task</code> = id из <code>eval/code_tasks.yaml</code>.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Датасеты</h2>
+      <div id="dropzone" class="dropzone">
+        Перетащите файл сюда или нажмите — .jsonl .json .txt .yaml
+      </div>
+      <input type="file" id="fileInput" hidden accept=".jsonl,.json,.txt,.yaml,.yml" />
+
+      <h2 style="margin-top:18px">Файлы в data/datasets</h2>
+      <div id="fileList" class="file-list"></div>
+
+      <div class="actions">
+        <button type="button" id="btnExportLearn">Экспорт журнала → ShareGPT JSONL</button>
+        <button type="button" id="btnBench">Запустить бенчмарк (eval)</button>
+        <button type="button" id="btnRefresh">Обновить</button>
+      </div>
+
+      <h2 style="margin-top:22px">LoRA (SFT) внутри Roza</h2>
+      <p style="margin:0 0 10px;font-size:0.8rem;color:var(--muted)">
+        Нужен GPU и пакеты: <code>pip install -e ".[train]"</code>. Датасет — ShareGPT JSONL из списка выше. После обучения: при желании
+        <code>python -m roza.train merge --base … --adapter … --out …</code>, затем конвертация в GGUF и <code>llm.backend: llama_cpp</code> — без Ollama.
+      </p>
+      <div id="trainDeps" class="train-deps"></div>
+      <div class="train-form">
+        <label>Файл датасета <select id="trainDataset"></select></label>
+        <label>Базовая модель (Hugging Face id или путь) <input type="text" id="trainBase" placeholder="meta-llama/Llama-3.2-1B-Instruct" /></label>
+        <label>Имя прогона (пусто = авто) <input type="text" id="trainRun" placeholder="my_lora_run" /></label>
+        <div class="train-row2">
+          <label>Эпохи <input type="number" id="trainEpochs" value="1" min="0.1" step="0.1" /></label>
+          <label>LR <input type="text" id="trainLr" value="0.0002" /></label>
+          <label>LoRA r <input type="number" id="trainR" value="8" min="4" /></label>
+          <label>LoRA α <input type="number" id="trainAlpha" value="16" min="4" /></label>
+        </div>
+        <div class="train-row2">
+          <label>max_seq <input type="number" id="trainSeq" value="1024" min="128" step="64" /></label>
+          <label>batch <input type="number" id="trainBs" value="1" min="1" /></label>
+          <label>grad_accum <input type="number" id="trainGa" value="8" min="1" /></label>
+          <label class="chk"><input type="checkbox" id="train4bit" /> QLoRA 4-bit</label>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <button type="button" id="btnTrainStart">Запустить обучение</button>
+          <button type="button" id="btnTrainLog">Обновить лог</button>
+        </div>
+      </div>
+      <p id="trainStatus" class="train-status"></p>
+      <pre id="trainLogPre" class="log train-log"></pre>
+
+      <p style="font-size:0.75rem;color:var(--muted);margin:14px 0 0">
+        Без Ollama для чата: в config.yaml <code>llm.backend: llama_cpp</code> или <code>openai_compatible</code>.
+      </p>
+      <pre id="studioLog" class="log"></pre>
+    </section>
+  </div>
+
+  <script src="/static/studio.js"></script>
+</body>
+</html>

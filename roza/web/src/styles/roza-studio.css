@@ -1,0 +1,2106 @@
+/* Roza — светлая линейка в духе Google AI / Material */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&display=swap');
+
+.roza-studio {
+  --rs-bg: #ffffff;
+  --rs-bg-soft: #f8f9fa;
+  --rs-surface: #ffffff;
+  --rs-border: #dadce0;
+  --rs-text: #202124;
+  --rs-muted: #5f6368;
+  --rs-blue: #1a73e8;
+  --rs-purple: #9334e6;
+  --rs-teal: #12b5cb;
+  --rs-green: #1e8e3e;
+  --rs-radius: 16px;
+  min-height: 100dvh;
+  font-family: 'Google Sans Flex', Roboto, system-ui, sans-serif;
+  background: var(--rs-bg);
+  color: var(--rs-text);
+  display: flex;
+  flex-direction: column;
+}
+
+.roza-studio::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% -20%, rgba(26, 115, 232, 0.06), transparent),
+    radial-gradient(ellipse 50% 40% at 90% 0%, rgba(147, 52, 230, 0.05), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.roza-top {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: nowrap;
+  padding: 10px 24px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--rs-border);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.roza-top-compact .roza-brand-name {
+  font-size: 1.05rem;
+}
+
+.roza-top-compact .roza-nav a {
+  font-size: 13px;
+  padding: 6px 2px;
+  margin: 0 6px;
+}
+
+.roza-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--rs-text);
+}
+
+.roza-brand-name {
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.roza-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.roza-nav a {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rs-muted);
+  text-decoration: none;
+  padding: 8px 4px;
+  margin: 0 8px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  line-height: 1.25;
+}
+
+.roza-nav a:hover,
+.roza-nav a.active {
+  color: var(--rs-blue);
+  border-bottom-color: var(--rs-blue);
+}
+
+.roza-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+
+.roza-mark-os-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--rs-text);
+  line-height: 1;
+}
+
+.roza-mark-os-text span {
+  color: var(--rs-teal);
+  margin-left: 2px;
+}
+
+.roza-mark-ai {
+  display: inline-block;
+  flex-shrink: 0;
+  background: linear-gradient(125deg, var(--rs-blue) 0%, var(--rs-purple) 52%, #d96570 100%);
+  -webkit-mask-image: url(/roza/roza-ai-mark.png);
+  mask-image: url(/roza/roza-ai-mark.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.roza-pill {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #e8f0fe;
+  color: var(--rs-blue);
+}
+
+.roza-pill.os {
+  background: #e0f7fa;
+  color: #00796b;
+}
+
+/* Hub */
+.roza-hero-center {
+  text-align: center;
+  margin-bottom: 56px;
+  animation: roza-fade-up 0.7s ease both;
+}
+
+.roza-hero-center h1 {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 500;
+  margin: 20px 0 12px;
+}
+
+.roza-hero-center p {
+  color: var(--rs-muted);
+  font-size: 18px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.roza-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 640px) {
+  .roza-product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roza-product-card {
+  padding: 32px 28px;
+  border-radius: 24px;
+  border: 1px solid var(--rs-border);
+  background: var(--rs-surface);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
+  animation: roza-fade-up 0.7s ease both;
+}
+
+.roza-product-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.roza-product-card:hover {
+  border-color: #c6dafc;
+  box-shadow: 0 8px 40px rgba(26, 115, 232, 0.12);
+  transform: translateY(-4px);
+}
+
+.roza-product-card h2 {
+  margin: 16px 0 8px;
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.roza-product-card p {
+  margin: 0;
+  color: var(--rs-muted);
+  line-height: 1.55;
+}
+
+.roza-product-cta {
+  display: inline-block;
+  margin-top: 20px;
+  font-weight: 500;
+  color: var(--rs-blue);
+}
+
+@keyframes roza-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* AI page */
+.roza-ai-hero {
+  margin-bottom: 48px;
+  animation: roza-fade-up 0.6s ease both;
+}
+
+.roza-ai-hero h1 {
+  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  font-weight: 500;
+  margin: 16px 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.roza-ai-lead {
+  color: var(--rs-muted);
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 640px;
+}
+
+.roza-access-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 40px 0 48px;
+}
+
+@media (max-width: 700px) {
+  .roza-access-compare {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roza-access-card {
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: var(--rs-bg-soft);
+  animation: roza-fade-up 0.6s ease both;
+}
+
+.roza-access-card.liza {
+  animation-delay: 0.08s;
+  border-color: #c6dafc;
+  background: linear-gradient(180deg, #f8fbff, #fff);
+}
+
+.roza-access-card.roza-req {
+  animation-delay: 0.16s;
+}
+
+.roza-access-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.roza-access-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.roza-access-badge.live {
+  background: #e6f4ea;
+  color: var(--rs-green);
+}
+
+.roza-access-badge.req {
+  background: #fef7e0;
+  color: #b06000;
+}
+
+.roza-api-flow {
+  margin: 48px 0;
+}
+
+.roza-api-flow h2 {
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 0 0 24px;
+}
+
+.roza-api-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.roza-api-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+  padding: 24px 28px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  animation: roza-fade-up 0.55s ease both;
+}
+
+.roza-api-step:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.roza-api-step:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.roza-api-num {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e8f0fe;
+  color: var(--rs-blue);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.roza-api-step h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.roza-api-step p {
+  margin: 0 0 12px;
+  color: var(--rs-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.roza-code {
+  display: block;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f1f3f4;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--rs-text);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.roza-studio-prompt {
+  margin: 48px 0;
+  padding: 24px 28px 20px;
+  border-radius: 28px;
+  background: #fff;
+  border: 1px solid var(--rs-border);
+  box-shadow: 0 4px 24px rgba(60, 64, 67, 0.08);
+  animation: roza-glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes roza-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 24px rgba(60, 64, 67, 0.08);
+  }
+  50% {
+    box-shadow: 0 8px 40px rgba(26, 115, 232, 0.12);
+  }
+}
+
+.roza-studio-prompt-label {
+  font-size: 14px;
+  color: var(--rs-muted);
+  margin-bottom: 14px;
+}
+
+.roza-studio-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.roza-studio-input-row textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  color: var(--rs-text);
+  resize: none;
+  outline: none;
+  min-height: 48px;
+}
+
+.roza-studio-send {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: var(--rs-blue);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.roza-studio-send:hover:not(:disabled) {
+  transform: scale(1.05);
+  background: #1557b0;
+}
+
+.roza-studio-send:disabled {
+  opacity: 0.4;
+}
+
+.roza-dialog-section {
+  margin-top: 48px;
+}
+
+.roza-dialog-section h2 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  color: var(--rs-muted);
+}
+
+.roza-dialog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.roza-dialog {
+  display: flex;
+  gap: 14px;
+  animation: roza-fade-up 0.5s ease both;
+}
+
+.roza-dialog-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.roza-dialog-avatar.user {
+  background: #f1f3f4;
+  color: var(--rs-muted);
+}
+
+.roza-dialog-avatar.liza {
+  background: linear-gradient(135deg, #e8f0fe, #ede7f6);
+  color: var(--rs-blue);
+}
+
+.roza-dialog-bubble {
+  flex: 1;
+  padding: 16px 20px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.roza-dialog.user .roza-dialog-bubble {
+  background: #f1f3f4;
+}
+
+.roza-dialog.liza .roza-dialog-bubble {
+  background: #e8f0fe;
+  border: 1px solid #d2e3fc;
+}
+
+/* OS presentation */
+.roza-os-present {
+  max-width: 100%;
+}
+
+.roza-os-hero-block {
+  text-align: center;
+  padding: 56px 24px 64px;
+  margin: 0 -32px 64px;
+  background: linear-gradient(180deg, #f8f9fa 0%, #fff 100%);
+  border-bottom: 1px solid var(--rs-border);
+  animation: roza-fade-up 0.7s ease both;
+}
+
+@media (max-width: 640px) {
+  .roza-os-hero-block {
+    margin: 0 -16px 48px;
+    padding: 40px 16px 48px;
+  }
+}
+
+.roza-os-hero-block h1 {
+  font-size: clamp(2.25rem, 6vw, 3.25rem);
+  font-weight: 500;
+  margin: 24px 0 16px;
+  letter-spacing: -0.03em;
+}
+
+.roza-os-tagline {
+  font-size: 1.25rem;
+  color: var(--rs-muted);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.roza-os-scroll-section {
+  margin-bottom: 72px;
+  animation: roza-fade-up 0.6s ease both;
+}
+
+.roza-os-scroll-section h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 500;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+}
+
+.roza-os-scroll-section > p {
+  font-size: 17px;
+  color: var(--rs-muted);
+  line-height: 1.65;
+  max-width: 640px;
+  margin: 0 0 28px;
+}
+
+.roza-os-visual-wide {
+  width: 100%;
+  aspect-ratio: 21/9;
+  max-height: 320px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #e8f0fe 0%, #f3e8fd 40%, #e0f7fa 100%);
+  border: 1px solid var(--rs-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.roza-os-visual-wide::after {
+  content: '';
+  position: absolute;
+  inset: 20% 15%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+  animation: roza-float-ui 5s ease-in-out infinite;
+}
+
+@keyframes roza-float-ui {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.roza-os-feature-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 32px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 600px) {
+  .roza-os-feature-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roza-os-feature-list li {
+  padding-left: 28px;
+  position: relative;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--rs-text);
+}
+
+.roza-os-feature-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.45em;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--rs-teal);
+}
+
+.roza-os-release {
+  margin-top: 48px;
+  padding: 40px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #f8f9fa, #fff);
+  border: 1px solid var(--rs-border);
+  text-align: center;
+}
+
+.roza-os-release h2 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.roza-os-release-meta {
+  color: var(--rs-muted);
+  margin-bottom: 24px;
+  font-size: 15px;
+}
+
+.roza-os-dl-main {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.roza-os-dl-main button {
+  padding: 14px 32px;
+  border-radius: 28px;
+  border: none;
+  background: #e8eaed;
+  color: #80868b;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: not-allowed;
+}
+
+.roza-os-dl-note {
+  font-size: 13px;
+  color: var(--rs-muted);
+}
+
+.roza-footer {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--rs-muted);
+  border-top: 1px solid var(--rs-border);
+  background: #fff;
+}
+
+/* Header text-only brand */
+.roza-brand-text-only {
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Hub — главная в духе Google */
+.roza-hub-google {
+  max-width: 960px;
+  padding-top: 24px;
+  padding-bottom: 80px;
+}
+
+.roza-hub-hero {
+  text-align: center;
+  padding: 48px 16px 40px;
+  animation: roza-fade-up 0.65s ease both;
+}
+
+.roza-hub-wordmark {
+  margin: 0 0 16px;
+  font-size: clamp(3rem, 12vw, 4.5rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--rs-text);
+}
+
+.roza-hub-tagline {
+  margin: 0 auto 28px;
+  max-width: 520px;
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--rs-muted);
+}
+
+.roza-hub-grad {
+  background: linear-gradient(90deg, var(--rs-blue), var(--rs-purple), #d96570);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.roza-hub-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.roza-hub-chip {
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--rs-bg-soft);
+  border: 1px solid var(--rs-border);
+  color: var(--rs-text);
+}
+
+.roza-hub-chat-wrap {
+  max-width: 640px;
+  margin: 0 auto 56px;
+  animation: roza-fade-up 0.65s 0.08s ease both;
+}
+
+.roza-hub-chat-wrap .roza-hub-prompt-note {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--rs-muted);
+}
+
+.roza-hub-section-title {
+  margin: 0 0 24px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--rs-muted);
+  text-align: center;
+}
+
+.roza-hub-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .roza-hub-product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roza-hub-product {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 24px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  transition: box-shadow 0.25s, border-color 0.25s;
+  animation: roza-fade-up 0.65s ease both;
+}
+
+.roza-hub-product:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.roza-hub-product:hover {
+  border-color: #c6dafc;
+  box-shadow: 0 4px 24px rgba(60, 64, 67, 0.12);
+}
+
+.roza-hub-product-ai .roza-hub-product-visual {
+  background: linear-gradient(160deg, #f3e8fd 0%, #e8f0fe 50%, #fff 100%);
+}
+
+.roza-hub-product-os .roza-hub-product-visual {
+  background: linear-gradient(160deg, #e0f7fa 0%, #e8f5e9 50%, #fff 100%);
+}
+
+.roza-hub-product-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 28px;
+}
+
+.roza-hub-product-os .roza-hub-product-visual {
+  min-height: 120px;
+}
+
+.roza-hub-product-copy {
+  padding: 24px 28px 28px;
+}
+
+.roza-hub-product-copy h3 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.roza-hub-product-copy p {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--rs-muted);
+}
+
+.roza-hub-product-cta {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--rs-blue);
+  color: #fff;
+}
+
+.roza-hub-product-os .roza-hub-product-cta {
+  background: #00796b;
+}
+
+.roza-hub-product:hover .roza-hub-product-cta {
+  filter: brightness(1.05);
+}
+
+.roza-hub-icon-slot {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roza-mark-os-badge {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #b2dfdb;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+}
+
+.roza-cabinet-cta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--rs-blue);
+  background: #e8f0fe;
+  border: 1px solid #d2e3fc;
+}
+
+.roza-cabinet-cta:hover {
+  background: #d2e3fc;
+}
+
+.roza-os-ai-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #e8f0fe, #fef7e0);
+  color: var(--rs-blue);
+  margin-bottom: 10px;
+}
+
+.roza-os-chapter.has-ai .roza-os-chapter-visual {
+  background: linear-gradient(145deg, #e8f0fe, #f3e8fd);
+}
+
+.roza-os-ai-panel {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 18%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--rs-border);
+  box-shadow: 0 8px 24px rgba(60, 64, 67, 0.1);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--rs-muted);
+}
+
+.roza-os-ai-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285f4, #d96570);
+  flex-shrink: 0;
+}
+
+.roza-os-float-ui.terminal {
+  width: 50%;
+  height: 28%;
+  left: 20%;
+  bottom: 14%;
+  background: #1e1e1e;
+  border-color: #333;
+}
+
+/* Roza AI — страница в духе Google (как главная) */
+.roza-ai-google {
+  max-width: 960px;
+  padding-top: 16px;
+  padding-bottom: 80px;
+}
+
+.roza-ai-hero-google {
+  text-align: center;
+  padding: 32px 16px 28px;
+  animation: roza-fade-up 0.65s ease both;
+}
+
+.roza-ai-hero-mark {
+  margin-bottom: 20px;
+}
+
+.roza-ai-wordmark {
+  margin: 0 0 12px;
+  font-size: clamp(2.25rem, 9vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: var(--rs-text);
+}
+
+.roza-ai-tagline {
+  margin: 0 auto;
+  max-width: 480px;
+  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--rs-muted);
+}
+
+.roza-ai-about-google {
+  max-width: 560px;
+  margin: 0 auto 36px;
+  padding: 0 16px;
+  text-align: center;
+  animation: roza-fade-up 0.65s 0.06s ease both;
+}
+
+.roza-ai-about-google p {
+  margin: 0 0 12px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--rs-muted);
+}
+
+.roza-ai-about-note {
+  font-size: 14px !important;
+}
+
+.roza-ai-cabinet-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--rs-blue);
+  background: #e8f0fe;
+  border: 1px solid #d2e3fc;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.roza-ai-cabinet-btn:hover {
+  background: #d2e3fc;
+  border-color: #aecbfa;
+}
+
+.roza-ai-chat-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px;
+  animation: roza-fade-up 0.65s 0.1s ease both;
+}
+
+.roza-ai-chat-wrap .roza-hub-prompt-note {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.roza-ai-page .roza-ai-footer-links {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.roza-ai-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 700px) {
+  .roza-ai-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roza-ai-panel {
+  padding: 22px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: var(--rs-bg-soft);
+  animation: roza-fade-up 0.55s ease both;
+}
+
+.roza-ai-panel.liza-panel {
+  border-color: #c6dafc;
+  background: linear-gradient(180deg, #f8fbff, #fff);
+}
+
+.roza-ai-panel h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.roza-ai-panel p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--rs-muted);
+}
+
+.roza-ai-steps-mini {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--rs-text);
+  line-height: 1.6;
+}
+
+.roza-ai-request-btn {
+  margin-top: 14px;
+  padding: 10px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rs-muted);
+  cursor: not-allowed;
+}
+
+.roza-chat-shell {
+  border-radius: 28px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(60, 64, 67, 0.06);
+  animation: roza-fade-up 0.6s ease 0.15s both;
+}
+
+.roza-chat-messages {
+  min-height: 280px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #fafafa;
+}
+
+.roza-chat-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.roza-chat-row.user {
+  flex-direction: row-reverse;
+}
+
+.roza-chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  background: #e8eaed;
+  color: var(--rs-muted);
+}
+
+.roza-chat-row.assistant .roza-chat-avatar {
+  background: transparent;
+  padding: 0;
+  overflow: hidden;
+}
+
+.roza-chat-row.liza .roza-chat-avatar {
+  background: linear-gradient(135deg, #e8f0fe, #ede7f6);
+  color: var(--rs-blue);
+}
+
+.roza-chat-bubble {
+  max-width: 85%;
+  padding: 14px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.55;
+  background: #fff;
+  border: 1px solid var(--rs-border);
+}
+
+.roza-chat-row.user .roza-chat-bubble {
+  background: #e8f0fe;
+  border-color: #d2e3fc;
+}
+
+.roza-chat-row.assistant .roza-chat-bubble {
+  background: #fff;
+}
+
+.roza-chat-row.liza .roza-chat-bubble {
+  background: #fff;
+}
+
+.roza-chat-bubble-typing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 1.25rem;
+}
+
+.roza-chat-typing-text {
+  font-size: 14px;
+  color: var(--rs-muted);
+  font-style: italic;
+}
+
+.roza-chat-typing-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.roza-chat-typing-dots span {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--rs-muted);
+  animation: roza-typing 1s ease infinite;
+}
+
+.roza-chat-typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.roza-chat-typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.roza-chat-typing span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-radius: 50%;
+  background: var(--rs-muted);
+  animation: roza-typing 1s ease infinite;
+}
+
+.roza-chat-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.roza-chat-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes roza-typing {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.roza-chat-composer {
+  padding: 16px 20px 20px;
+  border-top: 1px solid var(--rs-border);
+  background: #fff;
+}
+
+.roza-chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.roza-chip {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  font-size: 13px;
+  color: var(--rs-text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.roza-chip:hover {
+  background: #f1f3f4;
+  border-color: #c6dafc;
+}
+
+.roza-chat-input-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 12px 14px;
+  border-radius: 24px;
+  background: #f1f3f4;
+}
+
+.roza-chat-input-wrap textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  resize: none;
+  outline: none;
+  min-height: 24px;
+  max-height: 120px;
+}
+
+.roza-chat-send {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--rs-blue);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.roza-chat-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Мелкий чат на главной — как прежняя строка ввода */
+.roza-chat-mini {
+  border: 1px solid var(--rs-border);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08), 0 4px 12px rgba(60, 64, 67, 0.06);
+  overflow: hidden;
+}
+
+.roza-chat-mini .roza-chat-composer {
+  padding: 0;
+  border-top: none;
+  background: transparent;
+}
+
+.roza-chat-mini .roza-chat-input-wrap {
+  padding: 16px 20px;
+  border-radius: 28px;
+  background: #fff;
+}
+
+.roza-chat-mini .roza-chat-input-wrap textarea {
+  font-size: 16px;
+}
+
+.roza-chat-mini .roza-chat-send {
+  width: 40px;
+  height: 40px;
+}
+
+.roza-chat-mini-open .roza-chat-composer {
+  border-top: 1px solid var(--rs-border);
+}
+
+.roza-chat-mini .roza-chat-messages {
+  max-height: 160px;
+  min-height: 0;
+  padding: 12px 14px 8px;
+  background: #fafafa;
+  overflow-y: auto;
+}
+
+.roza-chat-mini .roza-chat-row {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.roza-chat-mini .roza-chat-row:last-child {
+  margin-bottom: 0;
+}
+
+.roza-chat-mini .roza-chat-avatar {
+  width: 22px;
+  height: 22px;
+  font-size: 8px;
+}
+
+.roza-chat-mini .roza-chat-bubble {
+  max-width: 90%;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  border-radius: 14px;
+}
+
+.roza-chat-mini .roza-chat-typing-text {
+  font-size: 12px;
+}
+
+.roza-ai-footer-links,
+.roza-os-footer-links {
+  margin-top: 40px;
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+}
+
+.roza-ai-footer-links a,
+.roza-os-footer-links a {
+  color: var(--rs-blue);
+  text-decoration: none;
+}
+
+/* OS — volumetric presentation */
+.roza-os-present {
+  max-width: 960px;
+  padding-top: 0;
+}
+
+.roza-os-cinema {
+  position: relative;
+  margin: 0 -32px 56px;
+  padding: 72px 32px 80px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.roza-os-cinema-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(18, 181, 203, 0.12), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 100%, rgba(147, 52, 230, 0.08), transparent),
+    linear-gradient(180deg, #f8f9fa, #fff);
+  animation: roza-cinema-shift 12s ease-in-out infinite alternate;
+}
+
+@keyframes roza-cinema-shift {
+  from {
+    filter: hue-rotate(0deg);
+  }
+  to {
+    filter: hue-rotate(8deg);
+  }
+}
+
+.roza-os-cinema-inner {
+  position: relative;
+  z-index: 1;
+  animation: roza-fade-up 0.8s ease both;
+}
+
+.roza-os-cinema-inner h1 {
+  font-size: clamp(2.25rem, 6vw, 3.25rem);
+  font-weight: 500;
+  margin: 20px 0 8px;
+  letter-spacing: -0.03em;
+}
+
+.roza-os-cinema-tag {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--rs-muted);
+}
+
+.roza-os-chapter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  margin-bottom: 72px;
+  padding: 32px 0;
+  animation: roza-fade-up 0.7s ease both;
+}
+
+.roza-os-chapter.alt {
+  direction: rtl;
+}
+
+.roza-os-chapter.alt > * {
+  direction: ltr;
+}
+
+@media (max-width: 768px) {
+  .roza-os-chapter,
+  .roza-os-chapter.alt {
+    grid-template-columns: 1fr;
+    direction: ltr;
+  }
+}
+
+.roza-os-chapter h2 {
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.roza-os-chapter-lead {
+  font-size: 17px;
+  color: var(--rs-text);
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.roza-os-chapter-text > p:last-of-type {
+  color: var(--rs-muted);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.roza-os-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+
+.roza-os-chips li {
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  background: #e0f7fa;
+  color: #00796b;
+}
+
+.roza-os-chapter-visual {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--rs-border);
+}
+
+.roza-os-chapter-visual.tone-a {
+  background: linear-gradient(145deg, #e8f0fe, #f3e8fd);
+}
+
+.roza-os-chapter-visual.tone-b {
+  background: linear-gradient(145deg, #e0f7fa, #e8f5e9);
+}
+
+.roza-os-chapter-visual.tone-c {
+  background: linear-gradient(145deg, #fef7e0, #fce8e6);
+}
+
+.roza-os-float-ui {
+  position: absolute;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.roza-os-float-ui.u1 {
+  inset: 18% 12% 35% 12%;
+  animation: roza-float-ui 6s ease-in-out infinite;
+}
+
+.roza-os-float-ui.u2 {
+  width: 42%;
+  height: 22%;
+  left: 8%;
+  bottom: 12%;
+  animation: roza-float-ui 5s ease-in-out 0.5s infinite;
+}
+
+.roza-os-float-ui.u3 {
+  width: 36%;
+  height: 18%;
+  right: 10%;
+  top: 14%;
+  animation: roza-float-ui 7s ease-in-out 1s infinite;
+}
+
+.roza-os-release-stage {
+  margin: 48px 0;
+  animation: roza-fade-up 0.7s ease both;
+}
+
+.roza-os-release-card {
+  text-align: center;
+  padding: 48px 32px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, #f8f9fa, #fff);
+  border: 1px solid var(--rs-border);
+  box-shadow: 0 12px 48px rgba(60, 64, 67, 0.08);
+}
+
+.roza-os-release-card h2 {
+  margin: 16px 0 8px;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.roza-os-release-card p {
+  color: var(--rs-muted);
+  margin: 0 0 24px;
+}
+
+.roza-os-release-card button {
+  padding: 14px 28px;
+  border-radius: 24px;
+  border: none;
+  background: #e8eaed;
+  color: #80868b;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: not-allowed;
+}
+
+/* ——— Скачивание консультанта ——— */
+.roza-hub-dl-wrap {
+  max-width: 640px;
+  margin: 0 auto 48px;
+  padding: 0 16px;
+}
+
+.roza-download {
+  padding: 28px 24px;
+  border-radius: 24px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(60, 64, 67, 0.06);
+}
+
+.roza-download-compact {
+  padding: 20px 22px;
+}
+
+.roza-download-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.roza-download-lead {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--rs-muted);
+}
+
+.roza-download-features {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.roza-download-features li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  color: var(--rs-muted);
+}
+
+.roza-download-features strong {
+  color: var(--rs-text);
+  font-weight: 500;
+}
+
+.roza-download-btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 24px;
+  background: var(--rs-blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.roza-download-btn:hover {
+  filter: brightness(1.06);
+}
+
+.roza-download-unavail {
+  margin: 0;
+  font-size: 14px;
+  color: var(--rs-muted);
+}
+
+.roza-nav-account {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 0 0 10px;
+  padding: 0;
+  flex-shrink: 0;
+  align-self: center;
+  border-radius: 8px;
+  color: var(--rs-muted);
+  text-decoration: none;
+  border-bottom: none !important;
+  transition: background 0.2s, color 0.2s;
+}
+
+.roza-nav-account:hover,
+.roza-nav-account.active {
+  background: var(--rs-bg-soft);
+  color: var(--rs-blue);
+  border-bottom-color: transparent !important;
+}
+
+.roza-nav-account-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.roza-hub-waypoint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rs-muted);
+}
+
+.roza-account-redirect {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+/* ——— Roza AI (светлая, улучшенная) ——— */
+.roza-ai-google {
+  max-width: 800px;
+  padding-bottom: 72px;
+}
+
+.roza-ai-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0 auto 28px;
+  padding: 0 16px;
+  max-width: 720px;
+}
+
+.roza-ai-panel-card {
+  padding: 20px 22px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.06);
+}
+
+.roza-ai-panel-card h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.roza-ai-panel-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--rs-muted);
+}
+
+.roza-ai-panel-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rs-blue);
+  text-decoration: none;
+}
+
+.roza-ai-panel-link:hover {
+  text-decoration: underline;
+}
+
+.roza-ai-chat-wrap {
+  max-width: 720px;
+  margin: 0 auto 32px;
+  padding: 0 16px;
+}
+
+.roza-ai-download-block {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Блок возможностей Roza AI (ПК) */
+.roza-ai-features {
+  max-width: 720px;
+  margin: 0 auto 40px;
+  padding: 0 16px;
+}
+
+.roza-ai-features-heading {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.roza-ai-features-lead {
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--rs-muted);
+}
+
+.roza-ai-pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.roza-ai-pillar {
+  padding: 18px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.05);
+}
+
+.roza-ai-pillar-icon {
+  display: block;
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+  opacity: 0.85;
+}
+
+.roza-ai-pillar h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.roza-ai-pillar p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--rs-muted);
+}
+
+.roza-ai-requirements-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+  padding: 22px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: linear-gradient(160deg, #f8f9fa 0%, #fff 55%);
+}
+
+.roza-ai-requirements-copy h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.roza-ai-requirements-copy ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--rs-muted);
+}
+
+.roza-ai-requirements-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 200px;
+}
+
+/* Кабинет Roza */
+.roza-account-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding-top: 24px;
+  padding-bottom: 80px;
+}
+
+.roza-account-hero {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: roza-fade-up 0.65s ease both;
+}
+
+.roza-account-hero .roza-mark-ai {
+  margin: 0 auto 16px;
+}
+
+.roza-account-page h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.roza-account-lead {
+  margin: 0 auto 24px;
+  max-width: 480px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--rs-muted);
+  text-align: center;
+}
+
+.roza-account-card {
+  max-width: 420px;
+  margin: 0 auto 32px;
+  padding: 28px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: var(--rs-surface);
+  box-shadow: 0 4px 24px rgba(26, 115, 232, 0.08);
+  animation: roza-fade-up 0.65s 0.08s ease both;
+}
+
+.roza-account-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.roza-account-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rs-text);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.roza-account-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.roza-account-btn-primary {
+  background: var(--rs-blue);
+  border-color: var(--rs-blue);
+  color: #fff;
+}
+
+.roza-account-form {
+  display: grid;
+  gap: 12px;
+  max-width: 400px;
+  margin-bottom: 28px;
+}
+
+.roza-account-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--rs-muted);
+}
+
+.roza-account-form input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--rs-border);
+  font-size: 14px;
+}
+
+.roza-account-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.roza-account-tabs button {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.roza-account-tabs button.active {
+  border-color: var(--rs-blue);
+  color: var(--rs-blue);
+}
+
+.roza-account-error {
+  margin: 0;
+  color: #d93025;
+  font-size: 13px;
+}
+
+.roza-account-ok {
+  margin: 0;
+  color: var(--rs-green);
+  font-size: 13px;
+}
+
+.roza-account-signed {
+  margin-bottom: 28px;
+}
+
+.roza-account-quota {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--rs-muted);
+}
+
+.roza-account-note {
+  margin: 0 0 28px;
+  font-size: 13px;
+  color: var(--rs-muted);
+}
+
+.roza-account-sections {
+  display: grid;
+  gap: 12px;
+  animation: roza-fade-up 0.65s 0.16s ease both;
+}
+
+.roza-account-sections article {
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+}
+
+.roza-account-sections h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.roza-account-sections p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--rs-muted);
+  line-height: 1.5;
+}
+
+.roza-os-cinema-inner .roza-hub-waypoint {
+  margin-bottom: 16px;
+}
+
+/* ——— Мобильная адаптация ——— */
+@media (max-width: 720px) {
+  .roza-top {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .roza-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    justify-content: center;
+  }
+
+  .roza-nav-cabinet {
+    margin-left: 0;
+  }
+
+  .roza-main {
+    padding: 24px 16px 64px;
+  }
+
+  .roza-hub-hero {
+    padding: 32px 8px 24px;
+  }
+
+  .roza-hub-wordmark {
+    font-size: clamp(2.5rem, 14vw, 3.5rem);
+  }
+
+  .roza-hub-product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roza-ai-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .roza-ai-pillar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roza-ai-requirements-card {
+    grid-template-columns: 1fr;
+  }
+
+  .roza-chat-messages {
+    min-height: 220px;
+    max-height: 50vh;
+    padding: 16px;
+  }
+
+  .roza-os-chapter {
+    grid-template-columns: 1fr !important;
+  }
+
+  .roza-os-cinema h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .roza-chat-bubble {
+    max-width: 92%;
+    font-size: 14px;
+    padding: 12px 14px;
+  }
+
+  .roza-download-features li {
+    font-size: 13px;
+  }
+}

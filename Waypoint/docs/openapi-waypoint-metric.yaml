@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: NEXUS Waypoint Metric API (интеграция заказчика)
+  version: 1.0.0
+  description: |
+    Контракт для приёма метрик/логов и чтения своих данных.
+    - Ingest: `X-API-Key` (ключ из ЛК или дефолтный после регистрации).
+    - Read: JWT (`Authorization: Bearer`) или сессионная cookie после входа в веб-консоль.
+
+servers:
+  - url: https://your-host.example
+    description: Production
+  - url: http://127.0.0.1:8080
+    description: Local API
+
+paths:
+  /register:
+    post:
+      summary: Регистрация пользователя
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, nickname, full_name, password]
+              properties:
+                email: { type: string, format: email }
+                nickname: { type: string }
+                full_name: { type: string }
+                password: { type: string, format: password }
+                phone: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Успех; Set-Cookie `nexus_session` (HttpOnly) + JSON с полем `token` для мобильных клиентов
+  /login:
+    post:
+      summary: Вход
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password]
+              properties:
+                login: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Set-Cookie сессии + `token` в теле
+  /logout:
+    post:
+      summary: Выход (очистка cookie сессии)
+      tags: [Auth]
+      responses:
+        '200': { description: OK }
+  /profile:
+    get:
+      summary: Профиль и роли
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Профиль с полем `role` и списком `realms`
+
+  /api/waypoint/api-keys:
+    get:
+      summary: Список API-ключей ingest
+      tags: [Keys]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200': { description: Массив ключей }
+    post:
+      summary: Создать новый ключ
+      tags: [Keys]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '200': { description: Созданный ключ }
+
+  /api/waypoint/ingest:
+    post:
+      summary: Отправка метрик и логов
+      tags: [Ingest]
+      parameters:
+        - in: header
+          name: X-API-Key
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timestamp: { type: string, format: date-time }
+                metrics:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      value: { type: number }
+                      tags: { type: object, additionalProperties: true }
+                logs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      level: { type: string }
+                      message: { type: string }
+                      tags: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: |
+            `{ ingested_metrics, ingested_logs, skipped_metrics?, skipped_logs? }`
+
+  /me/metrics:
+    get:
+      summary: Мои метрики (JWT)
+      tags: [Read]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200': { description: Точки метрик }
+
+  /me/logs:
+    get:
+      summary: Мои логи ingest
+      tags: [Read]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200': { description: Логи }
+
+  /me/metrics/summary:
+    get:
+      summary: Краткая сводка
+      tags: [Read]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200': { description: Сводка }
+
+  /integrations/vk/health:
+    get:
+      summary: Состояние интеграции VK (очередь, секреты)
+      tags: [Integrations]
+      responses:
+        '200':
+          description: JSON с флагами конфигурации и глубиной очереди
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: nexus_session

@@ -1,0 +1,29 @@
+# Whitelist компонентов для Roza. Редактируйте под свои сервисы и скрипты.
+# См. components.example.yaml для шаблонов.
+
+components:
+  demo_echo:
+    title: Демо (echo)
+    actions:
+      start: { command: ["cmd", "/c", "echo", "Roza: start demo"] }
+      stop: { command: ["cmd", "/c", "echo", "Roza: stop demo"] }
+      status: { command: ["cmd", "/c", "echo", "Roza: status ok"] }
+
+  # Рутина: локальные дата/время и краткий git status корня (см. roza.routine_snapshot).
+  routine_clock:
+    title: Дата и время (локально, Windows)
+    actions:
+      now:
+        command:
+          [
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            "Get-Date -Format 'yyyy-MM-dd HH:mm:ss K'",
+          ]
+
+  repo_snapshot:
+    title: Репозиторий — дата и git status -sb
+    actions:
+      status:
+        command: ["python", "-m", "roza.routine_snapshot"]

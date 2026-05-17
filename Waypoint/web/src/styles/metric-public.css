@@ -1,0 +1,260 @@
+/* Waypoint Metric — публичная витрина, отличима от Club */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+.metric-public {
+  --mp-bg: #070b12;
+  --mp-surface: #0f1520;
+  --mp-card: #141c2b;
+  --mp-border: rgba(91, 141, 239, 0.2);
+  --mp-text: #f1f5f9;
+  --mp-muted: #94a3b8;
+  --mp-accent: #5b8def;
+  --mp-accent-soft: #93b4f5;
+  min-height: 100vh;
+  background: var(--mp-bg);
+  color: var(--mp-text);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+.metric-public::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 20% -10%, rgba(91, 141, 239, 0.15), transparent 55%);
+  pointer-events: none;
+}
+
+.metric-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: rgba(7, 11, 18, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--mp-border);
+}
+
+.metric-brand {
+  text-decoration: none;
+  color: var(--mp-text);
+}
+
+.metric-brand strong {
+  display: block;
+  font-family: Syne, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.metric-brand span {
+  font-size: 0.75rem;
+  color: var(--mp-muted);
+}
+
+.metric-nav-links {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.88rem;
+}
+
+.metric-nav-links a {
+  color: var(--mp-muted);
+  text-decoration: none;
+}
+
+.metric-nav-links a:hover {
+  color: var(--mp-accent-soft);
+}
+
+.metric-main {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 2rem 5rem;
+}
+
+.metric-hero h1 {
+  font-family: Syne, sans-serif;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0.75rem 0 1rem;
+}
+
+.metric-hero h1 em {
+  font-style: normal;
+  color: var(--mp-accent-soft);
+}
+
+.metric-lead {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--mp-muted);
+  max-width: 36rem;
+  margin: 0 0 1.5rem;
+}
+
+.metric-pill {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(91, 141, 239, 0.15);
+  color: var(--mp-accent-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 3rem;
+}
+
+.metric-btn {
+  padding: 0.75rem 1.35rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.metric-btn-primary {
+  background: var(--mp-accent);
+  color: #fff;
+}
+
+.metric-btn-ghost {
+  border: 1px solid var(--mp-border);
+  color: var(--mp-text);
+}
+
+.metric-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 700px) {
+  .metric-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-product-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--mp-border);
+  background: var(--mp-card);
+}
+
+.metric-product-card.is-you {
+  border-color: var(--mp-accent);
+  box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.25);
+}
+
+.metric-product-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+}
+
+.metric-tag {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mp-muted);
+  margin: 0 0 1rem;
+}
+
+.metric-product-card ul {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--mp-muted);
+}
+
+.metric-link {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mp-accent-soft);
+  text-decoration: none;
+}
+
+.metric-section-title {
+  font-family: Syne, sans-serif;
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.metric-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .metric-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-feature {
+  padding: 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--mp-border);
+  background: var(--mp-surface);
+}
+
+.metric-feature h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.metric-feature p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--mp-muted);
+}
+
+.metric-db-block {
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--mp-border);
+  background: var(--mp-card);
+  margin-bottom: 2.5rem;
+}
+
+.metric-db-block h3 {
+  margin: 0 0 0.5rem;
+}
+
+.metric-db-block p {
+  margin: 0;
+  color: var(--mp-muted);
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.metric-pricing {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.metric-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--mp-border);
+  font-size: 0.8rem;
+  color: var(--mp-muted);
+}

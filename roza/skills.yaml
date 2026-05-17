@@ -1,0 +1,17 @@
+# Дерево умений для студии Roza. Поле eval_task — id из eval/code_tasks.yaml (после бенчмарка подставляется статус).
+tree:
+  - id: coding
+    label: "Код Python"
+    children:
+      - id: skill_sum
+        label: "Функции и return"
+        eval_task: python_sum
+      - id: skill_types
+        label: "Аннотации типов"
+        eval_task: type_hints
+      - id: skill_errors
+        label: "Обработка ошибок"
+        eval_task: error_handling
+      - id: skill_json
+        label: "JSON и файлы"
+        eval_task: json_parse

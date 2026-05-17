@@ -1,0 +1,130 @@
+'use client';
+
+import { FormEvent, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { LYNX_CABINET_URL } from '@/lib/links';
+
+const authBase = (process.env.NEXT_PUBLIC_LYNX_AUTH_URL ?? 'http://127.0.0.1:8090').replace(/\/$/, '');
+
+type Props = { initialRegister?: boolean };
+
+export function LynxAuthForm({ initialRegister = false }: Props) {
+  const router = useRouter();
+  const [mode, setMode] = useState<'login' | 'register'>(initialRegister ? 'register' : 'login');
+  const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [ok, setOk] = useState('');
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    setOk('');
+    setBusy(true);
+    try {
+      if (mode === 'login') {
+        const res = await fetch(`${authBase}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Client-Realm': 'lynx' },
+          credentials: 'include',
+          body: JSON.stringify({ login: email.trim(), password }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { token?: string; error?: string; error_code?: string; email?: string };
+        if (!res.ok) {
+          if (data.error_code === 'email_not_verified') {
+            router.push(`/cabinet/sign-in/verify?email=${encodeURIComponent(data.email ?? email)}`);
+            return;
+          }
+          throw new Error(data.error ?? 'Ошибка входа');
+        }
+        if (!data.token) throw new Error('Нет токена');
+        localStorage.setItem('lynx_auth_token', data.token);
+        localStorage.setItem('lynx_auth_login', email.trim());
+        router.push('/cabinet/dashboard');
+        return;
+      }
+
+      const res = await fetch(`${authBase}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Client-Realm': 'lynx' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          nickname: nickname.trim(),
+          full_name: (fullName || nickname).trim(),
+          password,
+          phone: null,
+          settings: {},
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { status?: string; email?: string; token?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'Ошибка регистрации');
+      if (data.status === 'pending_verification') {
+        router.push(`/cabinet/sign-in/verify?email=${encodeURIComponent(data.email ?? email)}`);
+        return;
+      }
+      if (data.token) {
+        localStorage.setItem('lynx_auth_token', data.token);
+        localStorage.setItem('lynx_auth_login', email.trim());
+        router.push('/cabinet/dashboard');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="cloud-auth-form" onSubmit={onSubmit}>
+      <div className="cloud-auth-tabs">
+        <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>
+          Вход
+        </button>
+        <button type="button" className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>
+          Регистрация
+        </button>
+      </div>
+      <label>
+        Email
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
+      </label>
+      {mode === 'register' ? (
+        <>
+          <label>
+            Никнейм
+            <input value={nickname} onChange={(e) => setNickname(e.target.value)} required minLength={2} />
+          </label>
+          <label>
+            Имя
+            <input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </label>
+        </>
+      ) : null}
+      <label>
+        Пароль
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={mode === 'register' ? 10 : 1}
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+        />
+      </label>
+      {error ? <p className="cloud-auth-error">{error}</p> : null}
+      {ok ? <p className="cloud-auth-ok">{ok}</p> : null}
+      <button type="submit" className="cloud-btn-primary" disabled={busy}>
+        {busy ? '…' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+      </button>
+      <p className="cloud-cabinet-note">
+        Аккаунт Lynx (серия nexus) отделён от Roza AI и Waypoint Metric.{' '}
+        <Link href={LYNX_CABINET_URL}>← Кабинет</Link>
+      </p>
+    </form>
+  );
+}

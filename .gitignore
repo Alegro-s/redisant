@@ -1,0 +1,63 @@
+# Build / deps
+node_modules/
+dist/
+.next/
+out/
+target/
+*.log
+
+# .NET build output (do not commit)
+**/bin/
+**/obj/
+*.pdb
+*.user
+*.suo
+
+# Flutter / Dart
+**/.dart_tool/
+**/.packages
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# Local release bundles (too large for GitHub; use CI artifacts)
+releases/
+
+# Secrets & local env
+.env
+.env.*
+!.env.example
+!.env.*.example
+smtp.env
+repos.env
+**/smtp.env
+
+# Export / caches
+_github_export/
+__pycache__/
+.venv/
+*.pyc
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Large local models (do not push)
+agler/models/
+
+# Rust/Android build artifacts
+**/target/
+**/.gradle/
+**/build/
+
+# Lynx engine native builds
+Lynx/engine/target/
+
+RozaOS/
+
+NGH/
+
+WDesktop/
+
+

@@ -1,0 +1,2 @@
+recursive-include roza/web/static *
+recursive-include roza/assets *

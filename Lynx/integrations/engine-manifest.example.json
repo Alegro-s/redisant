@@ -1,0 +1,19 @@
+{
+  "releases": [
+    {
+      "version": "0.1.0",
+      "notes": "Пример: положите файл на CDN/S3 и укажите URL в админке → Версии движка.",
+      "artifacts": {
+        "windows": {
+          "url": "https://example.com/nexus-engine/engine-0.1.0-windows-x64.zip",
+          "sha256": ""
+        },
+        "linux": {
+          "url": "https://example.com/nexus-engine/engine-0.1.0-linux-x64.tar.gz",
+          "sha256": ""
+        }
+      }
+    }
+  ],
+  "recommended_version": "0.1.0"
+}

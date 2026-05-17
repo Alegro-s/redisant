@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-nexus-agent
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: nexus-agent
+  template:
+    metadata:
+      labels:
+        app: nexus-agent
+    spec:
+      containers:
+        - name: nexus-agent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-agent
+                  key: {{ .Values.secret.databaseUrlKey }}
+            - name: NEXUS_AGENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-agent
+                  key: {{ .Values.secret.agentKeyKey }}
+            - name: NEXUS_AGENT_BIND
+              value: {{ .Values.env.NEXUS_AGENT_BIND | quote }}
+            {{- if .Values.env.NEXUS_HEARTBEAT_URL }}
+            - name: NEXUS_HEARTBEAT_URL
+              value: {{ .Values.env.NEXUS_HEARTBEAT_URL | quote }}
+            {{- end }}

@@ -1,0 +1,369 @@
+/* ТГПУ Профиль — витрина приложения */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+
+body.tspu-body {
+  background: #ffffff !important;
+  margin: 0;
+}
+
+.tspu-root {
+  --tspu-bg: #ffffff;
+  --tspu-warm: #faf8f6;
+  --tspu-text: #1a1a1a;
+  --tspu-sub: #6b6b6b;
+  --tspu-line: #ebe6e3;
+  --tspu-accent: #c45d45;
+  --tspu-tile: #f7f4f2;
+  --tspu-icon-bg: #f3ebe8;
+  min-height: 100vh;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--tspu-text);
+  background: var(--tspu-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tspu-brand em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--tspu-sub);
+}
+
+.tspu-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 64px;
+  border-bottom: 1px solid var(--tspu-line);
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.tspu-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--tspu-text);
+}
+
+.tspu-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.tspu-nav a {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tspu-sub);
+  text-decoration: none;
+  margin-left: 28px;
+}
+
+.tspu-nav a:hover {
+  color: var(--tspu-accent);
+}
+
+.tspu-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 40px 80px;
+}
+
+/* Hero */
+.tspu-hero {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(360px, 1.15fr);
+  gap: 32px 56px;
+  align-items: center;
+  min-height: min(75vh, 760px);
+  margin-bottom: 80px;
+}
+
+@media (max-width: 960px) {
+  .tspu-hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+}
+
+.tspu-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tspu-accent);
+  margin: 0 0 16px;
+}
+
+.tspu-hero h1 {
+  font-size: clamp(38px, 4.5vw, 52px);
+  font-weight: 600;
+  line-height: 1.08;
+  margin: 0 0 20px;
+  letter-spacing: -0.03em;
+}
+
+.tspu-lead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--tspu-sub);
+  max-width: 440px;
+  margin: 0 0 32px;
+}
+
+.tspu-lead a {
+  color: var(--tspu-accent);
+  text-decoration: none;
+}
+
+.tspu-lead a:hover {
+  text-decoration: underline;
+}
+
+.tspu-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tspu-btn {
+  display: inline-block;
+  padding: 15px 30px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tspu-btn-primary {
+  background: var(--tspu-accent);
+  color: #fff;
+}
+
+/* Иконка приложения в hero */
+.tspu-hero-icon-showcase {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+}
+
+.tspu-hero-app-icon {
+  width: min(280px, 70vw);
+  height: auto;
+  border-radius: 48px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1);
+}
+
+/* Схема — наглядный граф с анимацией */
+.tspu-sync-section {
+  margin-bottom: 72px;
+}
+
+.tspu-sync-section h2 {
+  margin: 0 0 10px;
+  font-size: clamp(26px, 3vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.tspu-sync-lead {
+  margin: 0 0 32px;
+  color: var(--tspu-sub);
+  font-size: 17px;
+  max-width: 600px;
+  line-height: 1.55;
+}
+
+.tspu-graph {
+  position: relative;
+  min-height: 340px;
+  padding: 24px 16px 16px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, var(--tspu-warm) 0%, #fff 100%);
+  border: 1px solid var(--tspu-line);
+}
+
+.tspu-graph-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.tspu-graph-path {
+  stroke-dasharray: 10 8;
+  animation: tspu-graph-flow 2.2s linear infinite;
+}
+
+.tspu-graph-path.delay {
+  animation-delay: 0.35s;
+}
+
+.tspu-graph-path.delay2 {
+  animation-delay: 0.7s;
+}
+
+@keyframes tspu-graph-flow {
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+
+.tspu-graph-node {
+  position: absolute;
+  width: min(200px, 28vw);
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid var(--tspu-line);
+  box-shadow: 0 10px 32px rgba(196, 93, 69, 0.08);
+  text-align: center;
+  z-index: 2;
+}
+
+.tspu-graph-node strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tspu-graph-node p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--tspu-sub);
+  line-height: 1.45;
+}
+
+.tspu-graph-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tspu-accent);
+  margin-bottom: 6px;
+}
+
+.tspu-graph-node img {
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.tspu-graph-node.n-1c {
+  left: 4%;
+  top: 8%;
+}
+
+.tspu-graph-node.n-moodle {
+  right: 4%;
+  top: 8%;
+}
+
+.tspu-graph-node.n-hub {
+  left: 50%;
+  top: 42%;
+  transform: translateX(-50%);
+  width: min(220px, 32vw);
+  background: linear-gradient(165deg, #fff8f6, #fff);
+  border-color: rgba(196, 93, 69, 0.4);
+  box-shadow: 0 12px 40px rgba(196, 93, 69, 0.12);
+}
+
+.tspu-graph-node.n-student {
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  width: min(260px, 36vw);
+  border-color: var(--tspu-accent);
+}
+
+@media (max-width: 700px) {
+  .tspu-graph {
+    min-height: 520px;
+  }
+  .tspu-graph-node {
+    width: 42%;
+  }
+  .tspu-graph-node.n-1c,
+  .tspu-graph-node.n-moodle {
+    top: 4%;
+  }
+  .tspu-graph-node.n-hub {
+    top: 38%;
+  }
+}
+
+/* Сервисы */
+.tspu-services {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 700px) {
+  .tspu-services {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tspu-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: var(--tspu-icon-bg);
+  color: var(--tspu-accent);
+}
+
+.tspu-tile {
+  background: var(--tspu-tile);
+  border-radius: 18px;
+  padding: 24px 20px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.tspu-tile:hover {
+  border-color: rgba(196, 93, 69, 0.2);
+  box-shadow: 0 8px 24px rgba(196, 93, 69, 0.07);
+}
+
+.tspu-tile h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.tspu-tile p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--tspu-sub);
+  line-height: 1.45;
+}
+
+.tspu-footer {
+  text-align: center;
+  padding: 28px;
+  font-size: 14px;
+  color: var(--tspu-sub);
+  border-top: 1px solid var(--tspu-line);
+  background: #fff;
+}
+
+.tspu-footer a {
+  color: var(--tspu-accent);
+  text-decoration: none;
+}

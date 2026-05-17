@@ -1,0 +1,186 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NEXUS API",
+    "version": "1.0.0",
+    "description": "NEXUS API: аккаунт, игровые проекты, Nexus Cloud (облачные проекты, движок: /engine/manifest, /engine/blob, артефакты). WaypointMetric — отдельная зона: метрики, логи, BaaS для разработчиков сайтов и приложений (не версионирование движка). WebSocket BaaS realtime."
+  },
+  "servers": [{ "url": "/", "description": "Текущий хост" }],
+  "tags": [
+    { "name": "health", "description": "Проверки живости" },
+    { "name": "metrics", "description": "Prometheus" },
+    { "name": "waypoint", "description": "WaypointMetric: ingest метрик/логов (инфра для приложений, не движок)" },
+    { "name": "baas", "description": "BaaS (JWT)" },
+    { "name": "docs", "description": "Документация API" },
+    { "name": "nexus-cloud", "description": "Nexus Cloud: движок NEXUS, манифесты, артефакты" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Health check",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Readiness (БД)",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": ["metrics"],
+        "summary": "Prometheus scrape",
+        "responses": { "200": { "description": "text/plain exposition format" } }
+      }
+    },
+    "/api/docs/openapi.json": {
+      "get": {
+        "tags": ["docs"],
+        "summary": "OpenAPI JSON",
+        "responses": { "200": { "description": "Спецификация" } }
+      }
+    },
+    "/api/docs": {
+      "get": {
+        "tags": ["docs"],
+        "summary": "Swagger UI",
+        "responses": { "200": { "description": "HTML" } }
+      }
+    },
+    "/api/waypoint/ingest": {
+      "post": {
+        "tags": ["waypoint"],
+        "summary": "Ingest метрик и логов",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Принято" } }
+      }
+    },
+    "/me/baas/sql": {
+      "post": {
+        "tags": ["baas"],
+        "summary": "SQL в схеме пользователя (текст запроса)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "query": { "type": "string" } },
+                "required": ["query"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Результат" } }
+      }
+    },
+    "/me/baas/sql/param": {
+      "post": {
+        "tags": ["baas"],
+        "summary": "SQL с параметрами $1..$N (JSON-массив)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": { "type": "string" },
+                  "params": {
+                    "type": "array",
+                    "items": {}
+                  }
+                },
+                "required": ["query"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Результат" } }
+      }
+    },
+    "/me/baas/rest/{table}": {
+      "get": {
+        "tags": ["baas"],
+        "summary": "Список строк JSONB-таблицы (limit, offset, sort, order)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "table", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["created_at", "id"] } },
+          { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": { "200": { "description": "rows" } }
+      },
+      "post": {
+        "tags": ["baas"],
+        "summary": "Вставка в data",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Созданная строка" } }
+      }
+    },
+    "/me/baas/rest/{table}/{id}": {
+      "put": {
+        "tags": ["baas"],
+        "summary": "Частичное обновление data (JSON merge)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Обновлённая строка" } }
+      },
+      "delete": {
+        "tags": ["baas"],
+        "summary": "Удаление строки",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/me/baas/realtime/ws": {
+      "get": {
+        "tags": ["baas"],
+        "summary": "WebSocket событий BaaS (pg_notify), JWT в query access_token или Authorization",
+        "responses": { "101": { "description": "Switching Protocols" } }
+      }
+    },
+    "/waypointmetric/v1/health": {
+      "get": {
+        "tags": ["waypoint"],
+        "summary": "WaypointMetric health (роль продукта и версия)",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/engine/manifest": {
+      "get": {
+        "tags": ["nexus-cloud"],
+        "summary": "Публичный манифест релизов движка NEXUS",
+        "responses": { "200": { "description": "EngineManifest JSON" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

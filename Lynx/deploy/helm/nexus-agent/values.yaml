@@ -1,0 +1,15 @@
+replicaCount: 1
+image:
+  repository: nexus-agent
+  tag: local
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 9847
+env:
+  NEXUS_AGENT_BIND: "0.0.0.0:9847"
+  NEXUS_HEARTBEAT_URL: ""
+secret:
+  create: false
+  databaseUrlKey: database-url
+  agentKeyKey: agent-key

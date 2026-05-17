@@ -1,0 +1,29 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="RozaCompanion.App"
+             xmlns:local="using:RozaCompanion"
+             RequestedThemeVariant="Default">
+
+    <Application.Resources>
+        <SolidColorBrush x:Key="RozenAccentBrush" Color="#B91C48" />
+        <SolidColorBrush x:Key="RozenAccentHoverBrush" Color="#D12D5A" />
+        <SolidColorBrush x:Key="RozenBlueBrush" Color="#A8C7FA" />
+        <SolidColorBrush x:Key="RozenSurfaceBrush" Color="#131314" />
+        <SolidColorBrush x:Key="RozenPanelBrush" Color="#1C1D22" />
+        <SolidColorBrush x:Key="RozenBorderBrush" Color="#3D4049" />
+        <SolidColorBrush x:Key="RozenNavSelectedBrush" Color="#32353C" />
+        <!-- Совместимость со старыми ключами в окне -->
+        <SolidColorBrush x:Key="RozaAccentBrush" Color="#B91C48" />
+        <SolidColorBrush x:Key="RozaAccentHoverBrush" Color="#D12D5A" />
+        <SolidColorBrush x:Key="RozaSurfaceBrush" Color="#131314" />
+        <SolidColorBrush x:Key="RozaNavSelectedBrush" Color="#32353C" />
+    </Application.Resources>
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>

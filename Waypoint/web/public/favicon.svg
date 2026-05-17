@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Waypoint Metrics">
+  <defs>
+    <linearGradient id="wm_tile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#065f46"/>
+      <stop offset="100%" stop-color="#022c22"/>
+    </linearGradient>
+    <linearGradient id="wm_spark" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="55%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#34B67A"/>
+    </linearGradient>
+    <linearGradient id="wm_fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#34B67A" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+  <rect
+    x="3.5"
+    y="3.5"
+    width="57"
+    height="57"
+    rx="15.5"
+    fill="url(#wm_tile)"
+    stroke="#34B67A"
+    stroke-opacity="0.5"
+    stroke-width="1"
+  />
+  <path
+    d="M12.5 41.5 L21.5 27.5 L30.5 35.5 L39.5 21.5 L51.5 29.5 L51.5 43.5 L12.5 43.5 Z"
+    fill="url(#wm_fill)"
+  />
+  <path
+    d="M12.5 41.5 L21.5 27.5 L30.5 35.5 L39.5 21.5 L51.5 29.5"
+    fill="none"
+    stroke="url(#wm_spark)"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="51.5" cy="29.5" r="4.2" fill="#ecfdf5" stroke="#278E5F" stroke-width="1.25"/>
+</svg>

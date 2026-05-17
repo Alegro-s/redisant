@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <SolidColorBrush x:Key="RzBg" Color="#1E1F20" />
+  <SolidColorBrush x:Key="RzPanel" Color="#28292A" />
+  <SolidColorBrush x:Key="RzMainSurface" Color="#1E1F20" />
+  <SolidColorBrush x:Key="RzElevated" Color="#303134" />
+  <SolidColorBrush x:Key="RzBorder" Color="#3C4043" />
+  <SolidColorBrush x:Key="RzHover" Color="#35363A" />
+  <SolidColorBrush x:Key="RzNavSel" Color="#394457" />
+  <SolidColorBrush x:Key="RzText" Color="#E8EAED" />
+  <SolidColorBrush x:Key="RzMuted" Color="#9AA0A6" />
+  <SolidColorBrush x:Key="RzBlue" Color="#8AB4F8" />
+  <SolidColorBrush x:Key="Card" Color="#303134" />
+  <SolidColorBrush x:Key="TextPrimary" Color="#E8EAED" />
+  <SolidColorBrush x:Key="TextMuted" Color="#9AA0A6" />
+  <SolidColorBrush x:Key="FillSoft" Color="#28292A" />
+  <SolidColorBrush x:Key="Hairline" Color="#5F6368" />
+  <SolidColorBrush x:Key="AccentUi" Color="#8AB4F8" />
+  <SolidColorBrush x:Key="AccentUiHover" Color="#AECBFA" />
+  <SolidColorBrush x:Key="TextOnAccent" Color="#202124" />
+  <SolidColorBrush x:Key="OverlayScrim" Color="#CC000000" />
+  <SolidColorBrush x:Key="RozaSurfaceBrush" Color="#1E1F20" />
+  <SolidColorBrush x:Key="RozaAccentBrush" Color="#8AB4F8" />
+  <SolidColorBrush x:Key="RozaAccentHoverBrush" Color="#AECBFA" />
+  <SolidColorBrush x:Key="RozaNavSelectedBrush" Color="#394457" />
+  <SolidColorBrush x:Key="MapLine" Color="#5F6368" />
+  <SolidColorBrush x:Key="MapNode" Color="#303134" />
+  <SolidColorBrush x:Key="MapNodeBorder" Color="#5F6368" />
+  <SolidColorBrush x:Key="ChatWell" Color="#1E1F20" />
+  <SolidColorBrush x:Key="GeminiChipBg" Color="#303134" />
+  <SolidColorBrush x:Key="GeminiChipBorder" Color="#5F6368" />
+</ResourceDictionary>

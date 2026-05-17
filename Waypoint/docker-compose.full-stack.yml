@@ -1,0 +1,112 @@
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus
+      POSTGRES_DB: nexus
+    ports:
+      - "5432:5432"
+    volumes:
+      - nexus_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - nexus_redis:/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - nexus_ch:/var/lib/clickhouse
+
+  clickhouse-init:
+    image: clickhouse/clickhouse-server:24.8
+    restart: "no"
+    depends_on:
+      - clickhouse
+    volumes:
+      - ./infra/clickhouse/init.sql:/init.sql:ro
+    entrypoint: ["/bin/bash", "-lc"]
+    command: >
+      for i in $(seq 1 45); do clickhouse-client --host clickhouse -q 'SELECT 1' && break; sleep 1; done
+      && clickhouse-client --host clickhouse --multiquery < /init.sql
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: nexus
+      MINIO_ROOT_PASSWORD: nexusminio123
+    ports:
+      - "9001:9000"
+      - "9002:9001"
+    volumes:
+      - nexus_minio:/data
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - nexus_prom:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - nexus_grafana:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
+  nexus-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      BIND_ADDRESS: 0.0.0.0:8080
+      DATABASE_URL: postgres://nexus:nexus@postgres:5432/nexus
+      JWT_SECRET: change-me-in-production-use-long-random
+      REDIS_URL: redis://redis:6379
+      CLICKHOUSE_HTTP_URL: http://clickhouse:8123
+      ADMIN_ALLOW_RAW_SQL: "1"
+      WM_BAAS_SQL_WRITE: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      clickhouse-init:
+        condition: service_completed_successfully
+
+volumes:
+  nexus_pg:
+  nexus_redis:
+  nexus_ch:
+  nexus_minio:
+  nexus_prom:
+  nexus_grafana:

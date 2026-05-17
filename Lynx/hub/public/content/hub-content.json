@@ -1,0 +1,21 @@
+{
+  "news": [
+    {
+      "slug": "lynx-1-2",
+      "title": "Lynx Core 1.2 Stable",
+      "date": "2026-05-10",
+      "body": "Стабильная ветка runtime: исправления физики 2D и обновлённый манифест для Hub."
+    },
+    {
+      "slug": "launcher-09",
+      "title": "Launcher 0.9",
+      "date": "2026-04-28",
+      "body": "Каталог проектов, синхронизация с Cloud и улучшенный редактор сцен."
+    }
+  ],
+  "engineCores": [
+    { "id": "lynx-core-stable", "label": "Lynx Core Stable", "version": "1.2.0", "note": "Рекомендуется для продакшена" },
+    { "id": "lynx-core-beta", "label": "Lynx Core Beta", "version": "1.3.0-b1", "note": "Новые API рендера" },
+    { "id": "lynx-core-lts", "label": "Lynx Core LTS", "version": "1.1.4", "note": "Долгая поддержка" }
+  ]
+}
