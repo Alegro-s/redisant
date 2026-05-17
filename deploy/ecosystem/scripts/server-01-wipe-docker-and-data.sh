@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# =============================================================================
-# VPS: полная очистка Docker и старых данных Waypoint/Lynx/Nexus
-#
-# Запуск на сервере (Ubuntu), от root:
-#   chmod +x server-01-wipe-docker-and-data.sh
-#   ./server-01-wipe-docker-and-data.sh
-#
-# ВНИМАНИЕ: удаляет ВСЕ контейнеры, образы, тома Docker на этой машине
-#           и каталоги legacy в /root и /opt/waypoint, /srv/*
-# =============================================================================
 set -euo pipefail
 
 if [[ "${EUID:-0}" -ne 0 ]]; then

@@ -1,0 +1,56 @@
+# API по умолчанию без порта на хост (только сеть Docker). Проброс:
+#   docker compose -f docker-compose.yml -f docker-compose.publish-8080.yml up -d --build
+# Рядом с NEXUS (:8080 занят): docker-compose.bind-local-api.yml — см. deploy/README.md
+# С фронтом (Flutter Web для MAX): см. deploy/README.md — профиль web
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tsput
+      POSTGRES_PASSWORD: tsput
+      POSTGRES_DB: tsput_profile
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Порт 5432 с хоста не пробрасываем: API ходит в БД по сети Docker (db:5432).
+    # Так не конфликтует с другим PostgreSQL на сервере и безопаснее.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tsput -d tsput_profile"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: prod
+      MOCK_MODE: "true"
+      DATABASE_URL: postgresql://tsput:tsput@db:5432/tsput_profile
+      API_DEMO_LOGIN: student@university.ru
+      API_DEMO_PASSWORD: password123
+      MOODLE_STUDENT_ID: ${MOODLE_STUDENT_ID:-24807}
+      MOODLE_EMAIL: ${MOODLE_EMAIL:-lorm2053@gmail.com}
+      STUDENT_FULL_NAME: ${STUDENT_FULL_NAME:-Виноградов Игорь Денисович}
+      MOODLE_PASSWORD: ${MOODLE_PASSWORD:-}
+      STUDENT_CARD_ID: ${STUDENT_CARD_ID:-24807}
+      STUDENT_CARD_FULL_NAME: ${STUDENT_CARD_FULL_NAME:-Виноградов Игорь Денисович}
+      STUDENT_CARD_GROUP: "${STUDENT_CARD_GROUP:-1521621 (МОИАИС)}"
+      STUDENT_CARD_EMAIL: ${STUDENT_CARD_EMAIL:-lorm2053@gmail.com}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    profiles: ["web"]
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./build/web:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

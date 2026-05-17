@@ -1,0 +1,9 @@
+# Запасной вариант, если на хосте 8081 уже занят (например, NEXUS ошибочно проброшен на 8081).
+# Тогда в nginx для waypointclub.ru замените upstream waypointclub_api на 127.0.0.1:8082.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.bind-local-api-8082.yml up -d --build
+
+services:
+  api:
+    ports:
+      - "127.0.0.1:8082:8080"

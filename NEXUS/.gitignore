@@ -1,0 +1,53 @@
+# Rust
+/target
+**/target/
+**/*.rs.bk
+Cargo.lock
+!server/Cargo.lock
+**/*.pdb
+**/*.rlib
+**/.env
+
+# Flutter
+**/build/
+**/ios/Flutter/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Pods/
+**/android/app/build/
+**/android/.gradle/
+**/android/local.properties
+**/android/app/.cxx/
+**/pubspec.lock
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node: никогда не коммитить зависимости (лимит GitHub 100 MB на файл — next-swc, esbuild, …)
+**/node_modules/
+
+# Веб-консоль: артефакты сборки (на VPS/CI — npm run build в admin-panel)
+admin-panel/dist/
+admin-panel/node_modules/.vite/
+
+# Next / Vite: кэш и выкладка не в репозитории
+**/.next/
+nexus-cloud/.next/
+nexus-cloud/dist/
+nexus-hab/dist/
+
+# Крупные архивы в корне — не в Git (лимит GitHub 100 MB на файл)
+/engine.zip
+
+# Локальный override Compose (порты/сервисы на VPS). Не коммитить — иначе легко сломать 8080 vs tsput :8081.
+docker-compose.override.yml

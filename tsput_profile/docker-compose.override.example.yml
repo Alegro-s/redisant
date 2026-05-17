@@ -1,0 +1,9 @@
+# Скопируйте в docker-compose.override.yml (файл не коммитится),
+# после того как создадите backend/local_users.json по примеру local_users.example.json
+#
+#   cp docker-compose.override.example.yml docker-compose.override.yml
+#
+services:
+  api:
+    volumes:
+      - ./backend/local_users.json:/app/local_users.json:ro

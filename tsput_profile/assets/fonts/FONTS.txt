@@ -1,0 +1,5 @@
+Granate (Art. Lebedev Studio) — коммерческий шрифт с кириллицей.
+После покупки лицензии положите файлы .ttf в эту папку, добавьте секцию fonts: в pubspec.yaml
+и в lib/core/themes.dart замените GoogleFonts.manropeTextTheme на fontFamily: 'Granate'.
+
+Сейчас в приложении используется Manrope из пакета google_fonts.

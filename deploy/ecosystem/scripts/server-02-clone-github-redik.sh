@@ -1,20 +1,4 @@
 #!/usr/bin/env bash
-# =============================================================================
-# VPS: клонирование GitHub Alegro-s/redik и базовая подготовка
-#
-# Перед запуском:
-#   1) Выполните server-01-wipe-docker-and-data.sh (по желанию)
-#   2) Создайте /opt/waypoint/smtp.env (JWT, POSTGRES_PASSWORD, Yandex SMTP)
-#
-# На сервере:
-#   chmod +x server-02-clone-github-redik.sh
-#   export GITHUB_REPO=Alegro-s/redik
-#   export GITHUB_BRANCH=main
-#   ./server-02-clone-github-redik.sh
-#
-# SSH с ключом (с вашего ПК):
-#   scp d:/PO/deploy/ecosystem/smtp.env root@72.56.244.26:/opt/waypoint/smtp.env
-# =============================================================================
 set -euo pipefail
 
 DEPLOY_ROOT="${DEPLOY_ROOT:-/opt/waypoint}"
@@ -114,7 +98,6 @@ build_vite() {
   rsync -a --delete dist/ "$out/"
 }
 
-# Club + Metric — один Waypoint/web, разные .env.production
 if [[ -d "$PO_ROOT/Waypoint/web" ]]; then
   cd "$PO_ROOT/Waypoint/web"
   npm ci

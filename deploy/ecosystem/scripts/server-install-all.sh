@@ -1,21 +1,4 @@
 #!/usr/bin/env bash
-# =============================================================================
-# ONE-SCRIPT INSTALL (paste on VPS as root)
-#
-#   curl -fsSL ...   OR:
-#   nano /root/install.sh   (paste this file)
-#   chmod +x /root/install.sh && /root/install.sh
-#
-# Before run:
-#   1) Push code to https://github.com/Alegro-s/redik  (branch main)
-#   2) Create /opt/waypoint/smtp.env  (see below) OR set SKIP_SMTP_CHECK=1 for test only
-#
-# Optional env:
-#   GITHUB_REPO=Alegro-s/redik
-#   GITHUB_BRANCH=main
-#   DEPLOY_ROOT=/opt/waypoint
-#   AUTO_YES=1          skip wipe confirmation
-# =============================================================================
 set -euo pipefail
 
 DEPLOY_ROOT="${DEPLOY_ROOT:-/opt/waypoint}"
@@ -34,7 +17,6 @@ echo " Waypoint / Lynx / Roza — full server install"
 echo " Repo: $CLONE_URL ($GITHUB_BRANCH)"
 echo "=============================================="
 
-# --- wipe ---
 if [[ "$AUTO_YES" != "1" ]]; then
   read -r -p "Delete ALL Docker data and old deploy? Type YES: " confirm
   [[ "$confirm" == "YES" ]] || { echo "Cancelled."; exit 0; }

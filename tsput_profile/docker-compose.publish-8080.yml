@@ -1,0 +1,7 @@
+# Проброс API на хост :8080 (одиночный запуск без NEXUS).
+#   docker compose -f docker-compose.yml -f docker-compose.publish-8080.yml up -d --build
+
+services:
+  api:
+    ports:
+      - "8080:8080"
