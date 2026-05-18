@@ -28,11 +28,11 @@ function friendlyError(err: unknown): string {
   };
   if (ax.response?.data?.error) return ax.response.data.error;
   if (!ax.response && (ax.code === 'ERR_NETWORK' || ax.code === 'ECONNABORTED')) {
-    return 'Нет связи с сервером. Откройте консоль по адресу сайта (не file://); API должен проксироваться с того же хоста на /api.';
+    return 'Нет связи с сервером. Откройте сайт в браузере по обычному адресу и попробуйте снова.';
   }
   const m = ax.message ?? '';
   if (/network/i.test(m) || /ERR_CONNECTION/i.test(m)) {
-    return 'Нет связи с сервером. Проверьте nginx и прокси /api → порт API. В билде не должно оставаться localhost как хост API на прод-сайте.';
+    return 'Нет связи с сервером. Проверьте интернет и повторите попытку через минуту.';
   }
   return 'Неверный логин или пароль.';
 }

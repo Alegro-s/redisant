@@ -22,7 +22,7 @@ function networkMessage(err: unknown): string | null {
   if (e.response) return null;
   const m = e.message ?? '';
   if (e.code === 'ERR_NETWORK' || e.code === 'ECONNABORTED' || /network/i.test(m) || /ERR_CONNECTION/i.test(m)) {
-    return 'Нет связи с сервером. Откройте консоль по домену или IP сайта (запросы должны идти на /api того же хоста, а не на localhost с вашего ПК).';
+    return 'Нет связи с сервером. Откройте сайт в браузере по обычному адресу и попробуйте снова.';
   }
   return null;
 }

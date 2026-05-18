@@ -108,8 +108,13 @@ export function LynxAuthForm({ initialRegister = false }: Props) {
         </a>
       )}
       <p className="cloud-cabinet-note">
-        Аккаунт Lynx (серия nexus) отделён от Roza AI и Waypoint Metric.{' '}
+        Аккаунт Lynx отделён от Roza AI и Waypoint Metric.{' '}
         <Link href={LYNX_CABINET_URL}>← Кабинет</Link>
+      </p>
+      <p className="cloud-cabinet-note" style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
+        <Link href="/privacy">Конфиденциальность</Link>
+        {' · '}
+        <Link href="/terms">Условия</Link>
       </p>
     </form>
   );

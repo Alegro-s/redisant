@@ -26,6 +26,11 @@ export default function LynxCabinetSignInPage({
             Витрина
           </Link>
         </div>
+        <p className="cloud-cabinet-note" style={{ marginTop: '1rem', fontSize: '0.85rem' }}>
+          <Link href="/privacy">Конфиденциальность</Link>
+          {' · '}
+          <Link href="/terms">Условия</Link>
+        </p>
       </section>
     </main>
   );

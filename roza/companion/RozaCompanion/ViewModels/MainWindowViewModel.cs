@@ -308,15 +308,15 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (!ServerOnline)
         {
-            ConnectionSummary = "Сервер Roza: нет ответа — запустите python -m roza web и нажмите «Подключить».";
+            ConnectionSummary = "Сервер недоступен. Проверьте интернет и нажмите «Подключить».";
             return;
         }
 
         if (UseWebSocket)
         {
             ConnectionSummary = SocketConnected
-                ? "Сервер: онлайн · ответы по WebSocket (история совпадает с POST /api/chat)."
-                : "Сервер: онлайн · WebSocket не подключён — нажмите «Подключить» в настройках или панели чата.";
+                ? "Сервер: онлайн · ответы в реальном времени."
+                : "Сервер: онлайн · потоковый режим не подключён — нажмите «Подключить».";
         }
         else
         {
@@ -364,7 +364,7 @@ public partial class MainWindowViewModel : ViewModelBase
             _suppressLearningSync = true;
             LearningRecordingEnabled = !value;
             _suppressLearningSync = false;
-            StatusText = "Не удалось записать POST /api/learning/enabled.";
+            StatusText = "Не удалось изменить режим журнала обучения.";
             return;
         }
 
@@ -438,7 +438,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ServerOnline = ok;
             if (!ok)
             {
-                StatusText = "Сервер не отвечает на /api/health. Запустите: python -m roza web";
+                StatusText = "Сервер не отвечает. Проверьте адрес в настройках и подключение к интернету.";
                 HealthDetailText = "Сервер недоступен.";
                 return;
             }
@@ -458,12 +458,12 @@ public partial class MainWindowViewModel : ViewModelBase
                 var wsUri = RozaEndpoints.WebSocketChatUri(baseUri);
                 await _socket.ConnectAsync(wsUri, _socketCts.Token).ConfigureAwait(true);
                 SocketConnected = true;
-                StatusText = $"Подключено (WebSocket): {wsUri}";
+                StatusText = "Подключено. Обмен сообщениями в реальном времени.";
             }
             else
             {
                 SocketConnected = false;
-                StatusText = $"Сервер доступен (HTTP): {baseUri} — отправка через POST /api/chat";
+                StatusText = "Сервер доступен. Можно отправлять сообщения.";
             }
 
             SaveLocalPrefs();

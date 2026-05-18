@@ -11,8 +11,7 @@ export function toastApiError(err: unknown, fallback: string): string {
   if (ax.response?.data?.error) {
     message = String(ax.response.data.error);
   } else if (ax.code === 'ERR_NETWORK' || ax.message === 'Network Error') {
-    message =
-      'Нет связи с сервером. Откройте сайт по домену или IP сервера, а не через файл или localhost.';
+    message = 'Нет связи с сервером. Откройте сайт в браузере и попробуйте снова.';
   } else if (typeof ax.message === 'string' && ax.message.length > 0) {
     message = ax.message;
   }
