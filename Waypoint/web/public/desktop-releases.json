@@ -4,7 +4,7 @@
   "updated": "2026-05-18",
   "downloads": {
     "windows": {
-      "url": "/downloads/WaypointDesktop-setup.msi",
+      "url": "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/WaypointDesktop-setup.msi",
       "filename": "WaypointDesktop-setup.msi",
       "sha256": "",
       "size_mb": 3.76
@@ -17,7 +17,7 @@
       "notes": [
         "Локальный клиент: Docker, терминал, связь с облаком Metric.",
         "Привязка устройства по коду из кабинета Metric.",
-        "Раздел на metrika-waypoint.ru/desktop."
+        "Раздел metrika-waypoint.ru/desktop."
       ]
     }
   ]

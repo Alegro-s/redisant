@@ -66,13 +66,15 @@ if (-not $msi -and -not $portable) {
     Write-Host "  WARN: no bundle artifacts (install Rust/WebView2 or run without -SkipTauri)"
 }
 
-# sync manifest size hint
+# sync manifest size only (URL stays S3 — see desktop-releases.json)
 $manifestPath = Join-Path $RepoRoot "Waypoint\web\public\desktop-releases.json"
 if ((Test-Path $manifestPath) -and (Test-Path (Join-Path $PublicDl $setupName))) {
     $f = Get-Item (Join-Path $PublicDl $setupName)
     $mb = [math]::Round($f.Length / 1MB, 2)
     $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
-    $json.downloads.windows.url = "/downloads/$setupName"
+    if (-not $json.downloads.windows.url -or $json.downloads.windows.url -match '^/downloads/') {
+        $json.downloads.windows.url = "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/$setupName"
+    }
     $json.downloads.windows.size_mb = $mb
     $json | ConvertTo-Json -Depth 6 | Set-Content $manifestPath -Encoding UTF8
 }

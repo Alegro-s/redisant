@@ -54,10 +54,12 @@ aws s3 sync $LocalDir $s3dest --endpoint-url $Endpoint
 
 if ($AlsoWaypointDesktop) {
     $wpDir = Join-Path $RepoRoot "releases\waypoint-desktop"
+    $wpPrefix = "project's/waypointdesktop/"
     if (Test-Path $wpDir) {
-        $wpDest = "s3://${Bucket}/waypoint-desktop/"
+        $wpDest = "s3://${Bucket}/${wpPrefix}"
         Write-Host "[s3] Waypoint Desktop -> $wpDest"
         aws s3 sync $wpDir $wpDest --endpoint-url $Endpoint
+        Write-Host "  URL: $Endpoint/${Bucket}/${wpPrefix}WaypointDesktop-setup.msi"
     } else {
         Write-Host "[s3] Skip waypoint-desktop (run pack-waypoint-desktop.ps1 first)"
     }

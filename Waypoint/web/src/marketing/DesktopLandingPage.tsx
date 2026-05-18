@@ -78,9 +78,9 @@ export function DesktopLandingPage() {
             .
           </p>
           <div className="metric-actions">
-            <Link className="metric-btn metric-btn-primary" to="/desktop/releases">
+            <a className="metric-btn metric-btn-primary" href={LINKS.desktopDownload}>
               Скачать для Windows
-            </Link>
+            </a>
             <a className="metric-btn metric-btn-ghost" href={LINKS.metric}>
               Облако Metric →
             </a>

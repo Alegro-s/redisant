@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/metric-public.css';
-import { LINKS } from './links';
+import { DESKTOP_INSTALLER_URL, LINKS } from './links';
 import { usePageMeta } from '../hooks/usePageMeta';
 
 type ReleaseManifest = {
@@ -17,7 +17,9 @@ type ReleaseManifest = {
 export function DesktopReleasesPage() {
   const [manifest, setManifest] = useState<ReleaseManifest | null>(null);
   const downloadUrl =
-    import.meta.env.VITE_WAYPOINT_DESKTOP_URL || manifest?.downloads?.windows?.url || '';
+    import.meta.env.VITE_WAYPOINT_DESKTOP_URL ||
+    manifest?.downloads?.windows?.url ||
+    DESKTOP_INSTALLER_URL;
 
   usePageMeta({
     title: 'Релизы — Waypoint Desktop',

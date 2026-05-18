@@ -15,6 +15,7 @@ ARG VITE_LYNX_HUB_URL=https://lynx-hub.ru
 ARG VITE_LYNX_CLOUD_URL=https://lynx-cloud.ru
 
 ARG VITE_ROZA_URL=https://waypointclub.ru/roza
+ARG VITE_WAYPOINT_DESKTOP_URL=https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/WaypointDesktop-setup.msi
 
 COPY Waypoint/web/package.json Waypoint/web/package-lock.json* ./
 
@@ -39,6 +40,7 @@ ENV VITE_LYNX_HUB_URL=${VITE_LYNX_HUB_URL}
 ENV VITE_LYNX_CLOUD_URL=${VITE_LYNX_CLOUD_URL}
 
 ENV VITE_ROZA_URL=${VITE_ROZA_URL}
+ENV VITE_WAYPOINT_DESKTOP_URL=${VITE_WAYPOINT_DESKTOP_URL}
 
 RUN npm run build
 

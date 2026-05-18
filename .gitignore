@@ -62,3 +62,6 @@ WDesktop/
 
 series-site/
 
+
+Waypoint/web/public/downloads/*.msi
+
