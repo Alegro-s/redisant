@@ -1,0 +1,63 @@
+import React from 'react';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { Outlet } from 'react-router-dom';
+import { PageSubNav } from '../../components/layout/PageSubNav';
+import { useWorkspace } from '../../app/contexts/WorkspaceContext';
+import { BaasConsoleProvider, useBaasConsole } from '../baas/BaasConsoleContext';
+import { DATABASE_HUB_NAV } from './databaseHubNav';
+
+function DatabaseHubInner() {
+  const { workspace } = useWorkspace();
+  const { loading, schemaName } = useBaasConsole();
+  const hasServer = workspace.serverConnected || workspace.setupMode === 'rent' || workspace.plan === 'pro';
+
+  return (
+    <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+        База данных
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: 720, lineHeight: 1.6 }}>
+        Ваша PostgreSQL в облаке: таблицы, ER-диаграмма, SQL-терминал и доступ по API. Локальная работа с файлами и Docker —
+        в Waypoint Desktop.
+      </Typography>
+
+      {!hasServer && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Подключите сервер в{' '}
+          <a href="/workspace/setup" style={{ color: 'inherit' }}>
+            настройке workspace
+          </a>
+          , чтобы создавать таблицы и выполнять SQL. Раздел «API и ключи» доступен уже сейчас.
+        </Alert>
+      )}
+
+      {hasServer && !schemaName && !loading && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          BaaS-схема на сервере ещё не инициализирована. Проверьте WM_BAAS_ENABLED на API или выберите аренду в настройке.
+        </Alert>
+      )}
+
+      {loading && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <CircularProgress size={18} />
+          <Typography variant="body2">Загрузка схемы…</Typography>
+        </Box>
+      )}
+
+      {schemaName ? (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+          Схема: <strong>{schemaName}</strong>
+        </Typography>
+      ) : null}
+
+      <PageSubNav items={[...DATABASE_HUB_NAV]} />
+      <Outlet />
+    </Box>
+  );
+}
+
+export const DatabaseHubLayout: React.FC = () => (
+  <BaasConsoleProvider>
+    <DatabaseHubInner />
+  </BaasConsoleProvider>
+);

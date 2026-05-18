@@ -17,7 +17,6 @@ import { Assets } from './pages/assets/Assets';
 import { AIAnalysis } from './pages/ai/AIAnalysis';
 import { Settings } from './pages/settings/Settings';
 import { ConnectedDevicesPage } from './pages/settings/ConnectedDevicesPage';
-import { DesktopHostsPage } from './pages/dashboard/DesktopHostsPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
@@ -33,7 +32,13 @@ import { ClubSeriesPage } from './marketing/ClubSeriesPage';
 import { EcosystemStatusPage } from './marketing/EcosystemStatusPage';
 import PlatformPage from './pages/platform/PlatformPage';
 import { PrivateRoute } from './components/PrivateRoute';
-import { Database } from './pages/database/Database';
+import { DatabaseHubLayout } from './pages/database/DatabaseHubLayout';
+import { DatabaseOverviewPage } from './pages/database/DatabaseOverviewPage';
+import { DatabaseSchemaPage } from './pages/database/DatabaseSchemaPage';
+import { DatabaseTablesPage } from './pages/database/DatabaseTablesPage';
+import { DatabaseSqlPage } from './pages/database/DatabaseSqlPage';
+import { DatabaseApiPage } from './pages/database/DatabaseApiPage';
+import { DatabaseStoragePage } from './pages/database/DatabaseStoragePage';
 import { Instances } from './pages/instances/Instances';
 import { Logs } from './pages/logs/Logs';
 import { Jobs } from './pages/jobs/Jobs';
@@ -49,7 +54,6 @@ import { IngestLabKeysUsagePage } from './pages/ingest/IngestLabKeysUsagePage';
 import { IngestLabDeveloperPlatformPage } from './pages/ingest/IngestLabDeveloperPlatformPage';
 import { IngestLabBusinessPage } from './pages/ingest/IngestLabBusinessPage';
 import { WaypointLayout } from './pages/waypoint/WaypointLayout';
-import { WaypointHubPage } from './pages/waypoint/WaypointHubPage';
 import {
   WaypointBusinessCatalogPage,
   WaypointDevelopersCatalogPage,
@@ -77,12 +81,6 @@ import { ApiHub } from './pages/workspace/ApiHub';
 import { GraphicsLab } from './pages/workspace/GraphicsLab';
 import { RealtimeOps } from './pages/workspace/RealtimeOps';
 import { DeveloperHub } from './pages/dev/DeveloperHub';
-import { BaasConsoleProvider } from './pages/baas/BaasConsoleContext';
-import { BaasLayout } from './pages/baas/BaasLayout';
-import { BaasSqlPage } from './pages/baas/BaasSqlPage';
-import { BaasRestPage } from './pages/baas/BaasRestPage';
-import { BaasStoragePage } from './pages/baas/BaasStoragePage';
-import { BaasAiPage } from './pages/baas/BaasAiPage';
 import { NexusCloudLayout } from './pages/nexus-cloud/NexusCloudLayout';
 import { CloudHub } from './pages/nexus-cloud/CloudHub';
 import { CloudProjectDetailPage } from './pages/nexus-cloud/CloudProjectDetailPage';
@@ -394,7 +392,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       >
-        <Route index element={<WaypointHubPage />} />
+        <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="business" element={<WaypointBusinessCatalogPage />} />
         <Route path="developers" element={<WaypointDevelopersCatalogPage />} />
         <Route path="assistant" element={<WaypointAssistantPage />} />
@@ -409,7 +407,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       >
-        <Route index element={<Navigate to="send" replace />} />
+        <Route index element={<Navigate to="summary" replace />} />
         <Route path="send" element={<IngestLabSendPage />} />
         <Route path="business" element={<IngestLabBusinessPage />} />
         <Route path="metrics" element={<IngestLabMetricsPage />} />
@@ -422,31 +420,22 @@ function AppRoutes() {
       <Route
         path="/dashboard/database"
         element={
-          <PrivateRoute requireServerConnection>
+          <PrivateRoute>
             <ModernLayout>
-              <Database />
-            </ModernLayout>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/dashboard/baas"
-        element={
-          <PrivateRoute requireServerConnection>
-            <ModernLayout>
-              <BaasConsoleProvider>
-                <BaasLayout />
-              </BaasConsoleProvider>
+              <DatabaseHubLayout />
             </ModernLayout>
           </PrivateRoute>
         }
       >
-        <Route index element={<Navigate to="sql" replace />} />
-        <Route path="sql" element={<BaasSqlPage />} />
-        <Route path="rest" element={<BaasRestPage />} />
-        <Route path="storage" element={<BaasStoragePage />} />
-        <Route path="ai" element={<BaasAiPage />} />
+        <Route index element={<DatabaseOverviewPage />} />
+        <Route path="schema" element={<DatabaseSchemaPage />} />
+        <Route path="tables" element={<DatabaseTablesPage />} />
+        <Route path="sql" element={<DatabaseSqlPage />} />
+        <Route path="api" element={<DatabaseApiPage />} />
+        <Route path="storage" element={<DatabaseStoragePage />} />
       </Route>
+      <Route path="/dashboard/baas" element={<Navigate to="/dashboard/database" replace />} />
+      <Route path="/dashboard/baas/*" element={<Navigate to="/dashboard/database" replace />} />
       <Route
         path="/dashboard/lynx-cloud"
         element={
@@ -584,16 +573,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-      <Route
-        path="/dashboard/desktop-hosts"
-        element={
-          <PrivateRoute>
-            <ModernLayout>
-              <DesktopHostsPage />
-            </ModernLayout>
-          </PrivateRoute>
-        }
-      />
+      <Route path="/dashboard/desktop-hosts" element={<Navigate to="/dashboard/settings/devices" replace />} />
 
       <Route path="/profile" element={<Navigate to="/dashboard/settings" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />

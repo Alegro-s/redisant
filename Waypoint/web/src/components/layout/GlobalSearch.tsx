@@ -4,14 +4,19 @@ import { Search } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const ROUTES: { label: string; path: string; keywords: string }[] = [
-  { label: 'Дашборд', path: '/dashboard', keywords: 'главная hub' },
-  { label: 'Ingest Lab', path: '/dashboard/ingest-lab', keywords: 'метрики логи ingest' },
-  { label: 'BaaS SQL', path: '/dashboard/baas/sql', keywords: 'база sql postgres' },
-  { label: 'Desktop hosts', path: '/dashboard/desktop-hosts', keywords: 'desktop хосты пк' },
-  { label: 'Подключённые устройства', path: '/settings/devices', keywords: 'desktop pair привязка' },
-  { label: 'Биллинг', path: '/billing', keywords: 'тариф оплата' },
-  { label: 'Документация', path: '/docs', keywords: 'docs справка' },
-  { label: 'Настройки', path: '/settings', keywords: 'settings профиль' },
+  { label: 'Рабочий стол', path: '/dashboard', keywords: 'главная hub' },
+  { label: 'Обзор', path: '/dashboard/overview', keywords: 'дашборд графики' },
+  { label: 'Метрики', path: '/dashboard/ingest-lab/summary', keywords: 'ingest сводка' },
+  { label: 'База данных', path: '/dashboard/database', keywords: 'sql таблицы er postgres baas' },
+  { label: 'SQL-терминал', path: '/dashboard/database/sql', keywords: 'запрос sql' },
+  { label: 'API и ключи БД', path: '/dashboard/database/api', keywords: 'секретный ключ api' },
+  { label: 'Waypoint Desktop', path: '/dashboard/settings/devices', keywords: 'привязка pair устройства пк' },
+  { label: 'Помощник', path: '/dashboard/business/ai', keywords: 'ai чат' },
+  { label: 'API и ключи', path: '/dashboard/connect', keywords: 'sdk ключ' },
+  { label: 'Настройки', path: '/dashboard/settings', keywords: 'профиль' },
+  { label: 'Биллинг', path: '/dashboard/billing', keywords: 'тариф оплата' },
+  { label: 'Lynx Cloud', path: '/dashboard/lynx-cloud', keywords: 'облако проекты' },
+  { label: 'Документация', path: '/metric/docs', keywords: 'docs справка' },
 ];
 
 export const GlobalSearch: React.FC = () => {
@@ -30,7 +35,7 @@ export const GlobalSearch: React.FC = () => {
 
   return (
     <ClickAwayListener onClickAway={() => setOpen(false)}>
-      <div ref={anchorRef} style={{ position: 'relative', flex: 1 }}>
+      <div ref={anchorRef} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
         <Search sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
         <InputBase
           placeholder="Поиск разделов…"

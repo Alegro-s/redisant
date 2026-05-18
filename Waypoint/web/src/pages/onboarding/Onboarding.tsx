@@ -9,14 +9,19 @@ import {
   TextField,
   Typography,
   Alert,
+  Stepper,
+  Step,
+  StepLabel,
 } from '@mui/material';
-import { Cloud, Dns, Science, CheckCircle } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Cloud, Dns, CheckCircle } from '@mui/icons-material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useWorkspace } from '../../app/contexts/WorkspaceContext';
 import { useAuth } from '../../app/contexts/AuthContext';
 import { PremiumIconBadge } from '../../components/common/PremiumIconBadge';
 import { consumePreferredPlan } from '../../utils/preferredPlan';
 import { useNotification } from '../../app/hooks/useNotification';
+
+const STEPS = ['Тариф', 'Сервер', 'Готово'];
 
 export const Onboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -27,159 +32,164 @@ export const Onboarding: React.FC = () => {
   const appliedLandingPlan = useRef(false);
   const [connectionUrl, setConnectionUrl] = React.useState<string>(workspace.connectionUrl ?? '');
 
+  const activeStep = !workspace.plan
+    ? 0
+    : !workspace.serverConnected
+      ? 1
+      : 2;
+
   useEffect(() => {
     if (appliedLandingPlan.current || isLoading || workspace.setupCompleted) return;
     const fromLanding = consumePreferredPlan();
     if (!fromLanding) return;
     appliedLandingPlan.current = true;
-    if (fromLanding === 'pro' && !proAllowed) {
-      void saveWorkspace({ plan: 'basic' });
-      return;
-    }
-    void saveWorkspace({ plan: fromLanding });
+    void saveWorkspace({ plan: fromLanding === 'pro' && !proAllowed ? 'basic' : fromLanding });
   }, [isLoading, workspace.setupCompleted, proAllowed, saveWorkspace]);
 
-  return (
-    <Box sx={{ maxWidth: 980, mx: 'auto', py: { xs: 2, md: 4 }, px: 2 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-        Запуск рабочего пространства
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Шаг 1: выбери аренду или подключение. Шаг 2: нажми тест кодовых баз. Шаг 3: переход в рабочий кабинет.
-      </Typography>
-      {!proAllowed && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Тариф Pro и аренда расширенного сервера доступны только после активации admin/nexus доступа.
-        </Alert>
-      )}
+  const finish = async () => {
+    const ok = await saveWorkspace({ setupCompleted: true });
+    if (!ok) {
+      showError('Не удалось сохранить — проверьте связь с API');
+      return;
+    }
+    navigate('/dashboard', { replace: true });
+  };
 
-      <Grid container spacing={2.5}>
+  return (
+    <Box sx={{ maxWidth: 720, mx: 'auto', py: { xs: 2, md: 3 }, px: 2 }}>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+        Настройка облака
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
+        Три шага: тариф → сервер (для БД и метрик) → рабочий стол. Waypoint Desktop ставится отдельно.
+      </Typography>
+
+      <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+        {STEPS.map((label) => (
+          <Step key={label}>
+            <StepLabel>{label}</StepLabel>
+          </Step>
+        ))}
+      </Stepper>
+
+      <Paper sx={{ p: 2.5, borderRadius: 2, mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+          1. Тариф
+        </Typography>
+        <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+          <Chip
+            label="Basic"
+            color={workspace.plan === 'basic' ? 'primary' : 'default'}
+            onClick={() => void saveWorkspace({ plan: 'basic' })}
+          />
+          <Chip
+            label="Pro"
+            color={workspace.plan === 'pro' ? 'primary' : 'default'}
+            disabled={!proAllowed}
+            onClick={() => void saveWorkspace({ plan: 'pro' })}
+          />
+        </Stack>
+        <Button component={RouterLink} to="/dashboard/billing" size="small" variant="text">
+          Подробнее о тарифах и оплате
+        </Button>
+        {!proAllowed && (
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+            Pro на этапе бета — по запросу или для admin-аккаунта.
+          </Typography>
+        )}
+      </Paper>
+
+      <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Paper sx={{ p: 2.5, borderRadius: 2, height: '100%' }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <PremiumIconBadge icon={<Cloud fontSize="small" />} />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Аренда сервера</Typography>
-            </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              Базовый тариф: 1 ядро, 10 ГБ. Выбери план и запусти workspace в пару кликов.
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-              <Chip
-                label="Basic"
-                color={workspace.plan === 'basic' ? 'primary' : 'default'}
-                onClick={() => void saveWorkspace({ plan: 'basic' })}
-              />
-              <Chip
-                label="Pro"
-                color={workspace.plan === 'pro' ? 'primary' : 'default'}
-                disabled={!proAllowed}
-                onClick={() => void saveWorkspace({ plan: 'pro' })}
-              />
-            </Stack>
-            {!proAllowed && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                Pro сейчас заблокирован: нужен admin/nexus доступ.
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                2a. Аренда сервера
               </Typography>
-            )}
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Готовый хост для PostgreSQL, BaaS и ingest.
+            </Typography>
             <Button
               variant="contained"
+              fullWidth
               disabled={isLoading}
               onClick={() =>
-                void (async () => {
-                  const ok = await saveWorkspace({
-                    setupMode: 'rent',
-                    serverConnected: true,
-                    plan: proAllowed ? workspace.plan : 'basic',
-                  });
-                  if (!ok) showError('Не удалось сохранить на сервере — проверьте API и сеть');
-                })()
+                void saveWorkspace({
+                  setupMode: 'rent',
+                  serverConnected: true,
+                  plan: proAllowed ? workspace.plan : 'basic',
+                })
               }
             >
-              Выбрать аренду
+              Включить аренду
             </Button>
           </Paper>
         </Grid>
-
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Paper sx={{ p: 2.5, borderRadius: 2, height: '100%' }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <PremiumIconBadge icon={<Dns fontSize="small" />} />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Подключение своего сервера</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                2b. Свой сервер
+              </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Подключи существующий сервер и сразу получи доступ к метрике, БД, API и тестам.
-            </Typography>
             <TextField
               fullWidth
               size="small"
-              label="URL вашего сервера (base URL агента), например http://1.2.3.4:3000"
+              label="URL агента"
+              placeholder="http://host:3000"
               value={connectionUrl}
               onChange={(e) => setConnectionUrl(e.target.value)}
               sx={{ mb: 1.5 }}
             />
-            {workspace.serverConnected && workspace.setupMode === 'connect' && workspace.agentApiKey ? (
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 1.5,
-                  borderRadius: 2,
-                  mb: 1.5,
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper',
-                }}
-              >
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                  Ключ агента (используйте как `X-Agent-Key` в heartbeat)
-                </Typography>
-                <Box component="code" sx={{ fontFamily: 'monospace', fontSize: 12 }}>
-                  {workspace.agentApiKey}
-                </Box>
-              </Paper>
-            ) : null}
             <Button
               variant="outlined"
+              fullWidth
               disabled={isLoading}
               onClick={() =>
-                void (async () => {
-                  const ok = await saveWorkspace({
-                    setupMode: 'connect',
-                    serverConnected: true,
-                    connectionUrl: connectionUrl.trim().length > 0 ? connectionUrl.trim() : null,
-                  });
-                  if (!ok) showError('Не удалось сохранить на сервере — проверьте API и сеть');
-                })()
+                void saveWorkspace({
+                  setupMode: 'connect',
+                  serverConnected: true,
+                  connectionUrl: connectionUrl.trim() || null,
+                })
               }
             >
-              Подключить сервер
+              Подключить
             </Button>
           </Paper>
         </Grid>
       </Grid>
 
-      <Paper sx={{ p: 3, borderRadius: 3, mt: 2.5 }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', sm: 'center' }}>
+      <Paper sx={{ p: 2.5, borderRadius: 2, mt: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+          3. Готово
+        </Typography>
+        {workspace.serverConnected ? (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Сервер подключён. Дальше: метрики, база данных и привязка Desktop.
+          </Alert>
+        ) : (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Выберите аренду или укажите URL своего сервера.
+          </Alert>
+        )}
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <Button
             variant="contained"
-            startIcon={<Science />}
-            onClick={() => navigate('/dashboard/module-testing')}
-          >
-            Тестирование кодовых баз
-          </Button>
-          <Button
-            variant="outlined"
             startIcon={<CheckCircle />}
-            onClick={async () => {
-              const ok = await saveWorkspace({ setupCompleted: true });
-              if (!ok) {
-                showError('Не удалось завершить настройку на сервере');
-                return;
-              }
-              navigate('/dashboard/overview', { replace: true });
-            }}
+            disabled={!workspace.serverConnected || isLoading}
+            onClick={() => void finish()}
           >
-            Завершить настройку и открыть кабинет
+            Открыть рабочий стол
           </Button>
-          {isAdmin && <Chip label="Admin: расширенные лимиты активны" color="primary" variant="outlined" />}
+          <Button component={RouterLink} to="/dashboard/database" variant="outlined" disabled={!workspace.serverConnected}>
+            База данных
+          </Button>
+          <Button component={RouterLink} to="/desktop/releases" variant="text">
+            Скачать Desktop
+          </Button>
         </Stack>
       </Paper>
     </Box>

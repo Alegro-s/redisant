@@ -67,15 +67,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     const path = location.pathname;
     if (path === '/workspace/setup') return 'Setup';
     if (path === '/dashboard') return 'Рабочий стол';
-    if (path === '/dashboard/business') return 'Бизнес · главная';
-    if (path.startsWith('/dashboard/business/documents')) return 'Бизнес · документы';
-    if (path.startsWith('/dashboard/business/vouchers')) return 'Бизнес · ваучеры';
-    if (path.startsWith('/dashboard/business/ledger')) return 'Бизнес · учёт';
-    if (path.startsWith('/dashboard/business/logistics')) return 'Бизнес · логистика';
-    if (path.startsWith('/dashboard/business/tax')) return 'Бизнес · налоги';
-    if (path.startsWith('/dashboard/business/ai')) return 'Бизнес · AI';
-    if (path === '/dashboard/developer') return 'Разработка · главная';
-    if (path.startsWith('/dashboard/developer/ai')) return 'Разработка · Copilot';
+    if (path.startsWith('/dashboard/business/ai')) return 'Помощник';
+    if (path.startsWith('/dashboard/settings/devices')) return 'Waypoint Desktop';
+    if (path === '/dashboard/developer') return 'Сервер · инфраструктура';
+    if (path.startsWith('/dashboard/developer/ai')) return 'Помощник';
     if (path === '/dashboard/overview') return 'Обзор';
     if (path === '/dashboard/git') return 'Git';
     if (path === '/dashboard/graphics') return 'Графика';
@@ -84,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     if (path === '/dashboard/users') return 'Пользователи';
     if (path === '/dashboard/projects') return 'Проекты';
     if (path === '/dashboard/assets') return 'Ассеты';
-    if (path === '/dashboard/database') return 'База (SQL)';
+    if (path.startsWith('/dashboard/database')) return 'База данных';
     if (path === '/dashboard/logs') return 'Логи сервера';
     if (path === '/dashboard/instances') return 'Инстансы Waypoint';
     if (path === '/dashboard/jobs') return 'Задания';
@@ -92,8 +87,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     if (path.startsWith('/dashboard/lynx-cloud/engine')) return 'Ядро Lynx';
     if (path === '/dashboard/ai') return 'ИИ (анализ)';
     if (path === '/dashboard/settings') return 'Настройки';
-    if (path.startsWith('/dashboard/waypoint')) return 'WaypointMetric';
-    if (path.startsWith('/dashboard/ingest-lab')) return 'WaypointMetric · Ingest Lab';
+    if (path.startsWith('/dashboard/waypoint')) return 'Обзор';
+    if (path.startsWith('/dashboard/ingest-lab')) return 'Метрики';
     if (path.startsWith('/dashboard/baas')) return 'BaaS';
     if (path.startsWith('/dashboard/lynx-cloud')) return 'Lynx Cloud';
     if (path.startsWith('/dashboard/nexus-cloud')) return 'Lynx Cloud';
@@ -107,8 +102,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const onCabinetModeChange = (_: React.MouseEvent<HTMLElement>, next: CabinetMode | null) => {
     if (!next) return;
     setCabinetMode(next);
-    if (next === 'business' && location.pathname.startsWith('/dashboard/developer')) navigate('/dashboard/business');
-    if (next === 'developer' && location.pathname.startsWith('/dashboard/business')) navigate('/dashboard/developer');
+    if (next === 'business' && location.pathname.startsWith('/dashboard/lynx-cloud')) navigate('/dashboard');
+    if (next === 'developer' && location.pathname === '/dashboard') navigate('/dashboard/lynx-cloud');
   };
 
   const closeAccountUi = () => {
@@ -324,17 +319,17 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               onChange={(_, next) => {
                 if (!next) return;
                 setCabinetMode(next);
-                if (next === 'business' && location.pathname.startsWith('/dashboard/developer')) navigate('/dashboard/business');
-                if (next === 'developer' && location.pathname.startsWith('/dashboard/business')) navigate('/dashboard/developer');
+                if (next === 'business' && location.pathname.startsWith('/dashboard/lynx-cloud')) navigate('/dashboard');
+                if (next === 'developer' && location.pathname.startsWith('/dashboard/business/ai')) navigate('/dashboard/lynx-cloud');
               }}
               size="medium"
               sx={{ '& .MuiToggleButton-root': { py: 1, textTransform: 'none', fontWeight: 600 } }}
             >
-              <ToggleButton value="business">Бизнес</ToggleButton>
-              <ToggleButton value="developer">Разработка</ToggleButton>
+              <ToggleButton value="business">Основное</ToggleButton>
+              <ToggleButton value="developer">Сервер</ToggleButton>
             </ToggleButtonGroup>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', lineHeight: 1.45 }}>
-              WaypointMetric — метрики, AI и данные отдельно от игрового рантайма. Режим меняет меню и быстрые разделы.
+              Основное — метрики и Desktop. Сервер — Lynx Cloud, BaaS, ingest для арендованной инфраструктуры.
             </Typography>
           </Box>
           <Divider />
