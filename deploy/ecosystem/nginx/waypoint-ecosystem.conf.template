@@ -1,0 +1,112 @@
+# Production nginx: HTTP → HTTPS + те же location, что в http-only.
+# __SSL_CERT_DIR__ подставляется в server-02 (обычно /etc/letsencrypt/live/waypointclub.ru).
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+upstream lynx_cloud_next {
+    server 127.0.0.1:3001;
+    keepalive 16;
+}
+
+upstream auth_api {
+    server 127.0.0.1:8090;
+    keepalive 16;
+}
+
+upstream waypoint_api {
+    server 127.0.0.1:8080;
+    keepalive 16;
+}
+
+upstream lynx_product_api {
+    server 127.0.0.1:8082;
+    keepalive 16;
+}
+
+upstream roza_api {
+    server 127.0.0.1:8765;
+    keepalive 8;
+}
+
+# --- Lynx Cloud ---
+server {
+    listen 80;
+    server_name lynx-cloud.ru www.lynx-cloud.ru;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name lynx-cloud.ru www.lynx-cloud.ru;
+    include /etc/nginx/waypoint-ecosystem/waypoint-ssl-params.conf;
+    include /etc/nginx/waypoint-ecosystem/lynx-cloud-locations.conf;
+}
+
+# --- Lynx Hub ---
+server {
+    listen 80;
+    server_name lynx-hub.ru www.lynx-hub.ru;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name lynx-hub.ru www.lynx-hub.ru;
+    include /etc/nginx/waypoint-ecosystem/waypoint-ssl-params.conf;
+    include /etc/nginx/waypoint-ecosystem/lynx-hub-locations.conf;
+}
+
+# --- Waypoint Metric ---
+server {
+    listen 80;
+    server_name metrika-waypoint.ru www.metrika-waypoint.ru;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name metrika-waypoint.ru www.metrika-waypoint.ru;
+    include /etc/nginx/waypoint-ecosystem/waypoint-ssl-params.conf;
+    include /etc/nginx/waypoint-ecosystem/metric-locations.conf;
+}
+
+# --- Waypoint Club + Roza ---
+server {
+    listen 80;
+    server_name waypointclub.ru www.waypointclub.ru;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name waypointclub.ru www.waypointclub.ru;
+    include /etc/nginx/waypoint-ecosystem/waypoint-ssl-params.conf;
+    include /etc/nginx/waypoint-ecosystem/club-locations.conf;
+}

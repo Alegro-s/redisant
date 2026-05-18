@@ -126,6 +126,8 @@ VITE_FAVICON=/favicon-club.svg
 EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointclub/web/
+  cp -f /srv/waypointclub/web/favicon-club.svg /srv/waypointclub/web/favicon.svg 2>/dev/null || true
+  sed -i 's|href="/favicon.svg"|href="/favicon-club.svg"|g' /srv/waypointclub/web/index.html 2>/dev/null || true
   sed -i 's|/favicon\.svg|/favicon-club.svg|g' /srv/waypointclub/web/manifest.webmanifest 2>/dev/null || true
   cat > .env.production.local <<'EOF'
 VITE_API_URL=/api
@@ -135,6 +137,8 @@ VITE_FAVICON=/favicon-metric.svg
 EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointmetric/dist/
+  cp -f /srv/waypointmetric/dist/favicon-metric.svg /srv/waypointmetric/dist/favicon.svg 2>/dev/null || true
+  sed -i 's|href="/favicon.svg"|href="/favicon-metric.svg"|g' /srv/waypointmetric/dist/index.html 2>/dev/null || true
   sed -i 's|/favicon\.svg|/favicon-metric.svg|g' /srv/waypointmetric/dist/manifest.webmanifest 2>/dev/null || true
   if [[ -d "$PO_ROOT/releases/waypoint-desktop" ]]; then
     mkdir -p /srv/waypointmetric/downloads
@@ -181,12 +185,42 @@ if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then
 fi
 
 echo "==> nginx"
-if [[ -f "$ECO/nginx/waypoint-ecosystem.conf" ]]; then
-  cp "$ECO/nginx/waypoint-ecosystem.conf" /etc/nginx/sites-available/waypoint-ecosystem.conf
-  ln -sf /etc/nginx/sites-available/waypoint-ecosystem.conf /etc/nginx/sites-enabled/waypoint-ecosystem.conf
+install_waypoint_nginx() {
+  local dst="/etc/nginx/sites-available/waypoint-ecosystem.conf"
+  local ssl_dir="${SSL_CERT_DIR:-/etc/letsencrypt/live/waypointclub.ru}"
+
+  mkdir -p /etc/nginx/waypoint-ecosystem
+  cp -f "$ECO/nginx/includes/"*.conf /etc/nginx/waypoint-ecosystem/
+  sed -i "s|__SSL_CERT_DIR__|${ssl_dir}|g" /etc/nginx/waypoint-ecosystem/waypoint-ssl-params.conf
+  if [[ ! -f /etc/letsencrypt/ssl-dhparams.pem ]]; then
+    sed -i '/ssl_dhparam/d' /etc/nginx/waypoint-ecosystem/waypoint-ssl-params.conf
+  fi
+
+  if [[ -f "${ssl_dir}/fullchain.pem" ]]; then
+    echo "    SSL: ${ssl_dir}"
+    cp -f "$ECO/nginx/waypoint-ecosystem.conf.template" "$dst"
+  else
+    echo "    WARN: no ${ssl_dir}/fullchain.pem — HTTP-only"
+    cp -f "$ECO/nginx/waypoint-ecosystem-http-only.conf" "$dst"
+  fi
+
+  ln -sf "$dst" /etc/nginx/sites-enabled/waypoint-ecosystem.conf
   rm -f /etc/nginx/sites-enabled/default
-  nginx -t
+
+  if ! nginx -t 2>/dev/null; then
+    echo "    nginx -t failed; fallback HTTP-only"
+    cp -f "$ECO/nginx/waypoint-ecosystem-http-only.conf" "$dst"
+    nginx -t
+  fi
   systemctl reload nginx
+}
+
+if [[ -f "$ECO/nginx/waypoint-ecosystem.conf.template" ]]; then
+  install_waypoint_nginx
+elif [[ -f "$ECO/nginx/waypoint-ecosystem.conf" ]]; then
+  cp -f "$ECO/nginx/waypoint-ecosystem.conf" /etc/nginx/sites-available/waypoint-ecosystem.conf
+  ln -sf /etc/nginx/sites-available/waypoint-ecosystem.conf /etc/nginx/sites-enabled/waypoint-ecosystem.conf
+  nginx -t && systemctl reload nginx
 fi
 
 echo ""

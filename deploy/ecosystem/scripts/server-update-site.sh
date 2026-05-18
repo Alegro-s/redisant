@@ -49,6 +49,12 @@ for f in /srv/waypointclub/web/favicon-club.svg /srv/waypointmetric/dist/favicon
   [[ -f "$f" ]] && echo "  OK $f" || echo "  MISSING $f"
 done
 
+if ! ss -tlnp 2>/dev/null | grep -q ':443 '; then
+  echo ""
+  echo "WARN: порт 443 не слушается — HTTPS отключён. Восстановление:"
+  echo "  sudo SSL_CERT_DIR=/etc/letsencrypt/live/waypointclub.ru bash $ECO/scripts/server-fix-nginx-ssl.sh"
+fi
+
 echo ""
 echo "Готово. Проверка снаружи:"
 echo "  https://waypointclub.ru/roza"
