@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import '../styles/club.css';
-import { LINKS, productSiteUrl, desktopDocsUrl } from './links';
+import { LINKS, productSiteUrl, desktopDocsUrl, clubPath, isExternalUrl } from './links';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 type CatalogItem = {
@@ -47,13 +47,13 @@ const productCatalog: CatalogItem[] = [
     name: 'Roza AI',
     desc: 'Консультант Waypoint',
     doc: '/club/docs/roza-ai',
-    site: `${LINKS.roza}/ai`,
+    site: '/roza/ai',
   },
   {
     name: 'Roza OS',
     desc: 'Дистрибутив с ассистентом',
     doc: '/club/docs/roza-os',
-    site: `${LINKS.roza}/os`,
+    site: '/roza/os',
   },
   { name: 'ТГПУ Профиль', desc: 'Кампусное приложение', doc: '/club/docs/tspu', internal: true, href: '/tspu' },
 ];
@@ -105,7 +105,7 @@ const products = [
     title: 'Roza AI',
     body: 'Консультант Waypoint: документы, ПК, обучение. Чат и приложение.',
     doc: '/club/docs/roza-ai',
-    site: `${LINKS.roza}/ai`,
+    site: '/roza/ai',
   },
   {
     span: 'club-span-4',
@@ -113,7 +113,7 @@ const products = [
     title: 'Roza OS',
     body: 'Дистрибутив с ассистентом в системе.',
     doc: '/club/docs/roza-os',
-    site: `${LINKS.roza}/os`,
+    site: '/roza/os',
     soon: true,
   },
   {
@@ -129,6 +129,7 @@ const products = [
 
 function catalogHref(item: CatalogItem): string {
   if (item.internal && item.href) return item.href;
+  if (item.site?.startsWith('/')) return item.site;
   if (item.site) return productSiteUrl(item.site, item.siteHash);
   return item.doc;
 }
@@ -167,7 +168,7 @@ export function WaypointClubPage() {
               )}
             </div>
           </div>
-          <Link to="/club/series">Серия Waypoint</Link>
+          <a href={clubPath('/club/series')}>Серия Waypoint</a>
           <a href="#products">Продукты</a>
           <a href="#news">Новости</a>
           <a href="#docs">Документация</a>
@@ -259,8 +260,15 @@ export function WaypointClubPage() {
               );
             }
             if ('site' in p && p.site) {
+              const ext = isExternalUrl(p.site);
               return (
-                <a key={p.title} href={p.site} className={cls} target="_blank" rel="noreferrer">
+                <a
+                  key={p.title}
+                  href={p.site}
+                  className={cls}
+                  target={ext ? '_blank' : undefined}
+                  rel={ext ? 'noreferrer' : undefined}
+                >
                   {inner}
                 </a>
               );

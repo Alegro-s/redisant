@@ -34,3 +34,33 @@ export function desktopDocsUrl(topic?: string): string {
   if (!topic || topic === 'start') return `${base}/desktop/docs`;
   return `${base}/desktop/docs/${topic.replace(/^\//, '')}`;
 }
+
+/** Главная витрины Desktop на домене Metric (не облачная Metric `/`). */
+export const DESKTOP_HOME = '/desktop';
+
+/** Путь на Club (относительный на waypointclub.ru, иначе полный URL). */
+export function clubPath(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  if (typeof window !== 'undefined') {
+    const h = window.location.hostname.toLowerCase();
+    if (h === 'waypointclub.ru' || h === 'www.waypointclub.ru') return p;
+  }
+  return `${clubOrigin()}${p}`;
+}
+
+/** Roza на Club: `/roza/...` (отдельное приложение за nginx). */
+export function rozaPath(subpath = ''): string {
+  const tail = subpath.replace(/^\//, '');
+  if (typeof window !== 'undefined') {
+    const h = window.location.hostname.toLowerCase();
+    if (h === 'waypointclub.ru' || h === 'www.waypointclub.ru') {
+      return tail ? `/roza/${tail}` : '/roza/';
+    }
+  }
+  const base = `${clubOrigin()}/roza`;
+  return tail ? `${base}/${tail}` : `${base}/`;
+}
+
+export function isExternalUrl(href: string): boolean {
+  return /^https?:\/\//i.test(href);
+}

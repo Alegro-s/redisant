@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/metric-public.css';
 import { DESKTOP_INSTALLER_URL, LINKS } from './links';
+import { desktopHome } from './desktopNav';
 import { usePageMeta } from '../hooks/usePageMeta';
 
 type ReleaseManifest = {
@@ -37,13 +38,13 @@ export function DesktopReleasesPage() {
   return (
     <div className="metric-public">
       <header className="metric-nav">
-        <Link to="/" className="metric-brand">
+        <Link to={desktopHome} className="metric-brand">
           <strong>Waypoint Desktop</strong>
           <span>релизы</span>
         </Link>
         <nav className="metric-nav-links">
           <Link to="/desktop/docs">Документация</Link>
-          <Link to="/">Главная</Link>
+          <Link to={desktopHome}>Главная</Link>
         </nav>
       </header>
 

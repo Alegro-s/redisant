@@ -28,6 +28,18 @@ else
 fi
 
 echo ""
+echo "=== DATABASE_URL check (inside auth-api container) ==="
+db_url=$(docker inspect waypoint-auth-api --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | grep '^DATABASE_URL=' | cut -d= -f2- || true)
+if [[ -n "$db_url" ]]; then
+  # hide password between ://user:PASS@ and @host
+  safe=$(echo "$db_url" | sed -E 's#(postgres://[^:]+:)[^@]+(@)#\\1***\\2#')
+  echo "  $safe"
+  if echo "$db_url" | grep -qE 'postgres://[^/]+@[^/]+:[^0-9]'; then
+    echo "  WARN: password may contain @ or : — use A-Za-z0-9 only in POSTGRES_PASSWORD"
+  fi
+fi
+
+echo ""
 echo "=== Required keys ==="
 for k in POSTGRES_PASSWORD JWT_SECRET OTP_WEBHOOK_SECRET OTP_WEBHOOK_URL; do
   if grep -q "^${k}=" "$SMTP_FILE" 2>/dev/null; then

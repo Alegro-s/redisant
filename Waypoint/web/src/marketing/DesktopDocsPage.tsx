@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import '../styles/metric-public.css';
-import { LINKS } from './links';
+import { LINKS, desktopHome } from './desktopNav';
 import {
   DESKTOP_DOCS,
   DESKTOP_DOC_NAV,
@@ -36,19 +36,19 @@ export function DesktopDocsPage() {
   return (
     <div className="metric-public metric-doc-layout">
       <header className="metric-nav">
-        <Link to="/" className="metric-brand">
+        <Link to={desktopHome} className="metric-brand">
           <strong>Waypoint Desktop</strong>
           <span>документация</span>
         </Link>
         <nav className="metric-nav-links">
           <Link to="/desktop/releases">Скачать</Link>
-          <Link to="/">Главная</Link>
+          <Link to={desktopHome}>Главная</Link>
           <a href={LINKS.metric}>Metric</a>
         </nav>
       </header>
 
       <main className="metric-main metric-doc-main">
-        <Link to="/" className="metric-doc-back">
+        <Link to={desktopHome} className="metric-doc-back">
           ← На главную Desktop
         </Link>
 

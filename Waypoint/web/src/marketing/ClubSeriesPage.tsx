@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom';
 import '../styles/club.css';
-import { LINKS } from './links';
+import { LINKS, rozaPath } from './links';
+import { resolvePublicSiteMode } from './siteMode';
 import { usePageMeta } from '../hooks/usePageMeta';
 
 export function ClubSeriesPage() {
+  const onClub = resolvePublicSiteMode() === 'club';
+  const homeHref = onClub ? '/' : LINKS.club;
+
   usePageMeta({
     title: 'Серия Waypoint и подсерия Roza — Waypoint Club',
     description: 'Продуктовая линейка: Metric, Desktop, Lynx, Roza, кампусные решения.',
@@ -13,18 +17,30 @@ export function ClubSeriesPage() {
   return (
     <div className="club-root">
       <nav className="club-nav">
-        <Link to="/" className="club-logo">
-          Waypoint <em>Club</em>
-        </Link>
+        {onClub ? (
+          <Link to="/" className="club-logo">
+            Waypoint <em>Club</em>
+          </Link>
+        ) : (
+          <a href={LINKS.club} className="club-logo">
+            Waypoint <em>Club</em>
+          </a>
+        )}
         <div className="club-nav-links">
-          <Link to="/">Каталог</Link>
-          <Link to="/#docs">Документация</Link>
+          {onClub ? <Link to="/">Каталог</Link> : <a href={LINKS.club}>Каталог</a>}
+          <a href={onClub ? '/#docs' : `${LINKS.club}/#docs`}>Документация</a>
         </div>
       </nav>
       <main className="club-main club-doc-page">
-        <Link to="/" className="club-doc-back">
-          ← На главную Club
-        </Link>
+        {onClub ? (
+          <Link to={homeHref} className="club-doc-back">
+            ← На главную Club
+          </Link>
+        ) : (
+          <a href={homeHref} className="club-doc-back">
+            ← На главную Club
+          </a>
+        )}
         <h1>Серия Waypoint</h1>
         <p className="club-doc-sub">
           Единая линейка для разработки, облака и эксплуатации. У каждого продукта свой сайт и контур данных.
@@ -45,7 +61,12 @@ export function ClubSeriesPage() {
         <section className="club-doc-section">
           <h2>Подсерия Roza</h2>
           <p>
-            Roza AI и Roza OS — ассистент и дистрибутив внутри экосистемы Waypoint. Пути на Club: /roza/ai, /roza/os.
+            Roza AI и Roza OS — ассистент и дистрибутив внутри экосистемы Waypoint.{' '}
+            <a href={rozaPath()}>Roza</a>
+            {' · '}
+            <a href={rozaPath('ai')}>Roza AI</a>
+            {' · '}
+            <a href={rozaPath('os')}>Roza OS</a>
           </p>
         </section>
         <section className="club-doc-section">

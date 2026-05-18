@@ -95,7 +95,8 @@ run_stack() {
 
 sync_s3() {
   apt-get update -qq
-  apt-get install -y -qq awscli
+  apt-get install -y -qq python3-pip || true
+  pip3 install --break-system-packages awscli 2>/dev/null || pip3 install awscli 2>/dev/null || apt-get install -y -qq awscli || true
   mkdir -p "$DOWNLOADS_DIR" /srv/lynx-hub/dist/downloads
   load_secrets "$S3_SECRETS"
   local extra=()

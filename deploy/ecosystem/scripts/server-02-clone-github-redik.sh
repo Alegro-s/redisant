@@ -33,7 +33,7 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 
 mkdir -p "$DEPLOY_ROOT"
-mkdir -p /srv/waypointclub/web /srv/waypointmetric/dist /srv/waypointmetric/downloads /srv/lynx-hub/dist /srv/roza/web/dist
+mkdir -p /srv/waypointclub/web /srv/waypointmetric/dist /srv/waypointmetric/downloads /srv/lynx-hub/dist /srv/roza/web/roza
 mkdir -p /var/www/certbot
 
 echo "==> Clone or update ${CLONE_URL}"
@@ -73,7 +73,7 @@ fi
 
 echo "==> Docker: auth stack (migrations)"
 cd "$ECO"
-docker compose -f docker-compose.auth.yml --env-file "$DEPLOY_ROOT/smtp.env" up -d --build
+docker compose -f docker-compose.auth.yml --env-file "$DEPLOY_ROOT/smtp.env" up -d --build --pull never
 
 echo "Waiting for Postgres..."
 for i in $(seq 1 40); do
@@ -82,8 +82,8 @@ for i in $(seq 1 40); do
   sleep 2
 done
 
-docker compose -f docker-compose.apis.yml --env-file "$DEPLOY_ROOT/smtp.env" up -d --build
-docker compose -f docker-compose.roza.yml up -d --build 2>/dev/null || true
+docker compose -f docker-compose.apis.yml --env-file "$DEPLOY_ROOT/smtp.env" up -d --build --pull never
+docker compose -f docker-compose.roza.yml up -d --build --pull never 2>/dev/null || true
 
 echo "==> Build frontends (paths inside monorepo)"
 build_vite() {
@@ -111,6 +111,7 @@ if [[ -d "$PO_ROOT/Waypoint/web" ]]; then
 VITE_API_URL=/api
 VITE_AUTH_URL=/auth
 VITE_PUBLIC_SITE_MODE=club
+VITE_FAVICON=/favicon-club.svg
 EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointclub/web/
@@ -118,6 +119,7 @@ EOF
 VITE_API_URL=/api
 VITE_AUTH_URL=/auth
 VITE_PUBLIC_SITE_MODE=metric
+VITE_FAVICON=/favicon-metric.svg
 EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointmetric/dist/
@@ -132,7 +134,20 @@ EOF
 fi
 
 build_vite "$PO_ROOT/Lynx/hub" /srv/lynx-hub/dist
-build_vite "$PO_ROOT/roza/web" /srv/roza/web/dist
+
+if [[ -d "$PO_ROOT/roza/web" ]]; then
+  echo "==> Roza web (/roza/)"
+  cd "$PO_ROOT/roza/web"
+  npm ci
+  cat > .env.production.local <<'EOF'
+VITE_BASE=/roza/
+VITE_ROZA_API_URL=/roza/api
+VITE_AUTH_URL=/auth
+EOF
+  npm run build
+  mkdir -p /srv/roza/web/roza
+  rsync -a --delete dist/ /srv/roza/web/roza/
+fi
 
 echo "==> Lynx Cloud (Next.js)"
 if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then

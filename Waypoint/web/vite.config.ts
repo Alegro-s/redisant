@@ -1,8 +1,20 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => ({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const favicon = env.VITE_FAVICON || '/favicon.svg';
+
+  return {
+  plugins: [
+    react(),
+    {
+      name: 'html-favicon',
+      transformIndexHtml(html) {
+        return html.replace(/href="\/favicon[^"]*"/g, `href="${favicon}"`);
+      },
+    },
+  ],
   
   define:
     mode === 'production'
@@ -35,4 +47,5 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-}));
+  };
+});

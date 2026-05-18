@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import '../styles/metric-public.css';
-import { LINKS } from './links';
+import { LINKS, desktopHome } from './desktopNav';
 import { usePageMeta } from '../hooks/usePageMeta';
 
 const steps = [
@@ -49,7 +49,7 @@ export function DesktopLandingPage() {
   return (
     <div className="metric-public">
       <header className="metric-nav">
-        <Link to="/" className="metric-brand">
+        <Link to={desktopHome} className="metric-brand">
           <strong>Waypoint Desktop</strong>
           <span>локальное приложение · не облако</span>
         </Link>

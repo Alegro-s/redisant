@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Waypoint Metric">
+  <defs>
+    <linearGradient id="m_tile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#065f46"/>
+      <stop offset="100%" stop-color="#022c22"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#m_tile)" stroke="#34B67A" stroke-width="1.5"/>
+  <path d="M14 42 L23 28 L32 36 L41 22 L50 30" fill="none" stroke="#6ee7b7" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="30" r="4" fill="#ecfdf5"/>
+</svg>

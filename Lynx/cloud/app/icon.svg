@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lynx Cloud">
+  <defs>
+    <linearGradient id="lc_tile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e7490"/>
+      <stop offset="100%" stop-color="#082f49"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#lc_tile)" stroke="#38bdf8" stroke-width="1.5"/>
+  <ellipse cx="32" cy="34" rx="16" ry="10" fill="none" stroke="#7dd3fc" stroke-width="3.5"/>
+  <path d="M22 34 C26 24 38 24 42 34" fill="none" stroke="#bae6fd" stroke-width="3" stroke-linecap="round"/>
+</svg>
