@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { CloudPanel } from './components/CloudPanel';
 import type { CloudConfig } from './services/config';
 import { defaultConfig } from './services/config';
 import { loadConfig, saveConfig, loadSecure, saveSecure } from './services/store';
-import { claimPairing, heartbeat, login, metricOpenUrl, refreshAccess } from './services/cloud';
+import { heartbeat, metricOpenUrl } from './services/cloud';
 import { flushQueue, pushTelemetry } from './services/ingestQueue';
 import { checkForUpdate } from './services/updates';
 
@@ -57,7 +58,17 @@ export default function App() {
     const t = setInterval(async () => {
       if (!cfg.apiKey) return;
       try {
-        await heartbeat(cfg);
+        const flags = await heartbeat(cfg);
+        if (flags) {
+          const next = {
+            ...cfg,
+            syncTelemetry: flags.sync_telemetry,
+            syncTasks: flags.sync_tasks,
+            syncProjects: flags.sync_projects,
+          };
+          setCfg(next);
+          await saveConfig(next);
+        }
         if (cfg.syncTelemetry) await pushTelemetry(cfg, online);
         if (online) {
           const n = await flushQueue(cfg, true);
@@ -76,45 +87,7 @@ export default function App() {
     });
   }, [cfg.cloudUrl]);
 
-  const doLogin = async () => {
-    setStatus('Вход…');
-    try {
-      const token = await login(cfg, cfg.email, password);
-      await persist({ ...cfg, accessToken: token });
-      setStatus('Вход выполнен');
-    } catch (e) {
-      setStatus(`Ошибка: ${e}`);
-    }
-  };
-
-  const doPair = async () => {
-    setStatus('Привязка…');
-    try {
-      const res = await claimPairing(cfg, pairCode, cfg.deviceId, cfg.deviceName);
-      await persist({
-        ...cfg,
-        apiKey: res.api_key,
-        accessToken: res.access_token,
-        refreshToken: res.refresh_token,
-        cloudUrl: res.cloud_url || cfg.cloudUrl,
-      });
-      setStatus('Устройство привязано');
-    } catch (e) {
-      setStatus(`Ошибка: ${e}`);
-    }
-  };
-
   const openMetric = () => openUrl(metricOpenUrl(cfg, '/dashboard/settings/devices'));
-
-  const refreshToken = async () => {
-    try {
-      const t = await refreshAccess(cfg);
-      await persist({ ...cfg, accessToken: t });
-      setStatus('Токен обновлён');
-    } catch {
-      setStatus('Не удалось обновить токен');
-    }
-  };
 
   const refreshDocker = async () => {
     try {
@@ -178,62 +151,18 @@ export default function App() {
       </nav>
 
       {tab === 'cloud' && (
-        <div className="panel">
-          <label>URL облака (Metric)</label>
-          <input
-            type="url"
-            value={cfg.cloudUrl}
-            onChange={(e) => setCfg({ ...cfg, cloudUrl: e.target.value })}
-            onBlur={() => persist(cfg)}
-          />
-          <label>Auth URL</label>
-          <input type="url" value={cfg.authUrl} onChange={(e) => setCfg({ ...cfg, authUrl: e.target.value })} onBlur={() => persist(cfg)} />
-          <label>API URL</label>
-          <input type="url" value={cfg.apiUrl} onChange={(e) => setCfg({ ...cfg, apiUrl: e.target.value })} onBlur={() => persist(cfg)} />
-          <label>Email</label>
-          <input type="text" value={cfg.email} onChange={(e) => setCfg({ ...cfg, email: e.target.value })} />
-          <label>Пароль</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <div className="row">
-            <button type="button" className="btn" onClick={doLogin}>
-              Войти
-            </button>
-            <button type="button" className="btn ghost" onClick={refreshToken}>
-              Refresh token
-            </button>
-          </div>
-          <hr style={{ borderColor: 'var(--border)', margin: '1rem 0' }} />
-          <label>Код привязки WD-XXXXXXXX</label>
-          <input type="text" value={pairCode} onChange={(e) => setPairCode(e.target.value)} placeholder="WD-XXXXXXXX" />
-          <label>Имя устройства</label>
-          <input type="text" value={cfg.deviceName} onChange={(e) => setCfg({ ...cfg, deviceName: e.target.value })} onBlur={() => persist(cfg)} />
-          <button type="button" className="btn" onClick={doPair}>
-            Привязать к workspace
-          </button>
-          <div className="check" style={{ marginTop: '1rem' }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={cfg.syncTelemetry}
-                onChange={(e) => persist({ ...cfg, syncTelemetry: e.target.checked })}
-              />
-              Синхронизировать телеметрию (ingest)
-            </label>
-            <label>
-              <input type="checkbox" checked={cfg.syncTasks} onChange={(e) => persist({ ...cfg, syncTasks: e.target.checked })} />
-              Статусы задач
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={cfg.syncProjects}
-                onChange={(e) => persist({ ...cfg, syncProjects: e.target.checked })}
-              />
-              Ссылки на проекты
-            </label>
-          </div>
-          <p className={`status ${status.includes('Ошибка') ? 'err' : status ? 'ok' : ''}`}>{status}</p>
-        </div>
+        <CloudPanel
+          cfg={cfg}
+          setCfg={setCfg}
+          password={password}
+          setPassword={setPassword}
+          pairCode={pairCode}
+          setPairCode={setPairCode}
+          status={status}
+          setStatus={setStatus}
+          persist={persist}
+          onOpenMetric={openMetric}
+        />
       )}
 
       {tab === 'docker' && (

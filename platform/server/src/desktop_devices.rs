@@ -457,7 +457,27 @@ pub async fn desktop_heartbeat(
     .bind(os)
     .execute(&state.pool)
     .await;
-    HttpResponse::Ok().json(serde_json::json!({ "ok": true }))
+
+    let flags = sqlx::query_as::<_, (bool, bool, bool)>(
+        "SELECT d.sync_telemetry, d.sync_tasks, d.sync_projects
+         FROM desktop_devices d
+         JOIN api_keys k ON d.api_key_id = k.id
+         WHERE k.key = $1 AND d.revoked_at IS NULL
+         LIMIT 1",
+    )
+    .bind(key)
+    .fetch_optional(&state.pool)
+    .await
+    .ok()
+    .flatten();
+
+    let (sync_telemetry, sync_tasks, sync_projects) = flags.unwrap_or((true, false, false));
+    HttpResponse::Ok().json(serde_json::json!({
+        "ok": true,
+        "sync_telemetry": sync_telemetry,
+        "sync_tasks": sync_tasks,
+        "sync_projects": sync_projects,
+    }))
 }
 
 pub async fn list_desktop_hosts(state: web::Data<crate::AppState>, req: HttpRequest) -> impl Responder {

@@ -64,13 +64,27 @@ export async function sendIngest(cfg: CloudConfig, payload: unknown) {
   return r.json();
 }
 
-export async function heartbeat(cfg: CloudConfig) {
+export type HeartbeatResult = {
+  sync_telemetry: boolean;
+  sync_tasks: boolean;
+  sync_projects: boolean;
+};
+
+export async function heartbeat(cfg: CloudConfig): Promise<HeartbeatResult | null> {
+  if (!cfg.apiKey) return null;
   const base = cfg.apiUrl.replace(/\/$/, '');
-  await fetch(`${base}/api/waypoint/desktop/heartbeat`, {
+  const r = await fetch(`${base}/api/waypoint/desktop/heartbeat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': cfg.apiKey },
     body: JSON.stringify({ host_label: cfg.deviceName, os_info: navigator.platform }),
   });
+  if (!r.ok) throw new Error(await r.text());
+  const data = (await r.json()) as HeartbeatResult & { ok?: boolean };
+  return {
+    sync_telemetry: data.sync_telemetry ?? true,
+    sync_tasks: data.sync_tasks ?? false,
+    sync_projects: data.sync_projects ?? false,
+  };
 }
 
 export function metricOpenUrl(cfg: CloudConfig, path = '/dashboard') {

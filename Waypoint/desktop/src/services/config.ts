@@ -14,10 +14,29 @@ export type CloudConfig = {
   deviceName: string;
 };
 
-export const defaultConfig = (): CloudConfig => ({
-  cloudUrl: (import.meta.env.VITE_WAYPOINT_CLOUD_URL || 'http://127.0.0.1:3002').replace(/\/desktop\/?$/, ''),
-  authUrl: import.meta.env.VITE_WAYPOINT_AUTH_URL || 'http://127.0.0.1:8090',
-  apiUrl: import.meta.env.VITE_WAYPOINT_API_URL || 'http://127.0.0.1:8080',
+/** Из URL Metric выводим auth/api (прод: /auth и /api; локально — отдельные порты). */
+export function resolveCloudUrls(cloudUrl: string): Pick<CloudConfig, 'cloudUrl' | 'authUrl' | 'apiUrl'> {
+  const cloud = cloudUrl.replace(/\/$/, '').replace(/\/desktop\/?$/, '');
+  if (/127\.0\.0\.1:3002|localhost:3002/.test(cloud)) {
+    return {
+      cloudUrl: cloud,
+      authUrl: import.meta.env.VITE_WAYPOINT_AUTH_URL || 'http://127.0.0.1:8090',
+      apiUrl: import.meta.env.VITE_WAYPOINT_API_URL || 'http://127.0.0.1:8080',
+    };
+  }
+  return {
+    cloudUrl: cloud,
+    authUrl: `${cloud}/auth`,
+    apiUrl: `${cloud}/api`,
+  };
+}
+
+export const defaultConfig = (): CloudConfig => {
+  const urls = resolveCloudUrls(
+    import.meta.env.VITE_WAYPOINT_CLOUD_URL || 'https://metrika-waypoint.ru',
+  );
+  return {
+  ...urls,
   email: '',
   accessToken: '',
   refreshToken: '',
@@ -28,4 +47,5 @@ export const defaultConfig = (): CloudConfig => ({
   lizaEndpoint: 'http://127.0.0.1:11434',
   deviceId: '',
   deviceName: typeof navigator !== 'undefined' ? `${navigator.platform}-pc` : 'desktop',
-});
+};
+};
