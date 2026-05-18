@@ -100,10 +100,15 @@ export async function uploadBaasObject(bucket: string, key: string, file: File):
 }
 
 
-export function baasPublicObjectUrl(ownerId: string, bucket: string, key: string): string {
+export function baasPublicObjectUrl(
+  ownerId: string,
+  environmentId: string,
+  bucket: string,
+  key: string,
+): string {
   const base = api.defaults.baseURL ?? '';
   const q = new URLSearchParams({ key }).toString();
-  return `${base}/waypointmetric/v1/storage/public/${ownerId}/${encodeURIComponent(bucket)}/objects?${q}`;
+  return `${base}/waypointmetric/v1/storage/public/${ownerId}/${environmentId}/${encodeURIComponent(bucket)}/objects?${q}`;
 }
 
 export async function downloadBaasObject(bucket: string, key: string): Promise<Blob> {

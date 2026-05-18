@@ -9,6 +9,7 @@ import { PricingPage } from './pages/PricingPage';
 import { BusinessPage } from './pages/BusinessPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SignInPage } from './pages/SignInPage';
+import { LegalPage } from './pages/LegalPage';
 import { AdminPage } from './pages/AdminPage';
 import { AdminGate } from './components/AdminGate';
 function GamingRoute({ children }: { children: React.ReactNode }) {
@@ -71,6 +72,22 @@ export function App() {
         element={
           <GamingRoute>
             <ProjectsPage />
+          </GamingRoute>
+        }
+      />
+      <Route
+        path="/privacy"
+        element={
+          <GamingRoute>
+            <LegalPage />
+          </GamingRoute>
+        }
+      />
+      <Route
+        path="/terms"
+        element={
+          <GamingRoute>
+            <LegalPage />
           </GamingRoute>
         }
       />

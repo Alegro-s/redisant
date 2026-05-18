@@ -206,6 +206,7 @@ mod bootstrap;
 mod platform;
 mod python_tests;
 mod baas;
+mod rate_limit_key;
 mod nexus_cloud;
 mod nexus_cloud_builds;
 mod waypoint_ai;
@@ -226,6 +227,7 @@ mod email_verification;
 mod password_policy;
 mod service;
 mod vk_oauth;
+mod yandex_oauth;
 
 #[macro_use]
 mod routes_macro;
@@ -616,9 +618,27 @@ fn ensure_project_root(project_id: &Uuid) -> std::io::Result<String> {
     Ok(root)
 }
 
+fn realms_for_registration(req: &HttpRequest) -> Result<Vec<&'static str>, HttpResponse> {
+    let Some(realm) = client_realm_from_header(req) else {
+        return Err(HttpResponse::BadRequest().json(ErrorResponse {
+            error: "Заголовок X-Client-Realm обязателен (metric, lynx, roza).".into(),
+        }));
+    };
+    Ok(match realm {
+        "metric" => vec!["metric"],
+        "nexus" => vec!["nexus"],
+        "roza" => vec!["roza"],
+        _ => {
+            return Err(HttpResponse::BadRequest().json(ErrorResponse {
+                error: "Неизвестный клиент (realm).".into(),
+            }));
+        }
+    })
+}
+
 async fn register(
     state: web::Data<AppState>,
-    _http_req: HttpRequest,
+    http_req: HttpRequest,
     req: web::Json<RegisterRequest>,
 ) -> impl Responder {
     debug_print!("Register endpoint called");
@@ -633,7 +653,10 @@ async fn register(
         });
     }
 
-    let realms_grant: Vec<&str> = vec!["nexus", "metric", "roza"];
+    let realms_grant = match realms_for_registration(&http_req) {
+        Ok(r) => r,
+        Err(resp) => return resp,
+    };
     let existing = sqlx::query_as::<_, (Uuid,)>(
         "SELECT id FROM users WHERE lower(trim(email)) = $1 OR nickname = $2",
     )
@@ -737,23 +760,25 @@ async fn register(
         });
     }
 
-    let key_id = Uuid::new_v4();
-    let api_key = format!("nx_{}", Uuid::new_v4().as_simple());
-    if let Err(e) = sqlx::query(
-        "INSERT INTO api_keys (id, user_id, name, key) VALUES ($1, $2, $3, $4)",
-    )
-    .bind(key_id)
-    .bind(user_id)
-    .bind("default")
-    .bind(&api_key)
-    .execute(&mut *tx)
-    .await
-    {
-        error!("api_keys: {}", e);
-        let _ = tx.rollback().await;
-        return HttpResponse::InternalServerError().json(ErrorResponse {
-            error: "Failed to create user".into(),
-        });
+    if realms_grant.iter().any(|r| *r == "metric" || *r == "nexus") {
+        let key_id = Uuid::new_v4();
+        let api_key = format!("nx_{}", Uuid::new_v4().as_simple());
+        if let Err(e) = sqlx::query(
+            "INSERT INTO api_keys (id, user_id, name, key) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(key_id)
+        .bind(user_id)
+        .bind("default")
+        .bind(&api_key)
+        .execute(&mut *tx)
+        .await
+        {
+            error!("api_keys: {}", e);
+            let _ = tx.rollback().await;
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "Failed to create user".into(),
+            });
+        }
     }
 
     if let Err(e) = grant_realms_tx(&mut tx, user_id, &realms_grant).await {
@@ -847,13 +872,27 @@ async fn login(
     }
 
     if let Some(realm) = client_realm_from_header(&http_req) {
-        if !user_has_realm(&state.pool, user_id, realm).await {
-            let msg = if realm == "metric" {
-                "Нет доступа к Метрике для этого аккаунта. Откройте Lynx Launcher → Профиль → подключите Метрику (или зарегистрируйтесь через веб)."
-            } else if realm == "roza" {
-                "Нет доступа к Roza AI для этого аккаунта. Зарегистрируйтесь на сайте Roza в личном кабинете."
+        let mut has = user_has_realm(&state.pool, user_id, realm).await;
+        if !has && realm == "metric" && user_has_realm(&state.pool, user_id, "nexus").await {
+            if let Err(e) = sqlx::query(
+                "INSERT INTO user_realm (user_id, realm) VALUES ($1, 'metric') ON CONFLICT DO NOTHING",
+            )
+            .bind(user_id)
+            .execute(&state.pool)
+            .await
+            {
+                error!("link metric realm for lynx user: {}", e);
             } else {
-                "Нет доступа к лаунчеру Lynx для этого аккаунта. Откройте веб-консоль Метрики → Настройки → подключите Lynx Launcher."
+                has = true;
+            }
+        }
+        if !has {
+            let msg = if realm == "metric" {
+                "Нет доступа к Waypoint Metric. Зарегистрируйтесь на metrika-waypoint.ru или войдите аккаунтом Lynx (если он уже создан в лаунчере)."
+            } else if realm == "roza" {
+                "Нет доступа к Roza AI. Создайте аккаунт на waypointclub.ru/roza."
+            } else {
+                "Нет доступа к Lynx. Зарегистрируйтесь в приложении Lynx Launcher или войдите, если аккаунт уже есть."
             };
             return HttpResponse::Forbidden().json(ErrorResponse {
                 error: msg.into(),
@@ -3184,8 +3223,9 @@ async fn main() -> std::io::Result<()> {
     println!(">>> Binding {} to {}", po_service.name(), bind_addr);
 
     let governor_conf = GovernorConfigBuilder::default()
-        .per_second(40)
-        .burst_size(80)
+        .per_second(60)
+        .burst_size(120)
+        .key_extractor(rate_limit_key::ForwardedIpKeyExtractor)
         .finish()
         .expect("governor config");
 

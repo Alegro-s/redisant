@@ -1,4 +1,3 @@
-import { LYNX_API_BASE } from '@/lib/config';
 import { LYNX_HUB_URL, LYNX_CABINET_URL } from '@/lib/links';
 
 export function SiteFooter() {
@@ -25,9 +24,11 @@ export function SiteFooter() {
           <span className="site-footer-sep" aria-hidden>
             ·
           </span>
-          <span className="site-footer-api">
-            API: <code>{LYNX_API_BASE}</code>
+          <a href="/privacy">Конфиденциальность</a>
+          <span className="site-footer-sep" aria-hidden>
+            ·
           </span>
+          <a href="/terms">Условия</a>
         </div>
       </div>
     </footer>

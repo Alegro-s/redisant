@@ -61,6 +61,10 @@ export function GamingLayout({ children }: { children: ReactNode }) {
       <main className="lynx-app-main lynx-app-main-animated">{children}</main>
       <footer className="lynx-app-footer">
         © Lynx · <Link to="/docs">Руководство</Link>
+        {' · '}
+        <Link to="/privacy">Конфиденциальность</Link>
+        {' · '}
+        <Link to="/terms">Условия</Link>
       </footer>
     </div>
   );

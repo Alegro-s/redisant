@@ -348,8 +348,56 @@ code {
   color: var(--lynx-border);
 }
 
-.site-footer-api code {
-  font-size: 0.75rem;
+.cloud-legal-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+  line-height: 1.65;
+}
+
+.cloud-legal-page h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--lynx-text);
+}
+
+.cloud-legal-lead {
+  color: var(--lynx-muted);
+  margin-bottom: 1.25rem;
+}
+
+.cloud-legal-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cloud-legal-nav a {
+  color: var(--lynx-muted);
+  text-decoration: none;
+}
+
+.cloud-legal-nav a.active {
+  color: var(--lynx-green);
+}
+
+.cloud-legal-page section {
+  margin-bottom: 1.25rem;
+}
+
+.cloud-legal-page h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--lynx-text);
+}
+
+.cloud-legal-page p {
+  color: var(--lynx-body);
+  margin: 0 0 0.5rem;
+}
+
+.cloud-legal-back {
+  margin-top: 2rem;
 }
 
 /* Cloud header — отличается от Hub */

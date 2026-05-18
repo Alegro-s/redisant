@@ -638,25 +638,40 @@ async fn ensure_default_environment(pool: &PgPool, user_id: Uuid) -> Result<(Uui
     Ok(row)
 }
 
-async fn resolve_baas_schema(
+async fn resolve_baas_environment(
     pool: &PgPool,
     user_id: Uuid,
     env_id: Option<Uuid>,
-) -> Result<String, sqlx::Error> {
+) -> Result<(Uuid, String), sqlx::Error> {
     if let Some(eid) = env_id {
-        let row: Option<(String,)> = sqlx::query_as(
-            "SELECT schema_name FROM wm_baas_environments WHERE id = $1 AND user_id = $2",
+        let row: Option<(Uuid, String)> = sqlx::query_as(
+            "SELECT id, schema_name FROM wm_baas_environments WHERE id = $1 AND user_id = $2",
         )
         .bind(eid)
         .bind(user_id)
         .fetch_optional(pool)
         .await?;
-        if let Some((schema,)) = row {
-            return Ok(schema);
+        if let Some(r) = row {
+            return Ok(r);
         }
     }
-    let (_, schema) = ensure_default_environment(pool, user_id).await?;
-    Ok(schema)
+    ensure_default_environment(pool, user_id).await
+}
+
+async fn resolve_baas_schema(
+    pool: &PgPool,
+    user_id: Uuid,
+    env_id: Option<Uuid>,
+) -> Result<String, sqlx::Error> {
+    Ok(resolve_baas_environment(pool, user_id, env_id).await?.1)
+}
+
+async fn resolve_baas_environment_id(
+    pool: &PgPool,
+    user_id: Uuid,
+    env_id: Option<Uuid>,
+) -> Result<Uuid, sqlx::Error> {
+    Ok(resolve_baas_environment(pool, user_id, env_id).await?.0)
 }
 
 async fn ensure_user_schema_for_req(
@@ -665,6 +680,14 @@ async fn ensure_user_schema_for_req(
     req: &HttpRequest,
 ) -> Result<String, sqlx::Error> {
     resolve_baas_schema(pool, user_id, baas_env_id_from_req(req)).await
+}
+
+async fn ensure_baas_environment_for_req(
+    pool: &PgPool,
+    user_id: Uuid,
+    req: &HttpRequest,
+) -> Result<Uuid, sqlx::Error> {
+    resolve_baas_environment_id(pool, user_id, baas_env_id_from_req(req)).await
 }
 
 async fn ensure_user_schema(pool: &PgPool, user_id: Uuid) -> Result<String, sqlx::Error> {
@@ -1436,11 +1459,19 @@ pub async fn buckets_list(state: web::Data<AppState>, req: HttpRequest) -> impl 
         Ok(u) => u,
         Err(e) => return e,
     };
-    let _ = ensure_user_schema_for_req(&state.pool, uid, &req).await;
+    let env_id = match ensure_baas_environment_for_req(&state.pool, uid, &req).await {
+        Ok(id) => id,
+        Err(e) => {
+            log::error!("baas buckets env: {}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "environment error".into(),
+            });
+        }
+    };
     let rows: Result<Vec<BucketRow>, _> = sqlx::query_as(
-        "SELECT id, name, public_read FROM wm_baas_buckets WHERE user_id = $1 ORDER BY name",
+        "SELECT id, name, public_read FROM wm_baas_buckets WHERE environment_id = $1 ORDER BY name",
     )
-    .bind(uid)
+    .bind(env_id)
     .fetch_all(&state.pool)
     .await;
     match rows {
@@ -1464,8 +1495,14 @@ pub async fn bootstrap(state: web::Data<AppState>, req: HttpRequest) -> impl Res
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
-        Ok(s) => s,
+    let (env_id, schema) = match resolve_baas_environment(
+        &state.pool,
+        uid,
+        baas_env_id_from_req(&req),
+    )
+    .await
+    {
+        Ok(r) => r,
         Err(e) => {
             log::error!("baas bootstrap schema: {}", e);
             return HttpResponse::InternalServerError().json(ErrorResponse {
@@ -1487,9 +1524,9 @@ pub async fn bootstrap(state: web::Data<AppState>, req: HttpRequest) -> impl Res
     let pool2 = state.pool.clone();
     let buckets_fut = async move {
         sqlx::query_as::<_, BucketRow>(
-            "SELECT id, name, public_read FROM wm_baas_buckets WHERE user_id = $1 ORDER BY name",
+            "SELECT id, name, public_read FROM wm_baas_buckets WHERE environment_id = $1 ORDER BY name",
         )
-        .bind(uid)
+        .bind(env_id)
         .fetch_all(&pool2)
         .await
     };
@@ -1546,13 +1583,22 @@ pub async fn buckets_create(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let _ = ensure_user_schema_for_req(&state.pool, uid, &req).await;
+    let env_id = match ensure_baas_environment_for_req(&state.pool, uid, &req).await {
+        Ok(id) => id,
+        Err(e) => {
+            log::error!("baas bucket create env: {}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "environment error".into(),
+            });
+        }
+    };
     let row: Result<(Uuid,), _> = sqlx::query_as(
-        r#"INSERT INTO wm_baas_buckets (user_id, name, public_read) VALUES ($1, $2, $3)
-           ON CONFLICT (user_id, name) DO UPDATE SET public_read = EXCLUDED.public_read
+        r#"INSERT INTO wm_baas_buckets (user_id, environment_id, name, public_read) VALUES ($1, $2, $3, $4)
+           ON CONFLICT (environment_id, name) DO UPDATE SET public_read = EXCLUDED.public_read
            RETURNING id"#,
     )
     .bind(uid)
+    .bind(env_id)
     .bind(name)
     .bind(body.public_read)
     .fetch_one(&state.pool)
@@ -1609,12 +1655,20 @@ pub async fn object_put(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let _ = ensure_user_schema_for_req(&state.pool, uid, &req).await;
+    let env_id = match ensure_baas_environment_for_req(&state.pool, uid, &req).await {
+        Ok(id) => id,
+        Err(e) => {
+            log::error!("baas object put env: {}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "environment error".into(),
+            });
+        }
+    };
 
     let bucket_id = sqlx::query_as::<_, (Uuid,)>(
-        "SELECT id FROM wm_baas_buckets WHERE user_id = $1 AND name = $2",
+        "SELECT id FROM wm_baas_buckets WHERE environment_id = $1 AND name = $2",
     )
-    .bind(uid)
+    .bind(env_id)
     .bind(&bucket_name)
     .fetch_optional(&state.pool)
     .await;
@@ -1663,7 +1717,7 @@ pub async fn object_put(
 
     let root = storage_root();
     let safe_key = key.replace(['/', '\\'], "_");
-    let rel = format!("{}/{}/{}", uid, bid, safe_key);
+    let rel = format!("{}/{}/{}/{}", uid, env_id, bid, safe_key);
     let disk_path = root.join(&rel);
     if let Some(parent) = disk_path.parent() {
         if let Err(e) = fs::create_dir_all(parent).await {
@@ -1756,14 +1810,23 @@ pub async fn object_get(
         Ok(u) => u,
         Err(e) => return e,
     };
+    let env_id = match ensure_baas_environment_for_req(&state.pool, uid, &req).await {
+        Ok(id) => id,
+        Err(e) => {
+            log::error!("baas object get env: {}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "environment error".into(),
+            });
+        }
+    };
 
     let row = sqlx::query_as::<_, (String, String, i64)>(
         r#"SELECT o.storage_path, o.content_type, o.size_bytes
            FROM wm_baas_objects o
            JOIN wm_baas_buckets b ON b.id = o.bucket_id
-           WHERE b.user_id = $1 AND b.name = $2 AND o.object_key = $3"#,
+           WHERE b.environment_id = $1 AND b.name = $2 AND o.object_key = $3"#,
     )
-    .bind(uid)
+    .bind(env_id)
     .bind(&bucket_name)
     .bind(&key)
     .fetch_optional(&state.pool)
@@ -1810,6 +1873,44 @@ async fn serve_object_file(storage_path: &str, content_type: &str, public_cache:
 
 pub async fn object_get_public(
     state: web::Data<AppState>,
+    path: web::Path<(Uuid, Uuid, String)>,
+    q: web::Query<ObjectKeyQuery>,
+) -> impl Responder {
+    if baas_globally_disabled() {
+        return HttpResponse::NotFound().json(ErrorResponse {
+            error: "BaaS module disabled".into(),
+        });
+    }
+    let (owner_id, environment_id, bucket_name) = path.into_inner();
+    let key = match sanitize_object_key(&q.key) {
+        Ok(k) => k,
+        Err(msg) => {
+            return HttpResponse::BadRequest().json(ErrorResponse {
+                error: msg.into(),
+            })
+        }
+    };
+
+    let row = sqlx::query_as::<_, (String, String)>(
+        r#"SELECT o.storage_path, o.content_type
+           FROM wm_baas_objects o
+           JOIN wm_baas_buckets b ON b.id = o.bucket_id
+           JOIN wm_baas_environments e ON e.id = b.environment_id
+           WHERE b.user_id = $1 AND e.id = $2 AND b.name = $3 AND b.public_read = true AND o.object_key = $4"#,
+    )
+    .bind(owner_id)
+    .bind(environment_id)
+    .bind(&bucket_name)
+    .bind(&key)
+    .fetch_optional(&state.pool)
+    .await;
+
+    serve_public_object_row(row).await
+}
+
+/// Старый URL без environment_id — только bucket в основном подпроекте.
+pub async fn object_get_public_legacy(
+    state: web::Data<AppState>,
     path: web::Path<(Uuid, String)>,
     q: web::Query<ObjectKeyQuery>,
 ) -> impl Responder {
@@ -1832,7 +1933,10 @@ pub async fn object_get_public(
         r#"SELECT o.storage_path, o.content_type
            FROM wm_baas_objects o
            JOIN wm_baas_buckets b ON b.id = o.bucket_id
-           WHERE b.user_id = $1 AND b.name = $2 AND b.public_read = true AND o.object_key = $3"#,
+           WHERE b.user_id = $1 AND b.name = $2 AND b.public_read = true AND o.object_key = $3
+             AND b.environment_id = (
+               SELECT id FROM wm_baas_environments WHERE user_id = $1 AND is_default = true LIMIT 1
+             )"#,
     )
     .bind(owner_id)
     .bind(&bucket_name)
@@ -1840,6 +1944,12 @@ pub async fn object_get_public(
     .fetch_optional(&state.pool)
     .await;
 
+    serve_public_object_row(row).await
+}
+
+async fn serve_public_object_row(
+    row: Result<Option<(String, String)>, sqlx::Error>,
+) -> HttpResponse {
     let (storage_path, content_type) = match row {
         Ok(Some(r)) => r,
         Ok(None) => {

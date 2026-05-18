@@ -118,8 +118,8 @@ export default function Login() {
               метрики, логи, BaaS — не панель движка
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-              Email или ник и пароль — те же, что в клиенте Lynx. Расширенные разделы (хост, задания, инстансы, AI)
-              видны только пользователям с ролью <strong>admin</strong>.
+              Аккаунт Waypoint Metric — отдельная система. Можно зарегистрироваться здесь, войти через Яндекс (если настроено на
+              сервере) или использовать аккаунт Lynx Launcher.
             </Typography>
           </Box>
 
@@ -178,13 +178,15 @@ export default function Login() {
               <Button
                 fullWidth
                 variant="outlined"
-                component={RouterLink}
-                to="/auth/nexus"
+                href="/auth/yandex/start"
               >
-                Войти через Lynx Auth
+                Войти через Яндекс
+              </Button>
+              <Button fullWidth variant="outlined" component={RouterLink} to="/auth/nexus">
+                Войти аккаунтом Lynx
               </Button>
               <Link component={RouterLink} to="/register" sx={{ display: 'block', textAlign: 'center' }}>
-                Создать аккаунт
+                Создать аккаунт Metric
               </Link>
             </Stack>
           </Box>

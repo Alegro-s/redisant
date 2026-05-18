@@ -4,7 +4,7 @@
 export const LYNX_CLOUD_SITE_URL =
   import.meta.env.VITE_LYNX_CLOUD_URL?.trim() || 'https://lynx-cloud.ru';
 
-export const ROZA_SITE_URL = import.meta.env.VITE_ROZA_URL ?? 'http://localhost:5180';
+export const ROZA_SITE_URL = import.meta.env.VITE_ROZA_URL ?? 'https://waypointclub.ru/roza';
 
 /** Кабинет Lynx Cloud — не Waypoint Metric */
 export const LYNX_CABINET_URL =

@@ -42,7 +42,8 @@ export const DatabaseEnvironmentBar: React.FC = () => {
             Подпроект (изолированная БД)
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.45 }}>
-            У каждого подпроекта своя schema PostgreSQL: таблицы, SQL и ER не пересекаются. Свой сервер подключается
+            У каждого подпроекта своя schema PostgreSQL и отдельные buckets (файлы): таблицы, SQL, ER и хранилище не
+            пересекаются. Свой сервер подключается
             в{' '}
             <a href="/workspace/setup" style={{ color: 'inherit' }}>
               настройке workspace

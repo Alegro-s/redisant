@@ -194,7 +194,12 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const deleteEnvironment = async (id: string) => {
-    if (!window.confirm('Удалить подпроект и все его таблицы? Действие необратимо.')) return;
+    if (
+      !window.confirm(
+        'Удалить подпроект, все его таблицы и buckets с файлами? Действие необратимо.',
+      )
+    )
+      return;
     setLoading(true);
     try {
       await deleteBaasEnvironment(id);

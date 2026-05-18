@@ -3,8 +3,7 @@
 import { FormEvent, Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-const authBase = (process.env.NEXT_PUBLIC_LYNX_AUTH_URL ?? 'http://127.0.0.1:8090').replace(/\/$/, '');
+import { resolveLynxAuthBase } from '@/lib/authBase';
 
 export default function LynxVerifyEmailPage() {
   return (
@@ -28,7 +27,7 @@ function LynxVerifyEmailForm() {
     setError('');
     setBusy(true);
     try {
-      const res = await fetch(`${authBase}/auth/register/verify`, {
+      const res = await fetch(`${resolveLynxAuthBase()}/auth/register/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Client-Realm': 'lynx' },
         credentials: 'include',
@@ -52,7 +51,7 @@ function LynxVerifyEmailForm() {
     setOk('');
     setBusy(true);
     try {
-      const res = await fetch(`${authBase}/auth/register/resend`, {
+      const res = await fetch(`${resolveLynxAuthBase()}/auth/register/resend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Client-Realm': 'lynx' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),

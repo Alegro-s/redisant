@@ -159,7 +159,15 @@ EOF
   fi
 fi
 
-build_vite "$PO_ROOT/Lynx/hub" /srv/lynx-hub/dist
+if [[ -d "$PO_ROOT/Lynx/hub" ]]; then
+  cd "$PO_ROOT/Lynx/hub"
+  npm ci
+  cat > .env.production.local <<'EOF'
+VITE_LYNX_AUTH_URL=/auth
+EOF
+  npm run build
+  rsync -a --delete dist/ /srv/lynx-hub/dist/
+fi
 
 if [[ -d "$PO_ROOT/roza/web" ]]; then
   echo "==> Roza web (/roza/)"
@@ -187,6 +195,12 @@ echo "==> Lynx Cloud (Next.js)"
 if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then
   cd "$PO_ROOT/Lynx/cloud"
   npm ci
+  cat > .env.production.local <<'EOF'
+NEXT_PUBLIC_LYNX_AUTH_URL=https://lynx-cloud.ru/auth
+NEXT_PUBLIC_LYNX_API_BASE=https://lynx-cloud.ru
+NEXT_PUBLIC_LYNX_HUB_URL=https://lynx-hub.ru
+NEXT_PUBLIC_LYNX_CABINET_URL=https://lynx-cloud.ru/cabinet
+EOF
   npm run build
   pkill -f "next start.*3001" 2>/dev/null || true
   sleep 1

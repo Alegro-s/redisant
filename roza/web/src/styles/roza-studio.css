@@ -1,7 +1,26 @@
 /* Roza — светлая линейка в духе Google AI / Material */
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&display=swap');
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.roza-main {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.roza-account-form input {
+  width: 100%;
+}
+
 .roza-studio {
+  overflow-x: hidden;
   --rs-bg: #ffffff;
   --rs-bg-soft: #f8f9fa;
   --rs-surface: #ffffff;

@@ -8,7 +8,7 @@ public static class RozaEndpoints
     {
         var t = userInput.Trim();
         if (string.IsNullOrEmpty(t))
-            t = "http://127.0.0.1:8765";
+            t = "https://waypointclub.ru/roza/api";
         if (!t.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             && !t.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             t = "http://" + t;

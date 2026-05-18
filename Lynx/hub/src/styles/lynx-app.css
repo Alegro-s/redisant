@@ -1,8 +1,22 @@
 /* Токены Lynx Launcher (nexus_theme.dart darkPurple) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
 :root {
   --lynx-bg: #0d1117;
+  --lynx-content-max: 1120px;
   --lynx-surface: #161b22;
   --lynx-card: #21262d;
   --lynx-border: #30363d;
@@ -19,11 +33,28 @@
   --lynx-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
+.lynx-launch-page,
+.lynx-auth-page-wrap,
+.lynx-register {
+  max-width: var(--lynx-content-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.lynx-auth-form label,
+.lynx-auth-form input {
+  display: block;
+  width: 100%;
+}
+
 .lynx-app {
   font-family: var(--lynx-font);
   background: var(--lynx-bg);
   color: var(--lynx-body);
   min-height: 100vh;
+  overflow-x: hidden;
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.12), transparent),
     radial-gradient(ellipse 40% 30% at 100% 50%, rgba(124, 58, 237, 0.08), transparent);
@@ -1120,6 +1151,66 @@
 
 .lynx-muted {
   color: var(--lynx-muted);
+}
+
+.lynx-legal-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+  line-height: 1.65;
+}
+
+.lynx-legal-page h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: var(--lynx-text);
+  margin: 0.5rem 0 1rem;
+}
+
+.lynx-legal-lead {
+  color: var(--lynx-muted);
+  margin-bottom: 1.25rem;
+}
+
+.lynx-legal-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.lynx-legal-nav a {
+  color: var(--lynx-muted);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.lynx-legal-nav a.active {
+  color: var(--lynx-accent-soft);
+}
+
+.lynx-legal-section {
+  margin-bottom: 1.5rem;
+}
+
+.lynx-legal-section h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--lynx-text);
+  margin: 0 0 0.5rem;
+}
+
+.lynx-legal-section p {
+  color: var(--lynx-body);
+  margin: 0 0 0.65rem;
+}
+
+.lynx-legal-foot {
+  font-size: 0.85rem;
+  color: var(--lynx-muted);
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--lynx-border);
 }
 
 .lynx-app-footer a {

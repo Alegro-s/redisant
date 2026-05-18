@@ -45,6 +45,8 @@ macro_rules! po_auth_routes {
             )
             .route("/auth/vk/start", web::get().to(vk_oauth::vk_start))
             .route("/auth/vk/callback", web::get().to(vk_oauth::vk_callback))
+            .route("/auth/yandex/start", web::get().to(yandex_oauth::yandex_start))
+            .route("/auth/yandex/callback", web::get().to(yandex_oauth::yandex_callback))
             .route("/auth/introspect", web::get().to(auth_introspect))
             .route("/profile", web::get().to(get_profile))
             .route("/profile", web::put().to(update_profile))
@@ -180,8 +182,12 @@ macro_rules! po_waypoint_routes {
                         web::get().to(baas::object_get),
                     )
                     .route(
-                        "/storage/public/{owner_id}/{bucket}/objects",
+                        "/storage/public/{owner_id}/{environment_id}/{bucket}/objects",
                         web::get().to(baas::object_get_public),
+                    )
+                    .route(
+                        "/storage/public/{owner_id}/{bucket}/objects",
+                        web::get().to(baas::object_get_public_legacy),
                     ),
             )
             .route("/me/metrics", web::get().to(routes_extra::my_metrics))

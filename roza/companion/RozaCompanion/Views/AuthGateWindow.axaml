@@ -69,8 +69,8 @@
                 VerticalAlignment="Center">
             <StackPanel Spacing="16">
                 <StackPanel HorizontalAlignment="Center" Spacing="10">
-                    <Border Width="72" Height="72" CornerRadius="16" Background="#000000" ClipToBounds="True">
-                        <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="10" />
+                    <Border Width="72" Height="72" CornerRadius="18" Background="#2a1520" BorderBrush="#e879a9" BorderThickness="2" ClipToBounds="True">
+                        <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="8" />
                     </Border>
                     <TextBlock Text="Roza AI" FontSize="22" FontWeight="SemiBold" Foreground="#202124" HorizontalAlignment="Center" />
                     <TextBlock Text="Консультант" FontSize="12" Foreground="#5F6368" HorizontalAlignment="Center" />

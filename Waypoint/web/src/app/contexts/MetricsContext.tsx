@@ -72,7 +72,7 @@ export const MetricsProvider: React.FC<MetricsProviderProps> = ({ children }) =>
         if (document.visibilityState === 'visible') {
           void refreshMetrics();
         }
-      }, 5000);
+      }, 10000);
       return () => clearInterval(interval);
     }
     void refreshMetrics();

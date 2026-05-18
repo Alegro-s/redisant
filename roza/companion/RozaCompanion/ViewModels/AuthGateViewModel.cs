@@ -66,7 +66,7 @@ public partial class AuthGateViewModel : ViewModelBase
     {
         var url = CompanionLocalSettingsStore.Load().AccountUrl.Trim();
         if (string.IsNullOrEmpty(url))
-            url = "http://localhost:5180/account";
+            url = "https://waypointclub.ru/roza/account";
         try
         {
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });

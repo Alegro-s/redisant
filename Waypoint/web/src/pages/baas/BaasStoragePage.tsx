@@ -4,6 +4,7 @@ import { useBaasConsole } from './BaasConsoleContext';
 
 export const BaasStoragePage: React.FC = () => {
   const {
+    activeEnvironment,
     buckets,
     newBucket,
     setNewBucket,
@@ -19,6 +20,12 @@ export const BaasStoragePage: React.FC = () => {
   return (
     <Stack spacing={2}>
       <Typography variant="h6">S3-совместимое хранилище</Typography>
+      {activeEnvironment ? (
+        <Typography variant="body2" color="text.secondary">
+          Buckets и объекты изолированы в подпроекте «{activeEnvironment.name}». Другой подпроект — отдельный набор
+          bucket’ов с теми же именами.
+        </Typography>
+      ) : null}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
         <TextField label="Новый bucket" value={newBucket} onChange={(e) => setNewBucket(e.target.value)} />
         <Button variant="outlined" onClick={() => void onCreateBucket()}>

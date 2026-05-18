@@ -11,7 +11,7 @@ public sealed class CompanionLocalPrefs
     public bool StartupWizardCompleted { get; set; } = true;
 
     [JsonPropertyName("server_url")]
-    public string ServerUrl { get; set; } = "http://127.0.0.1:8765";
+    public string ServerUrl { get; set; } = "https://waypointclub.ru/roza/api";
 
     /// <summary>OpenAI-совместимый base URL (Gemini: …/v1beta/openai/ …).</summary>
     [JsonPropertyName("external_openai_base_url")]
@@ -47,10 +47,10 @@ public sealed class CompanionLocalPrefs
     public string AuthLogin { get; set; } = "";
 
     [JsonPropertyName("auth_api_url")]
-    public string AuthApiUrl { get; set; } = "http://127.0.0.1:8090";
+    public string AuthApiUrl { get; set; } = "https://waypointclub.ru/auth";
 
     [JsonPropertyName("account_url")]
-    public string AccountUrl { get; set; } = "http://localhost:5180/account";
+    public string AccountUrl { get; set; } = "https://waypointclub.ru/roza/account";
 
     /// <summary>free | pro</summary>
     [JsonPropertyName("subscription_plan")]

@@ -66,8 +66,8 @@
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="40" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Background" Value="{DynamicResource RozaAccentBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource RzText}" />
+            <Setter Property="Background" Value="{DynamicResource AccentUi}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccent}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="{DynamicResource Hairline}" />
             <Setter Property="CornerRadius" Value="999" />
@@ -76,7 +76,10 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="Button.MacSend:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource RozaAccentHoverBrush}" />
+            <Setter Property="Background" Value="{DynamicResource AccentUiHover}" />
+        </Style>
+        <Style Selector="ComboBox /template/ Popup#PART_Popup /template/ ListBox#PART_ListBox ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
         </Style>
         <Style Selector="TextBox.MacField">
             <Setter Property="Background" Value="Transparent" />
@@ -204,8 +207,8 @@
                     Padding="10,12,10,10">
                 <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" RowSpacing="0">
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
-                        <Border Width="28" Height="28" CornerRadius="6" Background="#000000" ClipToBounds="True">
-                            <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="4" />
+                        <Border Width="28" Height="28" CornerRadius="8" Background="#2a1520" BorderBrush="#e879a9" BorderThickness="1.5" ClipToBounds="True">
+                            <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="3" />
                         </Border>
                         <StackPanel VerticalAlignment="Center" Spacing="0">
                             <TextBlock Text="{x:Static vm:MainWindowViewModel.BrandName}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource RzText}" />
@@ -368,10 +371,11 @@
                                                                     Command="{Binding DataContext.CopyChatLineCommand, ElementName=MainRoot}"
                                                                     CommandParameter="{Binding Text}" />
                                                         </Grid>
-                                                        <md:MarkdownScrollViewer IsVisible="{Binding IsMarkdownBubble}"
-                                                                                 Markdown="{Binding Text}"
-                                                                                 MaxHeight="480"
-                                                                                 VerticalAlignment="Top" />
+                                                        <Border IsVisible="{Binding IsMarkdownBubble}" Padding="0,2">
+                                                            <md:MarkdownScrollViewer Markdown="{Binding Text}"
+                                                                                     MaxHeight="480"
+                                                                                     VerticalAlignment="Top" />
+                                                        </Border>
                                                         <TextBlock IsVisible="{Binding !IsMarkdownBubble}"
                                                                    Text="{Binding Text}"
                                                                    TextWrapping="Wrap"
@@ -849,7 +853,7 @@
                                                 <TextBlock Text="Подключение к серверу" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
                                                 <TextBlock Text="Базовый URL веб-интерфейса Roza (health, чат, Studio)." FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                                                 <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
-                                                    <TextBox Classes="MacField" Text="{Binding ServerUrl}" PlaceholderText="http://127.0.0.1:8765" />
+                                                    <TextBox Classes="MacField" Text="{Binding ServerUrl}" PlaceholderText="Адрес сервиса Roza на сайте" />
                                                 </Border>
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <Button Classes="MacPrimary" Content="Подключить" Command="{Binding ConnectCommand}" IsEnabled="{Binding !IsBusy}" />

@@ -3,9 +3,8 @@
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LYNX_CABINET_URL } from '@/lib/links';
-
-const authBase = (process.env.NEXT_PUBLIC_LYNX_AUTH_URL ?? 'http://127.0.0.1:8090').replace(/\/$/, '');
+import { LYNX_CABINET_URL, LYNX_HUB_URL } from '@/lib/links';
+import { resolveLynxAuthBase } from '@/lib/authBase';
 
 type Props = { initialRegister?: boolean };
 
@@ -27,7 +26,7 @@ export function LynxAuthForm({ initialRegister = false }: Props) {
     setBusy(true);
     try {
       if (mode === 'login') {
-        const res = await fetch(`${authBase}/login`, {
+        const res = await fetch(`${resolveLynxAuthBase()}/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Client-Realm': 'lynx' },
           credentials: 'include',
@@ -48,32 +47,16 @@ export function LynxAuthForm({ initialRegister = false }: Props) {
         return;
       }
 
-      const res = await fetch(`${authBase}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Client-Realm': 'lynx' },
-        credentials: 'include',
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          nickname: nickname.trim(),
-          full_name: (fullName || nickname).trim(),
-          password,
-          phone: null,
-          settings: {},
-        }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { status?: string; email?: string; token?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? 'Ошибка регистрации');
-      if (data.status === 'pending_verification') {
-        router.push(`/cabinet/sign-in/verify?email=${encodeURIComponent(data.email ?? email)}`);
-        return;
-      }
-      if (data.token) {
-        localStorage.setItem('lynx_auth_token', data.token);
-        localStorage.setItem('lynx_auth_login', email.trim());
-        router.push('/cabinet/dashboard');
-      }
+      setError('');
+      setOk('');
+      throw new Error('REGISTER_VIA_LAUNCHER');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка');
+      if (err instanceof Error && err.message === 'REGISTER_VIA_LAUNCHER') {
+        setOk('');
+        setError('');
+      } else {
+        setError(err instanceof Error ? err.message : 'Ошибка');
+      }
     } finally {
       setBusy(false);
     }
@@ -94,33 +77,36 @@ export function LynxAuthForm({ initialRegister = false }: Props) {
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
       </label>
       {mode === 'register' ? (
-        <>
-          <label>
-            Никнейм
-            <input value={nickname} onChange={(e) => setNickname(e.target.value)} required minLength={2} />
-          </label>
-          <label>
-            Имя
-            <input value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          </label>
-        </>
-      ) : null}
-      <label>
-        Пароль
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={mode === 'register' ? 10 : 1}
-          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-        />
-      </label>
+        <p className="cloud-cabinet-note" style={{ marginBottom: '1rem' }}>
+          Регистрация Lynx только в приложении <strong>Lynx Launcher</strong>. На сайте — вход, если аккаунт уже создан.
+          <br />
+          <a href={`${LYNX_HUB_URL}/download`} target="_blank" rel="noreferrer">
+            Скачать Launcher
+          </a>
+        </p>
+      ) : (
+        <label>
+          Пароль
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+        </label>
+      )}
       {error ? <p className="cloud-auth-error">{error}</p> : null}
       {ok ? <p className="cloud-auth-ok">{ok}</p> : null}
-      <button type="submit" className="cloud-btn-primary" disabled={busy}>
-        {busy ? '…' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
-      </button>
+      {mode === 'login' ? (
+        <button type="submit" className="cloud-btn-primary" disabled={busy}>
+          {busy ? '…' : 'Войти'}
+        </button>
+      ) : (
+        <a className="cloud-btn-primary" href={`${LYNX_HUB_URL}/download`} style={{ display: 'inline-block', textAlign: 'center' }}>
+          Скачать Lynx Launcher
+        </a>
+      )}
       <p className="cloud-cabinet-note">
         Аккаунт Lynx (серия nexus) отделён от Roza AI и Waypoint Metric.{' '}
         <Link href={LYNX_CABINET_URL}>← Кабинет</Link>

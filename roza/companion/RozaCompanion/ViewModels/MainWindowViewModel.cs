@@ -37,7 +37,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private static readonly IBrush LearningOnBrush = new SolidColorBrush(Color.Parse("#34C759"));
     private static readonly IBrush LearningOffBrush = new SolidColorBrush(Color.Parse("#C7C7CC"));
 
-    [ObservableProperty] private string _serverUrl = "http://127.0.0.1:8765";
+    [ObservableProperty] private string _serverUrl = "https://waypointclub.ru/roza/api";
 
     [ObservableProperty] private bool _agentMode;
 
@@ -105,7 +105,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _yandexClientSecret = "";
 
     [ObservableProperty] private string _yandexLoginHint =
-        "Вход через Яндекс ID. Redirect URI в OAuth: http://127.0.0.1:18769/";
+        "Вход через Яндекс ID. Настройте приложение в кабинете разработчика Яндекса и укажите Client ID в настройках.";
 
     [ObservableProperty] private bool _showStartupWizard;
 
@@ -741,7 +741,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var url = CompanionLocalSettingsStore.Load().AccountUrl.Trim();
         if (string.IsNullOrEmpty(url))
-            url = "http://localhost:5180/account";
+            url = "https://waypointclub.ru/roza/account";
         try
         {
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
