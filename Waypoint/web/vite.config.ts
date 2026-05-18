@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
     mode === 'production'
       ? {
           'import.meta.env.VITE_API_URL': JSON.stringify('/api'),
+          'import.meta.env.VITE_AUTH_URL': JSON.stringify('/auth'),
         }
       : {},
   server: {

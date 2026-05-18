@@ -107,10 +107,18 @@ build_vite() {
 if [[ -d "$PO_ROOT/Waypoint/web" ]]; then
   cd "$PO_ROOT/Waypoint/web"
   npm ci
-  echo 'VITE_PUBLIC_SITE_MODE=club' > .env.production.local
+  cat > .env.production.local <<'EOF'
+VITE_API_URL=/api
+VITE_AUTH_URL=/auth
+VITE_PUBLIC_SITE_MODE=club
+EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointclub/web/
-  echo 'VITE_PUBLIC_SITE_MODE=metric' > .env.production.local
+  cat > .env.production.local <<'EOF'
+VITE_API_URL=/api
+VITE_AUTH_URL=/auth
+VITE_PUBLIC_SITE_MODE=metric
+EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointmetric/dist/
   if [[ -d "$PO_ROOT/releases/waypoint-desktop" ]]; then
