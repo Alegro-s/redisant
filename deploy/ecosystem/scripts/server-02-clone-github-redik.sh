@@ -39,8 +39,12 @@ mkdir -p /var/www/certbot
 echo "==> Clone or update ${CLONE_URL}"
 if [[ -d "$DEPLOY_ROOT/redik/.git" ]]; then
   git -C "$DEPLOY_ROOT/redik" fetch origin
-  git -C "$DEPLOY_ROOT/redik" checkout "$GITHUB_BRANCH"
-  git -C "$DEPLOY_ROOT/redik" pull --ff-only origin "$GITHUB_BRANCH"
+  git -C "$DEPLOY_ROOT/redik" checkout -f "$GITHUB_BRANCH"
+  if ! git -C "$DEPLOY_ROOT/redik" pull --ff-only origin "$GITHUB_BRANCH"; then
+    echo "==> Local changes block pull; reset to origin/${GITHUB_BRANCH}"
+    git -C "$DEPLOY_ROOT/redik" reset --hard "origin/${GITHUB_BRANCH}"
+    git -C "$DEPLOY_ROOT/redik" clean -fd
+  fi
 else
   rm -rf "$DEPLOY_ROOT/redik"
   git clone --depth 1 --branch "$GITHUB_BRANCH" "$CLONE_URL" "$DEPLOY_ROOT/redik"

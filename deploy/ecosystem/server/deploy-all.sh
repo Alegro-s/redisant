@@ -69,7 +69,13 @@ docker_pull_images() {
 ensure_repo() {
   mkdir -p "$DEPLOY_ROOT"
   if [[ -d "$PO_ROOT/.git" ]]; then
-    git -C "$PO_ROOT" pull --ff-only origin main || true
+    git -C "$PO_ROOT" fetch origin
+    git -C "$PO_ROOT" checkout -f main
+    if ! git -C "$PO_ROOT" pull --ff-only origin main; then
+      log "Сброс локальных правок в репозитории → origin/main"
+      git -C "$PO_ROOT" reset --hard origin/main
+      git -C "$PO_ROOT" clean -fd
+    fi
   else
     git clone --depth 1 --branch main "https://github.com/${GITHUB_REPO}.git" "$PO_ROOT"
   fi
