@@ -155,7 +155,16 @@ if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then
   npm ci
   npm run build
   pkill -f "next start.*3001" 2>/dev/null || true
-  nohup npm run start -- -p 3001 > /var/log/lynx-cloud.log 2>&1 &
+  sleep 1
+  export NODE_ENV=production
+  nohup npm run start >> /var/log/lynx-cloud.log 2>&1 &
+  sleep 2
+  if curl -fsS http://127.0.0.1:3001/ >/dev/null 2>&1; then
+    echo "Lynx Cloud :3001 OK"
+  else
+    echo "WARN: Lynx Cloud failed — tail /var/log/lynx-cloud.log"
+    tail -15 /var/log/lynx-cloud.log 2>/dev/null || true
+  fi
 fi
 
 echo "==> nginx"
