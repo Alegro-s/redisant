@@ -13,7 +13,7 @@ export async function checkForUpdate(cfg: CloudConfig, currentVersion: string) {
   const m = (await r.json()) as ReleaseManifest;
   if (m.latest && m.latest !== currentVersion) {
     const fallback =
-      "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/WaypointDesktop-setup.msi";
+      "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/Waypoint_0.1.0_x64_en-US.msi";
     return { version: m.latest, url: m.downloads?.windows?.url || fallback };
   }
   return null;

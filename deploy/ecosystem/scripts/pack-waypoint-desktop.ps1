@@ -25,10 +25,13 @@ if (-not (Test-Path "node_modules")) {
     if (Test-Path "package-lock.json") { npm ci } else { npm install }
 }
 
-$iconSrc = Join-Path $RepoRoot "Waypoint\web\public\favicon.svg"
+$iconSrc = Join-Path $RepoRoot "Waypoint\desktop\public\logo.svg"
+if (-not (Test-Path $iconSrc)) {
+    $iconSrc = Join-Path $RepoRoot "Waypoint\web\public\favicon.svg"
+}
 $iconDir = Join-Path $DesktopDir "src-tauri\icons"
 if ((Test-Path $iconSrc) -and -not (Test-Path (Join-Path $iconDir "icon.ico"))) {
-    Write-Host "[waypoint-desktop] generate icons from favicon.svg..."
+    Write-Host "[waypoint-desktop] generate icons from logo.svg..."
     New-Item -ItemType Directory -Force -Path $iconDir | Out-Null
     npx --yes @tauri-apps/cli icon $iconSrc -o $iconDir 2>&1 | Out-Host
 }
@@ -51,11 +54,13 @@ if (-not $portable) {
         Where-Object { $_.Name -notmatch "uninstall" } | Select-Object -First 1
 }
 
-$setupName = "WaypointDesktop-setup.msi"
 if ($msi) {
+    $setupName = $msi.Name
     Copy-Item $msi.FullName (Join-Path $OutDir $setupName) -Force
     Copy-Item $msi.FullName (Join-Path $PublicDl $setupName) -Force
     Write-Host "  Setup: $OutDir\$setupName"
+} else {
+    $setupName = "Waypoint_0.1.0_x64_en-US.msi"
 }
 if ($portable) {
     Copy-Item $portable.FullName (Join-Path $OutDir "WaypointDesktop.exe") -Force
@@ -75,6 +80,7 @@ if ((Test-Path $manifestPath) -and (Test-Path (Join-Path $PublicDl $setupName)))
     if (-not $json.downloads.windows.url -or $json.downloads.windows.url -match '^/downloads/') {
         $json.downloads.windows.url = "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/$setupName"
     }
+    $json.downloads.windows.filename = $setupName
     $json.downloads.windows.size_mb = $mb
     $json | ConvertTo-Json -Depth 6 | Set-Content $manifestPath -Encoding UTF8
 }

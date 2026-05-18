@@ -4,10 +4,15 @@ const metricOrigin = () =>
 const clubOrigin = () =>
   (import.meta.env.VITE_CLUB_URL ?? 'https://waypointclub.ru').replace(/\/$/, '');
 
+const DESKTOP_S3_BASE =
+  "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/";
+
+/** Имя актуального MSI на S3 и в /downloads/ на Metric */
+export const DESKTOP_INSTALLER_FILENAME = "Waypoint_0.1.0_x64_en-US.msi";
+
 /** Публичная ссылка на установщик (Timeweb S3) */
 export const DESKTOP_INSTALLER_URL =
-  import.meta.env.VITE_WAYPOINT_DESKTOP_URL ??
-  "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/WaypointDesktop-setup.msi";
+  import.meta.env.VITE_WAYPOINT_DESKTOP_URL ?? `${DESKTOP_S3_BASE}${DESKTOP_INSTALLER_FILENAME}`;
 
 export const LINKS = {
   club: clubOrigin(),

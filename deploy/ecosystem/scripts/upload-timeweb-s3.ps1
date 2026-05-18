@@ -64,7 +64,7 @@ if ($AlsoWaypointDesktop) {
         $wpDest = "s3://${Bucket}/${wpPrefix}"
         Write-Host "[s3] Waypoint Desktop -> $wpDest"
         aws s3 sync $wpDir $wpDest --endpoint-url $Endpoint
-        Write-Host "  MSI: $Endpoint/${Bucket}/${wpPrefix}WaypointDesktop-setup.msi"
+        Write-Host "  MSI: $Endpoint/${Bucket}/${wpPrefix} (Waypoint_*.msi)"
     } else {
         Write-Host "[s3] Skip waypoint-desktop (run pack-waypoint-desktop.ps1 first)"
     }

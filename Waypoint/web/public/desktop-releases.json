@@ -4,8 +4,8 @@
   "updated": "2026-05-18",
   "downloads": {
     "windows": {
-      "url": "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/WaypointDesktop-setup.msi",
-      "filename": "WaypointDesktop-setup.msi",
+      "url": "https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/Waypoint_0.1.0_x64_en-US.msi",
+      "filename": "Waypoint_0.1.0_x64_en-US.msi",
       "sha256": "",
       "size_mb": 3.76
     }
@@ -15,9 +15,9 @@
       "version": "0.1.0",
       "date": "2026-05-18",
       "notes": [
-        "Локальный клиент: Docker, терминал, связь с облаком Metric.",
-        "Привязка устройства по коду из кабинета Metric.",
-        "Раздел metrika-waypoint.ru/desktop."
+        "Помощник: вкладки чата, новая ветка, копирование и закрепление ответов.",
+        "Терминал: модальное окно «Новый хост», SSH-профили.",
+        "Облако Waypoint Metric, привязка устройства из кабинета."
       ]
     }
   ]

@@ -33,6 +33,20 @@ chmod +x "$ECO/scripts/"*.sh
 "$ECO/scripts/server-02-clone-github-redik.sh"
 
 echo ""
+echo "==> Desktop MSI (/downloads/ mirror)"
+DL_DIR=/srv/waypointmetric/downloads
+DESKTOP_MSI=Waypoint_0.1.0_x64_en-US.msi
+DESKTOP_S3="https://s3.twcstorage.ru/bc39a46d-ee3d-4707-9e3f-9529afb602da/project's/waypointdesktop/${DESKTOP_MSI}"
+mkdir -p "$DL_DIR"
+if command -v curl >/dev/null; then
+  if curl -fsSL "$DESKTOP_S3" -o "$DL_DIR/$DESKTOP_MSI"; then
+    echo "  OK https://metrika-waypoint.ru/downloads/$DESKTOP_MSI"
+  else
+    echo "  WARN: не удалось скачать MSI с S3 (кнопки на сайте всё равно ведут на S3)"
+  fi
+fi
+
+echo ""
 echo "==> Health"
 ok=0
 curl -fsS http://127.0.0.1:8090/health >/dev/null && { echo "  auth-api OK"; ok=$((ok+1)); } || echo "  auth-api FAIL"
