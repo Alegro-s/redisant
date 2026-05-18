@@ -7,7 +7,11 @@ from typing import Any
 
 import httpx
 
-_AUTH_BASE = (os.environ.get("ROZA_AUTH_API_URL") or "http://127.0.0.1:8090").rstrip("/")
+_AUTH_BASE = (
+    os.environ.get("ROZA_AUTH_API_URL")
+    or os.environ.get("ROZA_AUTH_URL")
+    or "http://127.0.0.1:8090"
+).rstrip("/")
 _INTROSPECT = f"{_AUTH_BASE}/auth/introspect"
 _CONSUME = f"{_AUTH_BASE}/me/roza/consume"
 

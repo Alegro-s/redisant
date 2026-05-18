@@ -24,8 +24,16 @@ export async function rozaChat(message: string, sessionId?: string): Promise<{ r
   });
 
   if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    throw new Error(err || `Ошибка сервера (${res.status})`);
+    let message = `Ошибка сервера (${res.status})`;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === 'string') message = body.detail;
+      else if (Array.isArray(body?.detail)) message = body.detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join('; ');
+    } catch {
+      const err = await res.text().catch(() => '');
+      if (err) message = err;
+    }
+    throw new Error(message);
   }
 
   const data = (await res.json()) as { reply?: string; answer?: string; session_id?: string };

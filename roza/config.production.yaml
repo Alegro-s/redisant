@@ -1,0 +1,47 @@
+# Production (Docker на VPS). LLM — через Ollama в том же compose (см. docker-compose.roza.yml).
+# Альтернатива: ROZA_LLM_BACKEND=openai_compatible + ROZA_OPENAI_* в /opt/waypoint/smtp.env
+
+llm:
+  backend: ollama
+
+assistant:
+  name: Roza
+  think_first: false
+  swarm_prompt: true
+
+ollama:
+  base_url: http://ollama:11434
+  model: qwen2.5:3b
+  think: false
+  send_think_param: false
+  stream_chat: false
+  options:
+    num_ctx: 4096
+    num_predict: 1024
+    temperature: 0.3
+
+openai_compatible:
+  base_url: https://api.openai.com/v1
+  api_key: ""
+  model: gpt-4o-mini
+  max_tokens: 2048
+
+model_output:
+  strip_thinking: true
+  strip_cjk: true
+  strip_en_leaks: true
+
+web:
+  host: 0.0.0.0
+  port: 8765
+  cors_origins:
+    - https://waypointclub.ru
+    - https://www.waypointclub.ru
+
+workspace:
+  roots:
+    - .
+
+learning:
+  enabled: true
+  log_path: data/roza_learn.jsonl

@@ -147,9 +147,9 @@ def load_settings(config_path: Path | None = None) -> Settings:
         elif v in ("1", "true", "yes", "on"):
             stream_chat = True
 
-    oa_base = str(openai.get("base_url", "http://127.0.0.1:1234/v1")).rstrip("/")
-    oa_key = str(openai.get("api_key", "") or "")
-    oa_model = str(openai.get("model") or model).strip()
+    oa_base = str(_env("ROZA_OPENAI_BASE_URL", openai.get("base_url", "http://127.0.0.1:1234/v1"))).rstrip("/")
+    oa_key = str(_env("ROZA_OPENAI_API_KEY", openai.get("api_key", "") or "") or "")
+    oa_model = str(_env("ROZA_OPENAI_MODEL", openai.get("model") or model) or model).strip()
     oa_max = openai.get("max_tokens")
     openai_max_tokens: int | None
     if oa_max is None or oa_max == "":

@@ -800,6 +800,16 @@ def create_app() -> FastAPI:
         chat, ag = _get_http_session_pair(body.session_id)
         sess: RozaSession | AgentSession = ag if body.agent else chat
         clear_last_llm_usage()
+        s = load_settings()
+        b = s.llm_backend
+        if b == "openai_compatible" and not (s.openai_api_key or "").strip():
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Roza AI: не задан ключ LLM. На сервере добавьте ROZA_OPENAI_API_KEY в smtp.env "
+                    "или включите Ollama (ROZA_LLM_BACKEND=ollama)."
+                ),
+            )
         try:
             reply = await asyncio.to_thread(
                 functools.partial(sess.ask, text, stream=False),
@@ -807,7 +817,13 @@ def create_app() -> FastAPI:
         except Exception as e:
             if sess.history and sess.history[-1].get("role") == "user":
                 sess.history.pop()
-            raise HTTPException(status_code=500, detail=str(e)) from e
+            msg = str(e).strip() or "ошибка модели"
+            if b == "hf_local" and ("hf]" in msg or "transformers" in msg.lower() or "torch" in msg.lower()):
+                msg = (
+                    "На сервере не настроена локальная HF-модель. "
+                    "В Docker используйте config.production.yaml (ollama) или ROZA_LLM_BACKEND=openai_compatible."
+                )
+            raise HTTPException(status_code=500, detail=msg) from e
         usage = take_last_llm_usage()
         try:
             await consume_roza_tokens(authorization, text_in, reply or "")

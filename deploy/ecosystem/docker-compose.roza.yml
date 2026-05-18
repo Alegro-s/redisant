@@ -1,22 +1,43 @@
 name: roza-stack
 
 services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: roza-ollama
+    restart: unless-stopped
+    volumes:
+      - roza_ollama_data:/root/.ollama
+    networks:
+      - waypoint_net
+
   roza-api:
     container_name: local-roza-api
     build:
       context: ../../roza
       dockerfile: Dockerfile
     restart: unless-stopped
+    depends_on:
+      - ollama
+    env_file:
+      - /opt/waypoint/smtp.env
     environment:
-      ROZA_CONFIG: /app/config.yaml
-      ROZA_AUTH_URL: http://waypoint-auth-api:8090
-      ROZA_PLATFORM_INTROSPECT: http://waypoint-auth-api:8090/auth/introspect
+      ROZA_CONFIG: /app/config.production.yaml
+      ROZA_AUTH_API_URL: http://waypoint-auth-api:8090
+      ROZA_LLM_BACKEND: ${ROZA_LLM_BACKEND:-ollama}
+      ROZA_OLLAMA_URL: ${ROZA_OLLAMA_URL:-http://ollama:11434}
+      ROZA_MODEL: ${ROZA_MODEL:-qwen2.5:3b}
+      ROZA_ALLOW_GUEST: ${ROZA_ALLOW_GUEST:-1}
     volumes:
-      - ../../roza/config.yaml:/app/config.yaml:ro
+      - ../../roza/config.production.yaml:/app/config.production.yaml:ro
+      - roza_api_data:/app/data
     ports:
       - '127.0.0.1:8765:8765'
     networks:
       - waypoint_net
+
+volumes:
+  roza_ollama_data:
+  roza_api_data:
 
 networks:
   waypoint_net:

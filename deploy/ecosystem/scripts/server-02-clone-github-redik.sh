@@ -94,7 +94,16 @@ for i in $(seq 1 40); do
 done
 
 docker compose -f docker-compose.apis.yml --env-file "$DEPLOY_ROOT/smtp.env" up -d --build --pull never
-docker compose -f docker-compose.roza.yml up -d --build --pull never 2>/dev/null || true
+if [[ -f docker-compose.roza.yml ]]; then
+  docker compose -f docker-compose.roza.yml up -d --build --pull never 2>/dev/null || true
+  if docker ps --format '{{.Names}}' | grep -qx roza-ollama; then
+    if ! docker exec roza-ollama ollama list 2>/dev/null | grep -q "${ROZA_MODEL:-qwen2.5:3b}"; then
+      echo "==> Roza: загрузка модели Ollama (первый раз может занять несколько минут)…"
+      docker exec roza-ollama ollama pull "${ROZA_MODEL:-qwen2.5:3b}" 2>/dev/null || \
+        echo "WARN: ollama pull не выполнен — запустите: bash deploy/ecosystem/scripts/roza-ollama-pull.sh"
+    fi
+  fi
+fi
 
 echo "==> Build frontends (paths inside monorepo)"
 build_vite() {
