@@ -48,12 +48,16 @@ export function RozaChat({
       const res = await rozaChat(q, sessionId);
       if (res.sessionId) setSessionId(res.sessionId);
       return res.reply;
-    } catch {
+    } catch (err) {
       if (import.meta.env.DEV) {
         await new Promise((r) => setTimeout(r, rozaTypingDelayMs()));
         return rozaDemoReply(q);
       }
-      return 'Сервис временно недоступен. Попробуйте позже или используйте приложение Roza для Windows.';
+      const msg = err instanceof Error ? err.message : '';
+      if (msg && !/failed to fetch|network/i.test(msg)) {
+        return msg.length > 200 ? 'Не удалось получить ответ. Попробуйте позже.' : msg;
+      }
+      return 'Сервис Roza AI сейчас недоступен. Попробуйте через минуту или откройте приложение Roza для Windows.';
     }
   }
 

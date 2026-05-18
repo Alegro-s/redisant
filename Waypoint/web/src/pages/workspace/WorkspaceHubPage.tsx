@@ -26,8 +26,8 @@ export const WorkspaceHubPage: React.FC = () => {
           Рабочий стол
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 560, lineHeight: 1.6 }}>
-          Облако Metric — метрики, привязка Desktop и API. Локальные проекты, Docker и терминал остаются в приложении
-          Waypoint Desktop.
+          Облако Metric — базы данных, серверы и API. Метрики и привязка Desktop — здесь; локальные проекты и Docker — в
+          приложении Waypoint Desktop.
         </Typography>
       </Paper>
 

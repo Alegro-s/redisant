@@ -11,9 +11,20 @@ function authHeaders(token?: string) {
   return h;
 }
 
+function mapAuthErrorMessage(raw: string): string {
+  if (raw === 'Email or nickname already taken') {
+    return 'Этот email или ник уже занят. Если вы уже регистрировались — войдите.';
+  }
+  if (raw.startsWith('Invalid login or password')) {
+    return 'Неверный email или пароль.';
+  }
+  return raw;
+}
+
 async function parseError(res: Response): Promise<string> {
   const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
-  return data.error ?? data.message ?? `Ошибка ${res.status}`;
+  const raw = data.error ?? data.message ?? `Ошибка ${res.status}`;
+  return mapAuthErrorMessage(raw);
 }
 
 export type RozaQuota = {

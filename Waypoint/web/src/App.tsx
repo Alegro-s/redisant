@@ -392,7 +392,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard/overview" replace />} />
+        <Route index element={<Navigate to="/dashboard/database" replace />} />
         <Route path="business" element={<WaypointBusinessCatalogPage />} />
         <Route path="developers" element={<WaypointDevelopersCatalogPage />} />
         <Route path="assistant" element={<WaypointAssistantPage />} />

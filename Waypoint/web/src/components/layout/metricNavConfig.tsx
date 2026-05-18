@@ -30,7 +30,13 @@ export const metricPrimarySections: MetricNavSection[] = [
     title: 'Облако',
     items: [
       { text: 'Рабочий стол', icon: <HomeWork />, path: '/dashboard', secondary: 'Быстрый доступ' },
-      { text: 'Обзор', icon: <Dashboard />, path: '/dashboard/overview', secondary: 'Сводка и графики' },
+      {
+        text: 'База данных',
+        icon: <Storage />,
+        path: '/dashboard/database',
+        requiresServer: true,
+        secondary: 'Серверы · таблицы · SQL · API',
+      },
       {
         text: 'Метрики',
         icon: <QueryStats />,
@@ -43,14 +49,8 @@ export const metricPrimarySections: MetricNavSection[] = [
         path: '/dashboard/settings/devices',
         secondary: 'Привязка ПК · синхронизация',
       },
+      { text: 'Обзор', icon: <Dashboard />, path: '/dashboard/overview', secondary: 'Сводка и графики' },
       { text: 'Помощник', icon: <SmartToy />, path: '/dashboard/business/ai', secondary: 'Вопросы по данным' },
-      {
-        text: 'База данных',
-        icon: <Storage />,
-        path: '/dashboard/database',
-        requiresServer: true,
-        secondary: 'Таблицы · SQL · ER · API',
-      },
     ],
   },
   {
@@ -152,10 +152,10 @@ export type HubZone = {
 
 export const hubZones: HubZone[] = [
   {
-    title: 'Обзор',
-    description: 'Главные показатели и состояние сервисов.',
-    to: '/dashboard/overview',
-    icon: <Dashboard sx={{ fontSize: 28 }} />,
+    title: 'База данных',
+    description: 'Подпроекты, таблицы, SQL-терминал, хранилище и API.',
+    to: '/dashboard/database',
+    icon: <Storage sx={{ fontSize: 28 }} />,
   },
   {
     title: 'Метрики',
@@ -171,16 +171,16 @@ export const hubZones: HubZone[] = [
     badge: 'В приложении — проекты, Docker, терминал',
   },
   {
+    title: 'Обзор',
+    description: 'Главные показатели и состояние сервисов.',
+    to: '/dashboard/overview',
+    icon: <Dashboard sx={{ fontSize: 28 }} />,
+  },
+  {
     title: 'Помощник',
     description: 'Вопросы по метрикам и операциям в облаке.',
     to: '/dashboard/business/ai',
     icon: <SmartToy sx={{ fontSize: 28 }} />,
-  },
-  {
-    title: 'База данных',
-    description: 'Таблицы, SQL-терминал, ER-схема, API.',
-    to: '/dashboard/database',
-    icon: <Storage sx={{ fontSize: 28 }} />,
   },
   {
     title: 'API и ключи',

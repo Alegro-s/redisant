@@ -515,17 +515,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 _profileSection(
                   context,
-                  title: 'Сервер API',
+                  title: 'Сервер Lynx',
                   subtitle:
-                      'Базовый URL для клиента. Ключи метрик и ingest — в веб-консоли WaypointMetrik.',
+                      'Адрес Lynx Hub (например lynx-hub.ru). Вход и ядро подключаются автоматически.',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextField(
                         controller: _serverUrlController,
                         decoration: const InputDecoration(
-                          labelText: 'Базовый URL',
-                          hintText: 'http://127.0.0.1:8080',
+                          labelText: 'Сервер Lynx',
+                          hintText: 'lynx-hub.ru',
                         ),
                       ),
                       const SizedBox(height: 12),

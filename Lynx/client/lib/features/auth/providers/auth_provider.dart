@@ -13,21 +13,16 @@ String? _apiErrorRaw(dynamic data) {
 }
 
 String _dioConnectionFallback(DioException e) {
-  final base = e.requestOptions.baseUrl;
-  final raw = e.message?.trim();
-  final tech = (raw != null && raw.isNotEmpty) ? ' Тех.детали: $raw' : '';
   switch (e.type) {
     case DioExceptionType.connectionTimeout:
     case DioExceptionType.sendTimeout:
     case DioExceptionType.receiveTimeout:
     case DioExceptionType.connectionError:
-      return 'Нет ответа от $base (сеть или сервер недоступен). Проверьте URL в профиле '
-          '(должен быть API, например http://IP:8080, не главная страница сайта), фаервол и VPN. '
-          'Обновите приложение: для HTTP к IP на Android включён доступ без TLS.$tech';
+      return 'Нет связи с сервером Lynx. Проверьте интернет и настройки сервера в профиле.';
     case DioExceptionType.badCertificate:
-      return 'Ошибка сертификата при подключении к $base. Проверьте HTTPS/дату на устройстве.$tech';
+      return 'Не удалось установить защищённое соединение. Проверьте дату и время на устройстве.';
     default:
-      return 'Нет связи с сервером. Проверьте URL API в профиле и сеть. Сейчас: $base.$tech';
+      return 'Нет связи с сервером. Попробуйте позже.';
   }
 }
 
@@ -64,7 +59,7 @@ String? _tokenFromResponse(dynamic data) {
 
 String _normalizeApiBase(String value) {
   var trimmed = value.trim();
-  if (trimmed.isEmpty) return '${AuthProvider.defaultApiBase}/';
+  if (trimmed.isEmpty) return '${AuthProvider.defaultServerHost}/';
   if (!trimmed.contains('://')) {
     trimmed = 'https://$trimmed';
   }
@@ -72,14 +67,16 @@ String _normalizeApiBase(String value) {
 }
 
 class AuthProvider extends ChangeNotifier {
-  static const String _prefsApiBase = 'api_base_url';
+  static const String _prefsServerHost = 'lynx_server_host';
   static const String _webTokenKey = 'auth_token_web_backup';
   static const String _webIngestKey = 'ingest_api_key_web_backup';
-  static const String defaultApiBase = 'https://api.lynx-cloud.ru';
+  /// Продакшен: один домен Hub, вход — /auth, API Lynx — /lynx
+  static const String defaultServerHost = 'https://lynx-hub.ru';
 
   static const String clientRealm = 'nexus';
 
-  final Dio _dio;
+  final Dio _authDio;
+  final Dio _apiDio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   String? _token;
@@ -92,29 +89,74 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _token != null && _token!.isNotEmpty;
   bool get bootstrapped => _bootstrapped;
   String? get ingestApiKey => _ingestApiKey;
-  String get dioBaseUrl => _dio.options.baseUrl;
-  Dio get http => _dio;
+  String get dioBaseUrl => _apiDio.options.baseUrl;
+  Dio get http => _apiDio;
+
+  static String _authBaseFromHost(String host) {
+    var h = host.trim().replaceAll(RegExp(r'/$'), '');
+    if (h.endsWith('/lynx')) h = h.substring(0, h.length - 5);
+    if (h.endsWith('/auth')) h = h.substring(0, h.length - 5);
+    return _normalizeApiBase('$h/auth');
+  }
+
+  static String _apiBaseFromHost(String host) {
+    var h = host.trim().replaceAll(RegExp(r'/$'), '');
+    if (h.endsWith('/auth')) h = h.substring(0, h.length - 5);
+    if (h.endsWith('/lynx')) h = h.substring(0, h.length - 5);
+    return _normalizeApiBase('$h/lynx');
+  }
+
+  static String _sanitizeServerHost(String value) {
+    var t = value.trim();
+    if (t.isEmpty) return defaultServerHost;
+    if (!t.contains('://')) t = 'https://$t';
+    t = t.replaceAll(RegExp(r'/$'), '');
+    const legacy = {
+      'https://api.lynx-cloud.ru',
+      'http://api.lynx-cloud.ru',
+      'https://lynx-cloud.ru',
+      'http://lynx-cloud.ru',
+    };
+    if (legacy.contains(t)) return defaultServerHost;
+    return t;
+  }
+
+  void _applyServerHost(String host) {
+    final h = _sanitizeServerHost(host);
+    _authDio.options.baseUrl = _authBaseFromHost(h);
+    _apiDio.options.baseUrl = _apiBaseFromHost(h);
+  }
 
   AuthProvider()
-      : _dio = Dio(
+      : _authDio = Dio(
           BaseOptions(
-            baseUrl: _normalizeApiBase(defaultApiBase),
+            baseUrl: _authBaseFromHost(defaultServerHost),
+            connectTimeout: const Duration(seconds: 25),
+            receiveTimeout: const Duration(seconds: 45),
+            sendTimeout: const Duration(seconds: 45),
+          ),
+        ),
+        _apiDio = Dio(
+          BaseOptions(
+            baseUrl: _apiBaseFromHost(defaultServerHost),
             connectTimeout: const Duration(seconds: 25),
             receiveTimeout: const Duration(seconds: 45),
             sendTimeout: const Duration(seconds: 45),
           ),
         ) {
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          options.headers['X-Client-Realm'] = clientRealm;
-          if (_token != null && _token!.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $_token';
-          }
-          return handler.next(options);
-        },
-      ),
-    );
+    for (final dio in [_authDio, _apiDio]) {
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            options.headers['X-Client-Realm'] = clientRealm;
+            if (_token != null && _token!.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $_token';
+            }
+            return handler.next(options);
+          },
+        ),
+      );
+    }
     _init();
   }
 
@@ -130,24 +172,11 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _init() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString(_prefsApiBase);
+      final saved = prefs.getString(_prefsServerHost) ?? prefs.getString('api_base_url');
       if (saved != null && saved.trim().isNotEmpty) {
-        var base = saved.trim().replaceAll(RegExp(r'/$'), '');
-        final legacyRoots = {
-          'https://metrika-waypoint.ru',
-          'http://metrika-waypoint.ru',
-          'https://metrika-waypoint.ru/api',
-          'http://metrika-waypoint.ru/api',
-          'https://lynx-cloud.ru',
-          'http://lynx-cloud.ru',
-          'https://www.lynx-cloud.ru',
-          'http://www.lynx-cloud.ru',
-        };
-        if (legacyRoots.contains(base)) {
-          base = defaultApiBase;
-          await prefs.setString(_prefsApiBase, base);
-        }
-        _dio.options.baseUrl = _normalizeApiBase(base);
+        final host = _sanitizeServerHost(saved);
+        _applyServerHost(host);
+        await prefs.setString(_prefsServerHost, host);
       }
 
       String? tok = await _storage.read(key: 'token');
@@ -182,11 +211,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> setApiBaseUrl(String url) async {
-    var u = url.trim().replaceAll(RegExp(r'/$'), '');
-    if (u.isEmpty) u = defaultApiBase.replaceAll(RegExp(r'/$'), '');
-    _dio.options.baseUrl = _normalizeApiBase(u);
+    final host = _sanitizeServerHost(url);
+    _applyServerHost(host);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsApiBase, u);
+    await prefs.setString(_prefsServerHost, host);
     notifyListeners();
   }
 
@@ -211,7 +239,7 @@ class AuthProvider extends ChangeNotifier {
   Future<Map<String, dynamic>?> fetchVkBindCode() async {
     if (!isAuthenticated) return null;
     try {
-      final response = await _dio.get<Map<String, dynamic>>('profile/vk-code');
+      final response = await _apiDio.get<Map<String, dynamic>>('profile/vk-code');
       return response.data;
     } catch (e) {
       debugPrint('vk-code: $e');
@@ -228,7 +256,7 @@ class AuthProvider extends ChangeNotifier {
     Map<String, dynamic>? settings,
   }) async {
     try {
-      final response = await _dio.post('register', data: {
+      final response = await _authDio.post('register', data: {
         'email': email.trim(),
         'phone': phone,
         'full_name': fullName,
@@ -269,7 +297,7 @@ class AuthProvider extends ChangeNotifier {
     required String code,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _authDio.post<Map<String, dynamic>>(
         'auth/register/verify',
         data: {
           'email': email.trim().toLowerCase(),
@@ -295,7 +323,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> resendRegistrationEmail(String email) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _authDio.post<Map<String, dynamic>>(
         'auth/register/resend',
         data: {'email': email.trim().toLowerCase()},
       );
@@ -309,7 +337,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> login(String login, String password) async {
     try {
-      final response = await _dio.post('login', data: {
+      final response = await _authDio.post('login', data: {
         'login': login,
         'password': password,
       });
@@ -334,14 +362,14 @@ class AuthProvider extends ChangeNotifier {
       final gate = _gateEmailVerify(e.response?.data);
       if (e.response?.statusCode == 403 && gate != null) return gate;
       final fallback =
-          e.response != null ? 'Нет связи с сервером. Проверьте URL API в профиле и сеть.' : _dioConnectionFallback(e);
+          e.response != null ? 'Нет связи с сервером. Проверьте интернет и настройки в профиле.' : _dioConnectionFallback(e);
       return _friendlyAuthError(e.response?.data, fallback: fallback);
     }
   }
 
   Future<(List<String>, String?)> loginOtpPreview(String login, String password) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _authDio.post<Map<String, dynamic>>(
         'auth/login/challenge-preview',
         data: {'login': login.trim(), 'password': password},
       );
@@ -370,7 +398,7 @@ class AuthProvider extends ChangeNotifier {
     required String channel,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _authDio.post<Map<String, dynamic>>(
         'auth/login/challenge',
         data: {
           'login': login.trim(),
@@ -396,7 +424,7 @@ class AuthProvider extends ChangeNotifier {
     required String sessionToken,
   }) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _authDio.get<Map<String, dynamic>>(
         'auth/challenge/nexus-code',
         queryParameters: {'challenge_id': challengeId, 'session_token': sessionToken},
       );
@@ -416,7 +444,7 @@ class AuthProvider extends ChangeNotifier {
     required String code,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _authDio.post<Map<String, dynamic>>(
         'auth/login/verify',
         data: {
           'challenge_id': challengeId,
@@ -446,7 +474,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> fetchProfile() async {
     if (!isAuthenticated) return;
     try {
-      final response = await _dio.get('profile');
+      final response = await _apiDio.get('profile');
       if (response.statusCode == 200 && response.data != null) {
         final raw = response.data;
         if (raw is! Map) {
@@ -471,7 +499,7 @@ class AuthProvider extends ChangeNotifier {
       return 'Некорректная область';
     }
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _authDio.post<Map<String, dynamic>>(
         'auth/realms/link',
         data: {'realm': r, 'password': password},
       );
@@ -503,7 +531,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     if (!isAuthenticated) return;
     try {
-      final response = await _dio.put(
+      final response = await _apiDio.put(
         'profile',
         data: {
           'full_name': ?fullName,
@@ -534,7 +562,7 @@ class AuthProvider extends ChangeNotifier {
         'file': MultipartFile.fromBytes(bytes, filename: fileName),
       });
 
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _apiDio.post<Map<String, dynamic>>(
         'profile/avatar',
         data: formData,
       );

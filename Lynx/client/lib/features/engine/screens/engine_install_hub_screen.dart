@@ -40,7 +40,7 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
       if (!mounted) return;
       setState(() {
         _manifest = m;
-        _loadErr = m == null && !kIsWeb ? 'Не удалось загрузить /engine/manifest (сеть или пустая политика на сервере).' : null;
+        _loadErr = m == null && !kIsWeb ? 'Не удалось получить список версий ядра. Проверьте интернет и вход в Lynx.' : null;
         _installedPath = p;
         _installedVer = v;
         _loading = false;

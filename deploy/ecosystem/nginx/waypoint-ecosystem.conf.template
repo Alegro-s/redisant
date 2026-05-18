@@ -71,6 +71,26 @@ server {
     include /etc/nginx/waypoint-ecosystem/lynx-hub-locations.conf;
 }
 
+# --- Lynx API (лаунчер, ядро) ---
+server {
+    listen 80;
+    server_name api.lynx-cloud.ru;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.lynx-cloud.ru;
+    include /etc/nginx/waypoint-ecosystem/waypoint-ssl-params.conf;
+    include /etc/nginx/waypoint-ecosystem/api-lynx-locations.conf;
+}
+
 # --- Waypoint Metric ---
 server {
     listen 80;

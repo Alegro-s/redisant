@@ -31,6 +31,8 @@ interface AuthContextType {
   can: (permission: Permission) => boolean;
 }
 
+const AUTH_TOKEN_KEY = 'metric_auth_token';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -83,23 +85,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authApi.get<Record<string, unknown>>('/profile');
       setUser(mapProfile(response.data));
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
+    } catch {
       setToken(null);
       setUser(null);
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      applyBearer(null);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadProfile();
+    const stored = sessionStorage.getItem(AUTH_TOKEN_KEY);
+    if (stored && stored.length > 0) {
+      setToken(stored);
+      applyBearer(stored);
+      void loadProfile();
+      return;
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (loginStr: string, password: string) => {
     const response = await authApi.post<{ token: string }>('/login', { login: loginStr, password });
     setToken(response.data.token);
     applyBearer(response.data.token);
+    sessionStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
     const userResponse = await authApi.get<Record<string, unknown>>('/profile');
     setUser(mapProfile(userResponse.data));
   };
@@ -136,6 +147,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(null);
         applyBearer(null);
         setUser(null);
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
       });
   };
 

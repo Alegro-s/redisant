@@ -46,7 +46,7 @@ Future<bool> ensureStudioEngineForLocalProject(
       if (context.mounted) nav.pop();
       return true;
     }
-    err = 'Сервер не вернул артефакт для этой ОС или нет сети (см. /engine/manifest).';
+    err = 'Сервер не вернул ядро для вашей системы. Проверьте интернет и войдите в аккаунт Lynx.';
   } catch (e) {
     err = e.toString();
   }
@@ -60,7 +60,7 @@ Future<bool> ensureStudioEngineForLocalProject(
       title: const Text('Ядро не установлено'),
       content: Text(
         err ??
-            'Проверьте URL API в профиле. Для офлайн-режима укажите кэш с engine.dll / libengine.so.',
+            'Откройте «Центр ядра» в списке проектов и установите ядро. Нужен вход в Lynx и доступ в интернет.',
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),

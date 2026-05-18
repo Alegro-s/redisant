@@ -667,8 +667,14 @@ async fn register(
 
     match existing {
         Ok(Some(_)) => {
+            let realm = client_realm_from_header(&http_req).unwrap_or("metric");
+            let msg = match realm {
+                "roza" => "Этот email или ник уже занят в Roza AI. Войдите, если аккаунт уже создан.",
+                "nexus" => "Этот email или ник уже занят в Lynx. Войдите в лаунчер или восстановите доступ.",
+                _ => "Этот email или ник уже занят. Попробуйте войти.",
+            };
             return HttpResponse::BadRequest().json(ErrorResponse {
-                error: "Email or nickname already taken".into(),
+                error: msg.into(),
             });
         }
         Err(e) => {
