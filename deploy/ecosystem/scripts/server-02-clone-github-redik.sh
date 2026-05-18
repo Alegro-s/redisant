@@ -164,6 +164,14 @@ EOF
   npm run build
   mkdir -p /srv/roza/web/roza
   rsync -a --delete dist/ /srv/roza/web/roza/
+  if ! ls /srv/roza/web/roza/assets/*.js >/dev/null 2>&1; then
+    echo "ERROR: Roza assets missing under /srv/roza/web/roza/assets/" >&2
+    exit 1
+  fi
+  if ! grep -q '/roza/assets/' /srv/roza/web/roza/index.html; then
+    echo "ERROR: Roza index.html missing /roza/assets/ prefix (rebuild with VITE_BASE=/roza/)" >&2
+    exit 1
+  fi
 fi
 
 echo "==> Lynx Cloud (Next.js)"

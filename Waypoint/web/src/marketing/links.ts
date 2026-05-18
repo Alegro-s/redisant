@@ -48,16 +48,12 @@ export function clubPath(path: string): string {
   return `${clubOrigin()}${p}`;
 }
 
-/** Витрина Roza на Club — как `/tspu`. */
+/** Витрина Roza (Google/Apple hub) на `/roza/`. */
 export function rozaPath(): string {
-  if (typeof window !== 'undefined') {
-    const h = window.location.hostname.toLowerCase();
-    if (h === 'waypointclub.ru' || h === 'www.waypointclub.ru') return '/roza';
-  }
-  return `${clubOrigin()}/roza`;
+  return rozaAppPath();
 }
 
-/** SPA Roza на `/roza/...` (чат, ОС, кабинет). */
+/** SPA Roza: `/roza/`, `/roza/ai`, `/roza/os`, … */
 export function rozaAppPath(subpath = ''): string {
   const tail = subpath.replace(/^\//, '');
   if (typeof window !== 'undefined') {

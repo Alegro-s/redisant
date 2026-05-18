@@ -45,10 +45,9 @@ const productCatalog: CatalogItem[] = [
   },
   {
     name: 'Roza',
-    desc: 'Подсерия ИИ: ассистент и ОС',
+    desc: 'Roza AI и Roza OS — подсерия Waypoint',
     doc: '/club/docs/roza-ai',
-    internal: true,
-    href: '/roza',
+    site: '/roza/',
   },
   {
     name: 'Roza AI',
@@ -107,13 +106,12 @@ const products = [
     site: LINKS.lynxCloud,
   },
   {
-    span: 'club-span-4',
+    span: 'club-span-8',
     tag: 'ИИ',
     title: 'Roza',
-    body: 'Подсерия Waypoint: витрина на Club, приложения по /roza/…',
+    body: 'Витрина подсерии: Roza AI и Roza OS — документы, ПК, обучение.',
     doc: '/club/docs/roza-ai',
-    internal: true as const,
-    href: '/roza',
+    site: '/roza/',
   },
   {
     span: 'club-span-4',

@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Roza">
-  <rect x="4" y="4" width="56" height="56" rx="14" fill="#2a1520" stroke="#e879a9" stroke-width="1.5"/>
-  <circle cx="32" cy="34" r="10" fill="#9d174d" opacity="0.5"/>
-  <path d="M32 18 C38 28 42 34 32 46 C22 34 26 28 32 18 Z" fill="#f9a8d4"/>
-</svg>

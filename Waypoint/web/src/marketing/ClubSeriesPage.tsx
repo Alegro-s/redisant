@@ -62,7 +62,7 @@ export function ClubSeriesPage() {
           <h2>Подсерия Roza</h2>
           <p>
             Roza AI и Roza OS — ассистент и дистрибутив внутри экосистемы Waypoint.{' '}
-            <Link to={rozaPath()}>Roza</Link>
+            <a href={rozaPath()}>Roza</a>
             {' · '}
             <a href={rozaAppPath('ai')}>Roza AI</a>
             {' · '}

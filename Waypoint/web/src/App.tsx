@@ -24,7 +24,6 @@ import VerifyEmail from './pages/VerifyEmail';
 import NexusAuth from './pages/NexusAuth';
 import { PublicLanding } from './marketing/PublicLanding';
 import { TspuProductPage } from './marketing/TspuProductPage';
-import { RozaClubPage } from './marketing/RozaClubPage';
 import { ClubDocsPage } from './marketing/ClubDocsPage';
 import { DesktopLandingPage } from './marketing/DesktopLandingPage';
 import { DesktopDocsPage } from './marketing/DesktopDocsPage';
@@ -135,7 +134,6 @@ function AppRoutes() {
       <Route path="/docs" element={<Docs />} />
       <Route path="/platform" element={<PlatformPage />} />
       <Route path="/tspu" element={<TspuProductPage />} />
-      <Route path="/roza" element={<RozaClubPage />} />
       <Route path="/club/docs/:product" element={<ClubDocsPage />} />
       <Route path="/desktop" element={<DesktopLandingPage />} />
       <Route path="/desktop/docs" element={<DesktopDocsPage />} />
