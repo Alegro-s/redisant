@@ -29,10 +29,6 @@ export function RozaAiPage() {
         <Link to="/account">Личный кабинет</Link>
         <Link to="/os">Roza OS</Link>
         <Link to="/">На главную</Link>
-        <Link to="/os">Roza OS</Link>
-        <Link to="/">На главную</Link>
-        <Link to="/os">Roza OS</Link>
-        <Link to="/">На главную</Link>
       </p>
     </main>
   );

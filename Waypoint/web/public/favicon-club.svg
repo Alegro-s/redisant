@@ -1,10 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Waypoint Club">
-  <defs>
-    <linearGradient id="c_tile" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3d2e14"/>
-      <stop offset="100%" stop-color="#0d0d12"/>
-    </linearGradient>
-  </defs>
-  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#c_tile)" stroke="#c9a227" stroke-width="1.5"/>
-  <text x="32" y="40" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#f5e6b8">W</text>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#06080d" stroke="#00e5c0" stroke-width="1.5"/>
+  <text x="32" y="42" text-anchor="middle" font-family="Syne,system-ui,sans-serif" font-size="28" font-weight="800" fill="#f8fafc">W</text>
+  <rect x="18" y="46" width="28" height="3" rx="1.5" fill="#00e5c0"/>
 </svg>

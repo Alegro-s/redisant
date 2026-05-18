@@ -33,7 +33,7 @@ const features = [
   },
   {
     title: 'Экосистема',
-    body: 'Club, Lynx Hub и Lynx Cloud — отдельные продукты со своими сайтами и кабинетами.',
+    body: 'Объединяется с облачной Waypoint Metric: общий аккаунт, ingest метрик и синхронизация workspace по вашему выбору.',
   },
 ];
 
@@ -51,7 +51,7 @@ export function DesktopLandingPage() {
       <header className="metric-nav">
         <Link to={desktopHome} className="metric-brand">
           <strong>Waypoint Desktop</strong>
-          <span>локальное приложение · не облако</span>
+          <span>локальное приложение</span>
         </Link>
         <nav className="metric-nav-links">
           <Link to="/desktop/docs">Документация</Link>
