@@ -13,7 +13,24 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => config);
+const BAAS_ENV_STORAGE_KEY = 'waypoint-baas-env-id';
+const BAAS_ENV_HEADER = 'X-Waypoint-Baas-Env';
+
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const url = String(config.url ?? '');
+    if (url.includes('/baas/') || url.includes('/waypointmetric/v1/baas')) {
+      const envId = localStorage.getItem(BAAS_ENV_STORAGE_KEY);
+      if (envId) {
+        config.headers = config.headers ?? {};
+        (config.headers as Record<string, string>)[BAAS_ENV_HEADER] = envId;
+      }
+    }
+  }
+  return config;
+});
+
+export { BAAS_ENV_STORAGE_KEY, BAAS_ENV_HEADER };
 
 api.interceptors.response.use(
   (response) => response,

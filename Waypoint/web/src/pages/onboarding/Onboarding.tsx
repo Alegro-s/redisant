@@ -109,7 +109,8 @@ export const Onboarding: React.FC = () => {
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Готовый хост для PostgreSQL, BaaS и ingest.
+              Готовый хост для PostgreSQL, BaaS и ingest. В кабинете можно создать несколько подпроектов — у каждого своя
+              изолированная БД.
             </Typography>
             <Button
               variant="contained"
@@ -135,6 +136,9 @@ export const Onboarding: React.FC = () => {
                 2b. Свой сервер
               </Typography>
             </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              Свой VPS или домашний хост: агент отдаёт ER-схему, в облаке — отдельные БД на каждый подпроект.
+            </Typography>
             <TextField
               fullWidth
               size="small"

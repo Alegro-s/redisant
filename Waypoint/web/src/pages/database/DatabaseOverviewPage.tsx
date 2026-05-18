@@ -22,7 +22,16 @@ const LINKS = [
 ];
 
 export const DatabaseOverviewPage: React.FC = () => {
-  const { schemaName, tables, newTable, setNewTable, onCreateTable, loading, refreshTables } = useBaasConsole();
+  const {
+    schemaName,
+    tables,
+    newTable,
+    setNewTable,
+    onCreateTable,
+    loading,
+    refreshTables,
+    activeEnvironment,
+  } = useBaasConsole();
 
   return (
     <Stack spacing={3}>
@@ -32,7 +41,10 @@ export const DatabaseOverviewPage: React.FC = () => {
             Создать таблицу
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Быстрый старт: таблица с <code>id</code>, <code>data jsonb</code> и <code>created_at</code>. Дальше — REST или SQL.
+            {activeEnvironment
+              ? `Активный подпроект: ${activeEnvironment.name}. `
+              : ''}
+            Быстрый старт: таблица с <code>id</code>, <code>data jsonb</code> и <code>created_at</code>.
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
             <TextField

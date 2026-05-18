@@ -5,6 +5,7 @@ import { PageSubNav } from '../../components/layout/PageSubNav';
 import { useWorkspace } from '../../app/contexts/WorkspaceContext';
 import { BaasConsoleProvider, useBaasConsole } from '../baas/BaasConsoleContext';
 import { DATABASE_HUB_NAV } from './databaseHubNav';
+import { DatabaseEnvironmentBar } from './DatabaseEnvironmentBar';
 
 function DatabaseHubInner() {
   const { workspace } = useWorkspace();
@@ -50,6 +51,7 @@ function DatabaseHubInner() {
         </Typography>
       ) : null}
 
+      <DatabaseEnvironmentBar />
       <PageSubNav items={[...DATABASE_HUB_NAV]} />
       <Outlet />
     </Box>

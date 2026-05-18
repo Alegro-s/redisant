@@ -119,6 +119,12 @@ macro_rules! po_waypoint_routes {
             )
             .route("/me/db/query", web::post().to(user_db_query))
             .route("/me/baas/schema", web::get().to(baas::get_schema))
+            .route("/me/baas/environments", web::get().to(baas::list_environments))
+            .route("/me/baas/environments", web::post().to(baas::create_environment))
+            .route(
+                "/me/baas/environments/{id}",
+                web::delete().to(baas::delete_environment),
+            )
             .route("/me/baas/bootstrap", web::get().to(baas::bootstrap))
             .route("/me/baas/sql", web::post().to(baas::post_sql))
             .route("/me/baas/sql/param", web::post().to(baas::post_sql_param))

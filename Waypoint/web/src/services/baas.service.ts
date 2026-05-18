@@ -21,6 +21,28 @@ export interface BaasBootstrapResponse {
   buckets: BaasBucket[];
 }
 
+export type BaasEnvironment = {
+  id: string;
+  name: string;
+  slug: string;
+  schema_name: string;
+  is_default: boolean;
+};
+
+export async function listBaasEnvironments(): Promise<BaasEnvironment[]> {
+  const { data } = await api.get<{ environments: BaasEnvironment[] }>('/me/baas/environments');
+  return data.environments ?? [];
+}
+
+export async function createBaasEnvironment(name: string, slug?: string): Promise<BaasEnvironment> {
+  const { data } = await api.post<BaasEnvironment>('/me/baas/environments', { name, slug });
+  return data;
+}
+
+export async function deleteBaasEnvironment(id: string): Promise<void> {
+  await api.delete(`/me/baas/environments/${id}`);
+}
+
 
 export async function fetchBaasBootstrap(): Promise<BaasBootstrapResponse> {
   const { data } = await api.get<BaasBootstrapResponse>('/me/baas/bootstrap');

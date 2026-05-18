@@ -1,22 +1,34 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import {
+  createBaasEnvironment,
   createBaasTable,
   createBucket,
+  deleteBaasEnvironment,
   deleteBaasRow,
   downloadBaasObject,
   fetchBaasBootstrap,
   insertBaasRow,
+  listBaasEnvironments,
   listBaasRestRows,
   listBaasTables,
   listBuckets,
   runBaasSql,
   uploadBaasObject,
+  type BaasEnvironment,
 } from '../../services/baas.service';
+import { BAAS_ENV_STORAGE_KEY } from '../../services/api';
 import { deepseekChat } from '../../services/waypoint-chat.service';
 import { useNotification } from '../../app/hooks/useNotification';
 
 export type BaasConsoleContextValue = {
   loading: boolean;
+  environments: BaasEnvironment[];
+  activeEnvironmentId: string | null;
+  activeEnvironment: BaasEnvironment | null;
+  setActiveEnvironmentId: (id: string) => void;
+  createEnvironment: (name: string) => Promise<void>;
+  deleteEnvironment: (id: string) => Promise<void>;
+  reloadEnvironments: () => Promise<void>;
   schemaName: string | null;
   sql: string;
   setSql: (v: string) => void;
@@ -72,6 +84,20 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [objectKey, setObjectKey] = useState('demo.txt');
   const [chatIn, setChatIn] = useState('Кратко опиши, что такое JSONB в PostgreSQL.');
   const [chatOut, setChatOut] = useState('');
+  const [environments, setEnvironments] = useState<BaasEnvironment[]>([]);
+  const [activeEnvironmentId, setActiveEnvironmentIdState] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(BAAS_ENV_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
+
+  const activeEnvironment =
+    environments.find((e) => e.id === activeEnvironmentId) ??
+    environments.find((e) => e.is_default) ??
+    environments[0] ??
+    null;
 
   const loadBaasBootstrap = useCallback(async () => {
     setLoading(true);
@@ -112,9 +138,79 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [showError]);
 
+  const reloadEnvironments = useCallback(async () => {
+    try {
+      const list = await listBaasEnvironments();
+      setEnvironments(list);
+      const stored = localStorage.getItem(BAAS_ENV_STORAGE_KEY);
+      const pick =
+        (stored && list.some((e) => e.id === stored) ? stored : null) ??
+        list.find((e) => e.is_default)?.id ??
+        list[0]?.id ??
+        null;
+      if (pick) {
+        setActiveEnvironmentIdState(pick);
+        localStorage.setItem(BAAS_ENV_STORAGE_KEY, pick);
+      }
+    } catch {
+      showError('Не удалось загрузить подпроекты БД');
+    }
+  }, [showError]);
+
+  const setActiveEnvironmentId = useCallback(
+    (id: string) => {
+      setActiveEnvironmentIdState(id);
+      try {
+        localStorage.setItem(BAAS_ENV_STORAGE_KEY, id);
+      } catch {
+        void 0;
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
+    void reloadEnvironments();
+  }, [reloadEnvironments]);
+
+  useEffect(() => {
+    if (!activeEnvironmentId) return;
     void loadBaasBootstrap();
-  }, [loadBaasBootstrap]);
+  }, [activeEnvironmentId, loadBaasBootstrap]);
+
+  const createEnvironment = async (name: string) => {
+    setLoading(true);
+    try {
+      const env = await createBaasEnvironment(name.trim());
+      showSuccess(`Подпроект «${env.name}» создан`);
+      await reloadEnvironments();
+      setActiveEnvironmentId(env.id);
+      await loadBaasBootstrap();
+    } catch {
+      showError('Не удалось создать подпроект');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteEnvironment = async (id: string) => {
+    if (!window.confirm('Удалить подпроект и все его таблицы? Действие необратимо.')) return;
+    setLoading(true);
+    try {
+      await deleteBaasEnvironment(id);
+      showSuccess('Подпроект удалён');
+      if (activeEnvironmentId === id) {
+        localStorage.removeItem(BAAS_ENV_STORAGE_KEY);
+        setActiveEnvironmentIdState(null);
+      }
+      await reloadEnvironments();
+      await loadBaasBootstrap();
+    } catch {
+      showError('Не удалось удалить подпроект');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onRunSql = async () => {
     setLoading(true);
@@ -250,6 +346,13 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const value: BaasConsoleContextValue = {
     loading,
+    environments,
+    activeEnvironmentId,
+    activeEnvironment,
+    setActiveEnvironmentId,
+    createEnvironment,
+    deleteEnvironment,
+    reloadEnvironments,
     schemaName,
     sql,
     setSql,

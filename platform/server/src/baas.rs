@@ -551,7 +551,33 @@ fn baas_allow_write(cfg: &crate::config::RuntimeConfig) -> bool {
     }
 }
 
-async fn ensure_user_schema(pool: &PgPool, user_id: Uuid) -> Result<String, sqlx::Error> {
+const BAAS_ENV_HEADER: &str = "X-Waypoint-Baas-Env";
+
+fn baas_env_id_from_req(req: &HttpRequest) -> Option<Uuid> {
+    req.headers()
+        .get(BAAS_ENV_HEADER)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| Uuid::parse_str(s.trim()).ok())
+}
+
+fn slugify_env_name(name: &str) -> String {
+    let mut s = String::new();
+    for c in name.trim().to_lowercase().chars() {
+        if c.is_ascii_alphanumeric() {
+            s.push(c);
+        } else if (c.is_whitespace() || c == '-' || c == '_') && !s.ends_with('_') && !s.is_empty() {
+            s.push('_');
+        }
+    }
+    let out: String = s.trim_matches('_').chars().take(48).collect();
+    if out.is_empty() {
+        "project".into()
+    } else {
+        out
+    }
+}
+
+async fn legacy_ensure_user_schema_row(pool: &PgPool, user_id: Uuid) -> Result<String, sqlx::Error> {
     let row: Option<(String,)> =
         sqlx::query_as("SELECT schema_name FROM wm_baas_user_schema WHERE user_id = $1")
             .bind(user_id)
@@ -581,6 +607,70 @@ async fn ensure_user_schema(pool: &PgPool, user_id: Uuid) -> Result<String, sqlx
     Ok(name)
 }
 
+async fn ensure_default_environment(pool: &PgPool, user_id: Uuid) -> Result<(Uuid, String), sqlx::Error> {
+    let row: Option<(Uuid, String)> = sqlx::query_as(
+        "SELECT id, schema_name FROM wm_baas_environments WHERE user_id = $1 AND is_default = true LIMIT 1",
+    )
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+    if let Some(r) = row {
+        return Ok(r);
+    }
+    let schema = legacy_ensure_user_schema_row(pool, user_id).await?;
+    let id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO wm_baas_environments (id, user_id, name, slug, schema_name, is_default)
+           VALUES ($1, $2, 'Основной', 'default', $3, true)
+           ON CONFLICT (user_id, slug) DO NOTHING"#,
+    )
+    .bind(id)
+    .bind(user_id)
+    .bind(&schema)
+    .execute(pool)
+    .await?;
+    let row: (Uuid, String) = sqlx::query_as(
+        "SELECT id, schema_name FROM wm_baas_environments WHERE user_id = $1 AND is_default = true LIMIT 1",
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(row)
+}
+
+async fn resolve_baas_schema(
+    pool: &PgPool,
+    user_id: Uuid,
+    env_id: Option<Uuid>,
+) -> Result<String, sqlx::Error> {
+    if let Some(eid) = env_id {
+        let row: Option<(String,)> = sqlx::query_as(
+            "SELECT schema_name FROM wm_baas_environments WHERE id = $1 AND user_id = $2",
+        )
+        .bind(eid)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?;
+        if let Some((schema,)) = row {
+            return Ok(schema);
+        }
+    }
+    let (_, schema) = ensure_default_environment(pool, user_id).await?;
+    Ok(schema)
+}
+
+async fn ensure_user_schema_for_req(
+    pool: &PgPool,
+    user_id: Uuid,
+    req: &HttpRequest,
+) -> Result<String, sqlx::Error> {
+    resolve_baas_schema(pool, user_id, baas_env_id_from_req(req)).await
+}
+
+async fn ensure_user_schema(pool: &PgPool, user_id: Uuid) -> Result<String, sqlx::Error> {
+    resolve_baas_schema(pool, user_id, None).await
+}
+
 fn quote_ident(s: &str) -> String {
     format!("\"{}\"", s.replace('"', "\"\""))
 }
@@ -595,7 +685,7 @@ pub async fn get_schema(state: web::Data<AppState>, req: HttpRequest) -> impl Re
         Ok(u) => u,
         Err(e) => return e,
     };
-    match ensure_user_schema(&state.pool, uid).await {
+    match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(schema) => HttpResponse::Ok().json(json!({ "schema_name": schema })),
         Err(e) => {
             log::error!("baas ensure schema: {}", e);
@@ -638,7 +728,7 @@ pub async fn post_sql(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas schema: {}", e);
@@ -800,7 +890,7 @@ pub async fn post_sql_param(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas schema: {}", e);
@@ -974,7 +1064,7 @@ pub async fn list_tables(state: web::Data<AppState>, req: HttpRequest) -> impl R
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas: {}", e);
@@ -1032,7 +1122,7 @@ pub async fn create_table(
             error: "Invalid table name".into(),
         });
     }
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas: {}", e);
@@ -1090,7 +1180,7 @@ pub async fn rest_list(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas: {}", e);
@@ -1167,7 +1257,7 @@ pub async fn rest_insert(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas: {}", e);
@@ -1235,7 +1325,7 @@ pub async fn rest_update(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas: {}", e);
@@ -1293,7 +1383,7 @@ pub async fn rest_delete(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas: {}", e);
@@ -1346,7 +1436,7 @@ pub async fn buckets_list(state: web::Data<AppState>, req: HttpRequest) -> impl 
         Ok(u) => u,
         Err(e) => return e,
     };
-    let _ = ensure_user_schema(&state.pool, uid).await;
+    let _ = ensure_user_schema_for_req(&state.pool, uid, &req).await;
     let rows: Result<Vec<BucketRow>, _> = sqlx::query_as(
         "SELECT id, name, public_read FROM wm_baas_buckets WHERE user_id = $1 ORDER BY name",
     )
@@ -1374,7 +1464,7 @@ pub async fn bootstrap(state: web::Data<AppState>, req: HttpRequest) -> impl Res
         Ok(u) => u,
         Err(e) => return e,
     };
-    let schema = match ensure_user_schema(&state.pool, uid).await {
+    let schema = match ensure_user_schema_for_req(&state.pool, uid, &req).await {
         Ok(s) => s,
         Err(e) => {
             log::error!("baas bootstrap schema: {}", e);
@@ -1456,7 +1546,7 @@ pub async fn buckets_create(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let _ = ensure_user_schema(&state.pool, uid).await;
+    let _ = ensure_user_schema_for_req(&state.pool, uid, &req).await;
     let row: Result<(Uuid,), _> = sqlx::query_as(
         r#"INSERT INTO wm_baas_buckets (user_id, name, public_read) VALUES ($1, $2, $3)
            ON CONFLICT (user_id, name) DO UPDATE SET public_read = EXCLUDED.public_read
@@ -1519,7 +1609,7 @@ pub async fn object_put(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let _ = ensure_user_schema(&state.pool, uid).await;
+    let _ = ensure_user_schema_for_req(&state.pool, uid, &req).await;
 
     let bucket_id = sqlx::query_as::<_, (Uuid,)>(
         "SELECT id FROM wm_baas_buckets WHERE user_id = $1 AND name = $2",
@@ -1766,4 +1856,193 @@ pub async fn object_get_public(
     };
 
     serve_object_file(&storage_path, &content_type, true).await
+}
+
+#[derive(Serialize, sqlx::FromRow)]
+struct BaasEnvironmentRow {
+    id: Uuid,
+    name: String,
+    slug: String,
+    schema_name: String,
+    is_default: bool,
+}
+
+#[derive(Deserialize)]
+pub struct CreateEnvironmentBody {
+    name: String,
+    #[serde(default)]
+    slug: Option<String>,
+}
+
+pub async fn list_environments(state: web::Data<AppState>, req: HttpRequest) -> impl Responder {
+    if baas_globally_disabled() {
+        return HttpResponse::NotFound().json(ErrorResponse {
+            error: "BaaS module disabled".into(),
+        });
+    }
+    let uid = match auth_uid(&req) {
+        Ok(u) => u,
+        Err(e) => return e,
+    };
+    let _ = match ensure_default_environment(&state.pool, uid).await {
+        Ok(_) => (),
+        Err(e) => {
+            log::error!("baas default env: {}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "database error".into(),
+            });
+        }
+    };
+    match sqlx::query_as::<_, BaasEnvironmentRow>(
+        r#"SELECT id, name, slug, schema_name, is_default
+           FROM wm_baas_environments WHERE user_id = $1 ORDER BY is_default DESC, created_at ASC"#,
+    )
+    .bind(uid)
+    .fetch_all(&state.pool)
+    .await
+    {
+        Ok(rows) => HttpResponse::Ok().json(json!({ "environments": rows })),
+        Err(e) => {
+            log::error!("baas list env: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "database error".into(),
+            })
+        }
+    }
+}
+
+pub async fn create_environment(
+    state: web::Data<AppState>,
+    req: HttpRequest,
+    body: web::Json<CreateEnvironmentBody>,
+) -> impl Responder {
+    if baas_globally_disabled() {
+        return HttpResponse::NotFound().json(ErrorResponse {
+            error: "BaaS module disabled".into(),
+        });
+    }
+    let uid = match auth_uid(&req) {
+        Ok(u) => u,
+        Err(e) => return e,
+    };
+    let name = body.name.trim();
+    if name.is_empty() || name.len() > 120 {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "name required (max 120 chars)".into(),
+        });
+    }
+    let mut slug = body
+        .slug
+        .as_deref()
+        .map(slugify_env_name)
+        .unwrap_or_else(|| slugify_env_name(name));
+    if slug == "default" {
+        slug = format!("{}_{}", slug, &Uuid::new_v4().as_simple().to_string()[..6]);
+    }
+    let user_hex = uid.as_simple().to_string();
+    let schema = format!("wm_u_{user_hex}_{slug}");
+    let id = Uuid::new_v4();
+    let mut tx = match state.pool.begin().await {
+        Ok(t) => t,
+        Err(e) => {
+            log::error!("baas create env tx: {}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "database error".into(),
+            });
+        }
+    };
+    let create = format!(r#"CREATE SCHEMA IF NOT EXISTS "{}""#, schema);
+    if let Err(e) = sqlx::query(&create).execute(&mut *tx).await {
+        log::error!("baas create schema: {}", e);
+        return HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "schema create failed".into(),
+        });
+    }
+    if let Err(e) = sqlx::query(
+        r#"INSERT INTO wm_baas_environments (id, user_id, name, slug, schema_name, is_default)
+           VALUES ($1, $2, $3, $4, $5, false)"#,
+    )
+    .bind(id)
+    .bind(uid)
+    .bind(name)
+    .bind(&slug)
+    .bind(&schema)
+    .execute(&mut *tx)
+    .await
+    {
+        log::error!("baas insert env: {}", e);
+        return HttpResponse::Conflict().json(ErrorResponse {
+            error: "environment slug already exists".into(),
+        });
+    }
+    if let Err(e) = tx.commit().await {
+        log::error!("baas create env commit: {}", e);
+        return HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "database error".into(),
+        });
+    }
+    HttpResponse::Created().json(json!({
+        "id": id,
+        "name": name,
+        "slug": slug,
+        "schema_name": schema,
+        "is_default": false,
+    }))
+}
+
+pub async fn delete_environment(
+    state: web::Data<AppState>,
+    req: HttpRequest,
+    path: web::Path<Uuid>,
+) -> impl Responder {
+    if baas_globally_disabled() {
+        return HttpResponse::NotFound().json(ErrorResponse {
+            error: "BaaS module disabled".into(),
+        });
+    }
+    let uid = match auth_uid(&req) {
+        Ok(u) => u,
+        Err(e) => return e,
+    };
+    let env_id = path.into_inner();
+    let row: Option<(String, bool)> = sqlx::query_as(
+        "SELECT schema_name, is_default FROM wm_baas_environments WHERE id = $1 AND user_id = $2",
+    )
+    .bind(env_id)
+    .bind(uid)
+    .fetch_optional(&state.pool)
+    .await
+    .ok()
+    .flatten();
+    let Some((schema, is_default)) = row else {
+        return HttpResponse::NotFound().json(ErrorResponse {
+            error: "environment not found".into(),
+        });
+    };
+    if is_default {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "cannot delete default environment".into(),
+        });
+    }
+    let drop_sql = format!(r#"DROP SCHEMA IF EXISTS "{}" CASCADE"#, schema.replace('"', "\"\""));
+    if let Err(e) = sqlx::query(&drop_sql).execute(&state.pool).await {
+        log::error!("baas drop schema: {}", e);
+        return HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "drop schema failed".into(),
+        });
+    }
+    match sqlx::query("DELETE FROM wm_baas_environments WHERE id = $1 AND user_id = $2")
+        .bind(env_id)
+        .bind(uid)
+        .execute(&state.pool)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().json(json!({ "deleted": env_id })),
+        Err(e) => {
+            log::error!("baas delete env: {}", e);
+            HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "database error".into(),
+            })
+        }
+    }
 }
