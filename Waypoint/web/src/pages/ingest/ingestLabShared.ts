@@ -20,7 +20,16 @@ export const defaultSimJson = `{
   ]
 }`;
 
+export const ingestDesktopSample = `{
+  "metrics": [
+    { "name": "cpu_percent", "value": 24.5, "tags": { "host": "desktop", "source": "waypoint-desktop" } },
+    { "name": "docker_running", "value": 3, "tags": { "host": "desktop" } }
+  ],
+  "logs": [{ "level": "info", "message": "waypoint desktop heartbeat" }]
+}`;
+
 export const ingestSimSamples: Record<string, string> = {
+  'Шаблон Desktop': ingestDesktopSample,
   'Валидный минимум': `{
   "metrics": [{ "name": "requests_per_s", "value": 120.5 }],
   "logs": [{ "level": "info", "message": "ok" }]

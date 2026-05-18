@@ -1,4 +1,3 @@
-# Устаревший алиас — используйте push-redik-safe.ps1 (без --force по умолчанию).
 param(
     [string]$Token = $env:GITHUB_TOKEN,
     [string]$RepoRoot = "D:\PO",

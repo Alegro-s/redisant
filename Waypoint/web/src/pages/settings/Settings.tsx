@@ -34,6 +34,7 @@ import {
   RadioButtonUnchecked,
   CloudUpload,
 } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 import { useThemeContext } from '../../app/contexts/ThemeContext';
 import { useAuth } from '../../app/contexts/AuthContext';
 import { useNotification } from '../../app/hooks/useNotification';
@@ -176,6 +177,18 @@ export const Settings: React.FC = () => {
           Manage your account and system preferences
         </Typography>
       </Box>
+
+      <Paper sx={{ p: 2, mb: 3, borderRadius: 3 }}>
+        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+          Waypoint Desktop
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          Привязка ПК по коду WD-XXXXXXXX, отзыв API-ключей устройств.
+        </Typography>
+        <Button component={RouterLink} to="/dashboard/settings/devices" variant="outlined" size="small">
+          Подключённые устройства
+        </Button>
+      </Paper>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>

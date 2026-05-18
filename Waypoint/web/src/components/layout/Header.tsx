@@ -24,6 +24,7 @@ import {
   Divider,
   useMediaQuery,
 } from '@mui/material';
+import { GlobalSearch } from './GlobalSearch';
 import {
   Menu as MenuIcon,
   Search,
@@ -224,8 +225,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             maxWidth: 280,
           }}
         >
-          <Search sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
-          <InputBase placeholder="Поиск (скоро)" disabled sx={{ color: 'text.primary', flex: 1, fontSize: '0.875rem' }} />
+          <GlobalSearch />
         </Box>
 
         <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.25, mr: 1 }}>

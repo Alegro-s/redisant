@@ -44,6 +44,7 @@ import {
 } from '@mui/icons-material';
 import { ModuleFeatureCard } from '../components/common/ModuleFeatureCard';
 import { PwaInstallButton } from '../components/common/PwaInstallButton';
+import { LINKS } from '../marketing/links';
 
 
 const LANDING_COL_MAX = 960;
@@ -72,13 +73,13 @@ const moduleLinks = [
     ),
   },
   {
-    title: 'WaypointMetric',
+    title: 'Waypoint Metric',
     to: '/register?plan=basic',
     icon: <Insights fontSize="small" />,
     description: (
       <>
-        <strong>Ingest Lab</strong>, метрики и логи — инфраструктура сайтов и приложений. Игровой движок и редактор —
-        отдельные продукты экосистемы, не в этой облачной консоли.
+        <strong>Ingest Lab</strong>, метрики, логи, PostgreSQL и BaaS — облачная инфраструктура серии Waypoint для ваших
+        приложений.
       </>
     ),
   },
@@ -229,7 +230,7 @@ export default function LandingPage() {
                 sx={{ width: 32, height: 32, display: 'block' }}
               />
               <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
-                WaypointMetric
+                Waypoint Metric
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' }, flexWrap: 'nowrap' }}>
@@ -304,6 +305,34 @@ export default function LandingPage() {
                   }),
                 }}
               >
+                <MenuItem
+                  component="a"
+                  href={LINKS.desktop}
+                  onClick={closeMoreMenu}
+                  sx={(t) => ({
+                    py: 1.25,
+                    gap: 1.5,
+                    color: t.palette.secondary.main,
+                    '&:hover': { bgcolor: alpha(t.palette.secondary.main, 0.1) },
+                  })}
+                >
+                  <RocketLaunch fontSize="small" sx={(t) => ({ color: t.palette.secondary.main })} />
+                  Waypoint Desktop (ПК)
+                </MenuItem>
+                <MenuItem
+                  component="a"
+                  href={LINKS.club}
+                  onClick={closeMoreMenu}
+                  sx={(t) => ({
+                    py: 1.25,
+                    gap: 1.5,
+                    color: t.palette.text.secondary,
+                    '&:hover': { bgcolor: alpha(t.palette.primary.main, 0.06) },
+                  })}
+                >
+                  <Hub fontSize="small" />
+                  Экосистема Waypoint Club
+                </MenuItem>
                 <MenuItem
                   component={RouterLink}
                   to="/platform"
@@ -383,15 +412,15 @@ export default function LandingPage() {
               fontSize: { xs: '1.7rem', sm: '2.15rem', md: '4rem' },
             }}
           >
-            Создавайте за выходные
+            Метрики, база и backend
             <br />
             <Box component="span" sx={{ color: 'primary.main' }}>
-              масштабируйте до миллионов
+              в одном рабочем пространстве
             </Box>
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: LANDING_COL_MAX, mx: 'auto', lineHeight: 1.72, textAlign: 'center', px: { xs: 0, sm: 0 } }}>
-            Одна связка с <strong>PostgreSQL</strong> для Telegram-ботов, backend-сервисов и мобильных приложений.
-            Стартуйте быстро и наращивайте продукт <strong>без смены стека</strong> — от прототипа до продакшена.
+            <strong>Waypoint Metric</strong> — облачная консоль серии Waypoint: ingest, дашборды, PostgreSQL и REST BaaS
+            для ботов, сервисов и приложений. От прототипа до продакшена — без смены платформы.
           </Typography>
 
           <Paper
@@ -853,6 +882,12 @@ export default function LandingPage() {
       <Drawer anchor="right" open={mobileOpen} onClose={() => setMobileOpen(false)}>
         <Stack sx={{ width: 280, p: 2 }} spacing={1.2}>
           <Typography sx={{ fontWeight: 800, mb: 1 }}>Меню</Typography>
+          <Button component="a" href={LINKS.desktop} onClick={() => setMobileOpen(false)} variant="outlined" color="secondary">
+            Desktop
+          </Button>
+          <Button component="a" href={LINKS.club} onClick={() => setMobileOpen(false)} variant="outlined">
+            Waypoint Club
+          </Button>
           <Button component={RouterLink} to="/platform" onClick={() => setMobileOpen(false)} variant="outlined" color="secondary">
             Платформа
           </Button>

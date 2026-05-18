@@ -45,6 +45,7 @@ import {
   ReceiptLong,
   Code,
   HomeWork,
+  Computer,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../app/contexts/AuthContext';
@@ -134,6 +135,7 @@ const developerNavSections: { title: string; items: MenuItem[] }[] = [
     title: 'Метрики и ingest',
     items: [
       { text: 'Ingest Lab', icon: <QueryStats />, path: '/dashboard/ingest-lab' },
+      { text: 'Desktop hosts', icon: <Computer />, path: '/dashboard/desktop-hosts' },
       { text: 'WaypointMetric', icon: <Hub />, path: '/dashboard/waypoint', secondary: 'Витрина' },
     ],
   },

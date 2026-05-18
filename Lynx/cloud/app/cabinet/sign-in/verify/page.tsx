@@ -1,12 +1,20 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const authBase = (process.env.NEXT_PUBLIC_LYNX_AUTH_URL ?? 'http://127.0.0.1:8090').replace(/\/$/, '');
 
 export default function LynxVerifyEmailPage() {
+  return (
+    <Suspense fallback={<main className="cloud-apple cloud-cabinet-page"><p>Подтверждение почты…</p></main>}>
+      <LynxVerifyEmailForm />
+    </Suspense>
+  );
+}
+
+function LynxVerifyEmailForm() {
   const router = useRouter();
   const params = useSearchParams();
   const email = params.get('email') ?? '';
@@ -88,3 +96,4 @@ export default function LynxVerifyEmailPage() {
     </main>
   );
 }
+

@@ -1,3 +1,5 @@
+import { desktopDocsUrl } from './links';
+
 export type ClubDocProduct =
   | 'metric'
   | 'desktop'
@@ -16,7 +18,7 @@ export const CLUB_DOCS: Record<
     sections: [
       {
         h: 'Что это',
-        p: 'Веб-платформа после входа: ingest метрик и логов, дашборды, алерты, PostgreSQL, REST BaaS и object storage. Не игровой движок и не Lynx.',
+        p: 'Веб-платформа серии Waypoint после входа: ingest метрик и логов, дашборды, алерты, PostgreSQL, REST BaaS и object storage в своём workspace.',
       },
       {
         h: 'База данных',
@@ -37,12 +39,12 @@ export const CLUB_DOCS: Record<
         p: 'Отдельный клиент: Docker, терминал, планировщик, Liza на рабочем столе. Не заменяет облачный ingest и BaaS Waypoint Metric.',
       },
       {
-        h: 'Отличие от Metric',
-        p: 'Metric — облако и командная эксплуатация. Desktop — ежедневная разработка «у себя», без обязательной привязки к облачному ingest.',
+        h: 'Полная документация',
+        p: `Подробные разделы — на Metric: ${desktopDocsUrl()}`,
       },
       {
-        h: 'Скачивание',
-        p: 'Ссылка на установщик появится в каталоге Club после релиза. Пока — следите за обновлениями на главной Club.',
+        h: 'Отличие от Metric',
+        p: 'Metric — облако и командная эксплуатация. Desktop — ежедневная разработка «у себя»; связь с облаком опциональна (см. раздел «Связь с облаком» на сайте Desktop).',
       },
     ],
   },
@@ -66,11 +68,11 @@ export const CLUB_DOCS: Record<
   },
   'roza-ai': {
     title: 'Roza AI',
-    subtitle: 'Подбренд Waypoint · консультант',
+    subtitle: 'Подсерия Roza в линейке Waypoint',
     sections: [
       {
         h: 'Что это',
-        p: 'Roza AI — веб-чат, API и приложение для Windows. Документы, безопасность ПК и обучение. Отдельного домена нет: сайт на waypointclub.ru/roza.',
+        p: 'Roza AI — веб-чат, API и приложение для Windows в подсерии Roza. Документы, безопасность ПК и обучение. Сайт: waypointclub.ru/roza.',
       },
       {
         h: 'Скачивание',

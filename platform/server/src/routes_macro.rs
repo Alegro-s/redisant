@@ -62,6 +62,10 @@ macro_rules! po_auth_routes {
                 "/me/roza/billing/checkout",
                 web::post().to(billing::post_checkout),
             )
+            .route("/auth/desktop/pair/start", web::post().to(desktop_devices::pair_start))
+            .route("/auth/desktop/pair/confirm", web::post().to(desktop_devices::pair_confirm))
+            .route("/auth/desktop/pair/claim", web::post().to(desktop_devices::pair_claim))
+            .route("/auth/token/refresh", web::post().to(desktop_devices::token_refresh))
     };
 }
 
@@ -180,6 +184,11 @@ macro_rules! po_waypoint_routes {
             .route("/me/system-metrics", web::get().to(routes_extra::my_system_metrics))
             .route("/me/logs", web::get().to(routes_extra::my_logs))
             .route("/me/ingest/simulate", web::post().to(routes_extra::ingest_simulate))
+            .route("/me/desktop/devices", web::get().to(desktop_devices::list_devices))
+            .route("/me/desktop/devices/{id}", web::patch().to(desktop_devices::patch_device))
+            .route("/me/desktop/devices/{id}", web::delete().to(desktop_devices::revoke_device))
+            .route("/me/desktop/hosts", web::get().to(desktop_devices::list_desktop_hosts))
+            .route("/api/waypoint/desktop/heartbeat", web::post().to(desktop_devices::desktop_heartbeat))
             .route("/profile/vk-code", web::get().to(routes_extra::profile_vk_code))
             .route("/integrations/vk/bind", web::post().to(routes_extra::vk_bot_bind))
             .route(

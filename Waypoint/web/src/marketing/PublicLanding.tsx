@@ -1,17 +1,17 @@
 import { resolvePublicSiteMode } from './siteMode';
 import { WaypointClubPage } from './WaypointClubPage';
-import { MetricLandingPage } from './MetricLandingPage';
+import { MetricCloudLandingPage } from './MetricCloudLandingPage';
 
-/** Публичная витрина по hostname или VITE_PUBLIC_SITE_MODE (club | metric). */
+/** Club — главный сайт; Metric — облако. Desktop — маршруты /desktop/* на домене Metric. */
 export function PublicLanding() {
-  const override = (import.meta.env.VITE_PUBLIC_SITE_MODE as string | undefined)?.trim().toLowerCase();
-  const mode =
-    override === 'club' || override === 'metric' ? override : resolvePublicSiteMode();
+  const raw = (import.meta.env.VITE_PUBLIC_SITE_MODE as string | undefined)?.trim().toLowerCase();
+  const override = raw === 'club' || raw === 'metric' ? raw : undefined;
+  const mode = override ?? resolvePublicSiteMode();
 
   if (mode === 'club') return <WaypointClubPage />;
-  if (mode === 'metric') return <MetricLandingPage />;
-  // localhost:3000 — витрина Waypoint Club, не Metric
+  if (mode === 'metric') return <MetricCloudLandingPage />;
+
   const host = typeof window !== 'undefined' ? window.location.hostname : '';
   if (host === 'localhost' || host === '127.0.0.1') return <WaypointClubPage />;
-  return <MetricLandingPage />;
+  return <MetricCloudLandingPage />;
 }

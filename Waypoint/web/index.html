@@ -18,10 +18,16 @@
           document.title = 'Waypoint Club — экосистема Waypoint';
           var m = document.querySelector('meta[name="apple-mobile-web-app-title"]');
           if (m) m.setAttribute('content', 'Waypoint Club');
-        } else if (h.indexOf('metrika') !== -1 || h === 'localhost' || h === '127.0.0.1') {
-          document.title = 'Waypoint Metric — облачная консоль';
+        } else if (h.indexOf('desktop.') !== -1 && h.indexOf('metrika') !== -1) {
+          document.title = 'Waypoint Desktop';
+          var md = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+          if (md) md.setAttribute('content', 'Waypoint Desktop');
+        } else if (h.indexOf('metrika') !== -1) {
+          document.title = 'Waypoint Metric — облако';
           var m2 = document.querySelector('meta[name="apple-mobile-web-app-title"]');
           if (m2) m2.setAttribute('content', 'Waypoint Metric');
+        } else if (h === 'localhost' || h === '127.0.0.1') {
+          document.title = 'Waypoint Club';
         }
       })();
     </script>

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 DEPLOY_ROOT="${DEPLOY_ROOT:-/opt/waypoint}"
-GITHUB_REPO="${GITHUB_REPO:-Alegro-s/redik}"
+GITHUB_REPO="${GITHUB_REPO:-Alegro-s/redisant}"
 GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
 CLONE_URL="https://github.com/${GITHUB_REPO}.git"
 AUTO_YES="${AUTO_YES:-0}"
@@ -11,6 +11,8 @@ if [[ "${EUID:-0}" -ne 0 ]]; then
   echo "Run as root." >&2
   exit 1
 fi
+
+cd /tmp || cd /
 
 echo "=============================================="
 echo " Waypoint / Lynx / Roza — full server install"
@@ -36,7 +38,6 @@ if command -v docker >/dev/null 2>&1; then
 fi
 
 rm -rf "$HOME/nexus" "$HOME/tsput_profile" "$HOME/lynx_check.sh" "$HOME/lynx_check_output.txt"
-rm -rf /opt/waypoint/redik 2>/dev/null || true
 mkdir -p "$DEPLOY_ROOT" /srv/waypointclub/web /srv/waypointmetric/dist /srv/lynx-hub/dist /srv/roza/web/dist /var/www/certbot
 
 echo "[2/6] Install system packages..."

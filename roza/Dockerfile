@@ -3,6 +3,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY roza ./roza
+COPY config.yaml ./config.yaml
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8765
 CMD ["python", "-m", "roza", "web", "--host", "0.0.0.0", "--port", "8765"]

@@ -1,0 +1,16 @@
+.git
+**/.git
+**/node_modules
+**/.next
+**/dist
+**/build
+**/.dart_tool
+releases
+NEXUS
+RozaOS
+NGH
+WDesktop
+series-site
+tsput_profile/**/__pycache__
+*.zip
+*.pdb

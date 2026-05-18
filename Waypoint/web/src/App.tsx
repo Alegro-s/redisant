@@ -16,6 +16,8 @@ import { Projects } from './pages/projects/Projects';
 import { Assets } from './pages/assets/Assets';
 import { AIAnalysis } from './pages/ai/AIAnalysis';
 import { Settings } from './pages/settings/Settings';
+import { ConnectedDevicesPage } from './pages/settings/ConnectedDevicesPage';
+import { DesktopHostsPage } from './pages/dashboard/DesktopHostsPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
@@ -23,6 +25,12 @@ import NexusAuth from './pages/NexusAuth';
 import { PublicLanding } from './marketing/PublicLanding';
 import { TspuProductPage } from './marketing/TspuProductPage';
 import { ClubDocsPage } from './marketing/ClubDocsPage';
+import { DesktopLandingPage } from './marketing/DesktopLandingPage';
+import { DesktopDocsPage } from './marketing/DesktopDocsPage';
+import { DesktopReleasesPage } from './marketing/DesktopReleasesPage';
+import { MetricDocsPage } from './marketing/MetricDocsPage';
+import { ClubSeriesPage } from './marketing/ClubSeriesPage';
+import { EcosystemStatusPage } from './marketing/EcosystemStatusPage';
 import PlatformPage from './pages/platform/PlatformPage';
 import { PrivateRoute } from './components/PrivateRoute';
 import { Database } from './pages/database/Database';
@@ -127,6 +135,14 @@ function AppRoutes() {
       <Route path="/platform" element={<PlatformPage />} />
       <Route path="/tspu" element={<TspuProductPage />} />
       <Route path="/club/docs/:product" element={<ClubDocsPage />} />
+      <Route path="/desktop" element={<DesktopLandingPage />} />
+      <Route path="/desktop/docs" element={<DesktopDocsPage />} />
+      <Route path="/desktop/docs/:topic" element={<DesktopDocsPage />} />
+      <Route path="/desktop/releases" element={<DesktopReleasesPage />} />
+      <Route path="/metric/docs" element={<MetricDocsPage />} />
+      <Route path="/metric/docs/:topic" element={<MetricDocsPage />} />
+      <Route path="/club/series" element={<ClubSeriesPage />} />
+      <Route path="/status" element={<EcosystemStatusPage />} />
 
       <Route
         path="/dashboard"
@@ -554,6 +570,26 @@ function AppRoutes() {
           <PrivateRoute>
             <ModernLayout>
               <Settings />
+            </ModernLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/dashboard/settings/devices"
+        element={
+          <PrivateRoute>
+            <ModernLayout>
+              <ConnectedDevicesPage />
+            </ModernLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/dashboard/desktop-hosts"
+        element={
+          <PrivateRoute>
+            <ModernLayout>
+              <DesktopHostsPage />
             </ModernLayout>
           </PrivateRoute>
         }

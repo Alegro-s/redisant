@@ -5,7 +5,9 @@
 | Домен | Продукт | Статика / сервис |
 |-------|---------|------------------|
 | `waypointclub.ru` | Waypoint Club | `/srv/waypointclub/web` |
-| `metrika-waypoint.ru` | Waypoint Metric | `/srv/waypointmetric/dist` |
+| `metrika-waypoint.ru` | Waypoint Metric (облако, зелёная витрина) | `/srv/waypointmetric/dist` |
+| `metrika-waypoint.ru/desktop` | Waypoint Desktop (подраздел Metric) | тот же `dist`, маршруты SPA |
+| `metrika-waypoint.ru/downloads/` | Установщик Desktop (.msi) | `/srv/waypointmetric/downloads/` |
 | `lynx-hub.ru` | Lynx Hub | `/srv/lynx-hub/dist` |
 | `lynx-cloud.ru` | Lynx Cloud | Next.js `:3001` |
 | `waypointclub.ru/roza` | Roza AI web | `/srv/roza/web/dist` (nginx alias) |
@@ -37,6 +39,23 @@ API (Docker):
 - `roza-web` — Vite SPA
 
 Отдельная БД: один контейнер Postgres в стеке `auth`; product API подключаются к ней по `DATABASE_URL` в общей docker-сети `waypoint_net`.
+
+## Локально (Docker)
+
+Один скрипт, без npm-окон на хосте:
+
+```powershell
+.\scripts\start-local-docker.ps1
+# пересборка: .\scripts\start-local-docker.ps1 -Build
+```
+
+| URL | Роль |
+|-----|------|
+| http://127.0.0.1:3000 | Club |
+| http://127.0.0.1:3002 | Metric облако |
+| http://127.0.0.1:3002/desktop | Desktop (на Metric) |
+| http://127.0.0.1:5175 | Lynx Hub |
+| http://127.0.0.1:3001 | Lynx Cloud |
 
 ## SMTP
 

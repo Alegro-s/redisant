@@ -3,7 +3,9 @@ import { getRozaAuthToken } from '../services/rozaAuthApi';
 
 function apiUrl(path: string): string {
   const base = ROZA_API_BASE.replace(/\/$/, '');
-  return base ? `${base}${path}` : path;
+  const segment = path.startsWith('/') ? path : `/${path}`;
+  if (!base) return `/api${segment}`;
+  return `${base}${segment}`;
 }
 
 export async function rozaChat(message: string, sessionId?: string): Promise<{ reply: string; sessionId?: string }> {
@@ -11,7 +13,7 @@ export async function rozaChat(message: string, sessionId?: string): Promise<{ r
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(apiUrl('/api/chat'), {
+  const res = await fetch(apiUrl('/chat'), {
     method: 'POST',
     headers,
     credentials: 'include',

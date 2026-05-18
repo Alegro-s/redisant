@@ -35,6 +35,7 @@ mod logging;
 mod social;
 mod auth_challenge;
 mod blocking;
+mod desktop_devices;
 
 #[derive(Clone, Serialize)]
 struct MetricPoint {

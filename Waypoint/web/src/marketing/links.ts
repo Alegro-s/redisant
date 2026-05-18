@@ -1,12 +1,31 @@
+const metricOrigin = () =>
+  (import.meta.env.VITE_METRIC_URL ?? 'https://metrika-waypoint.ru').replace(/\/$/, '');
+
+const clubOrigin = () =>
+  (import.meta.env.VITE_CLUB_URL ?? 'https://waypointclub.ru').replace(/\/$/, '');
+
 export const LINKS = {
-  club: import.meta.env.VITE_CLUB_URL ?? 'https://waypointclub.ru',
-  metric: import.meta.env.VITE_METRIC_URL ?? 'https://metrika-waypoint.ru',
+  club: clubOrigin(),
+  metric: metricOrigin(),
+  /** Подраздел облака Metric (без отдельного домена), как /roza на Club */
+  desktop: `${metricOrigin()}/desktop`,
   lynxHub: import.meta.env.VITE_LYNX_HUB_URL ?? 'https://lynx-hub.ru',
   lynxCloud: import.meta.env.VITE_LYNX_CLOUD_URL ?? 'https://lynx-cloud.ru',
-  /** Подбренд Waypoint, путь на Club — без отдельного домена */
-  roza: import.meta.env.VITE_ROZA_URL ?? 'https://waypointclub.ru/roza',
+  roza: (import.meta.env.VITE_ROZA_URL ?? `${clubOrigin()}/roza`).replace(/\/?$/, ''),
   desktopDownload: import.meta.env.VITE_WAYPOINT_DESKTOP_URL ?? '',
   tspuSite: import.meta.env.VITE_TSPU_SITE_URL ?? 'https://tsput.ru',
   tspuApp: import.meta.env.VITE_TSPU_APP_URL ?? '',
   university: 'https://tsput.ru',
 } as const;
+
+export function productSiteUrl(base: string, hash?: string): string {
+  const url = base.replace(/\/$/, '');
+  return hash ? `${url}${hash.startsWith('#') ? hash : `#${hash}`}` : url;
+}
+
+/** Документация Desktop на домене Metric */
+export function desktopDocsUrl(topic?: string): string {
+  const base = metricOrigin();
+  if (!topic || topic === 'start') return `${base}/desktop/docs`;
+  return `${base}/desktop/docs/${topic.replace(/^\//, '')}`;
+}

@@ -4,6 +4,7 @@ name: waypoint-apis
 
 services:
   waypoint-api:
+    container_name: waypoint-waypoint-api
     build:
       context: ../../platform/server
       dockerfile: Dockerfile
@@ -26,6 +27,7 @@ services:
       - waypoint_net
 
   lynx-api:
+    container_name: waypoint-lynx-api
     build:
       context: ../../platform/server
       dockerfile: Dockerfile

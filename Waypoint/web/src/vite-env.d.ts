@@ -6,6 +6,9 @@ interface ImportMetaEnv {
   readonly VITE_WS_URL?: string;
   readonly VITE_AI_SERVICE_URL?: string;
   readonly VITE_PUBLIC_SITE_MODE?: string;
+  readonly VITE_CLUB_URL?: string;
+  readonly VITE_METRIC_URL?: string;
+  readonly VITE_DESKTOP_URL?: string;
   readonly VITE_LYNX_HUB_URL?: string;
   readonly VITE_LYNX_CLOUD_URL?: string;
   readonly VITE_ROZA_URL?: string;

@@ -1,0 +1,152 @@
+name: waypoint-local-sites
+
+
+
+x-waypoint-local-urls: &waypoint_local_urls
+
+  VITE_CLUB_URL: http://127.0.0.1:3000
+
+  VITE_METRIC_URL: http://127.0.0.1:3002
+
+  VITE_DESKTOP_URL: http://127.0.0.1:3002/desktop
+
+  VITE_LYNX_HUB_URL: http://127.0.0.1:5175
+
+  VITE_LYNX_CLOUD_URL: http://127.0.0.1:3001
+
+  VITE_ROZA_URL: http://127.0.0.1:3000/roza
+
+
+
+services:
+
+  waypoint-club:
+
+    container_name: local-waypoint-club
+
+    build:
+
+      context: ../..
+
+      dockerfile: deploy/ecosystem/docker/Dockerfile.waypoint-web
+
+      args:
+
+        SITE_MODE: club
+
+        <<: *waypoint_local_urls
+
+    ports:
+
+      - "127.0.0.1:3000:80"
+
+    networks:
+
+      - waypoint_net
+
+    restart: unless-stopped
+
+
+
+  waypoint-metric:
+
+    container_name: local-waypoint-metric
+
+    build:
+
+      context: ../..
+
+      dockerfile: deploy/ecosystem/docker/Dockerfile.waypoint-web
+
+      args:
+
+        SITE_MODE: metric
+
+        <<: *waypoint_local_urls
+
+    ports:
+
+      - "127.0.0.1:3002:80"
+
+    networks:
+
+      - waypoint_net
+
+    restart: unless-stopped
+
+
+
+  lynx-hub:
+
+    container_name: local-lynx-hub
+
+    build:
+
+      context: ../..
+
+      dockerfile: deploy/ecosystem/docker/Dockerfile.lynx-hub
+
+    ports:
+
+      - "127.0.0.1:5175:80"
+
+    networks:
+
+      - waypoint_net
+
+    restart: unless-stopped
+
+
+
+  roza-web:
+
+    container_name: local-roza-web
+
+    build:
+
+      context: ../..
+
+      dockerfile: deploy/ecosystem/docker/Dockerfile.roza-web
+
+    ports:
+
+      - "127.0.0.1:5180:80"
+
+    networks:
+
+      - waypoint_net
+
+    restart: unless-stopped
+
+
+
+  lynx-cloud:
+
+    container_name: local-lynx-cloud
+
+    build:
+
+      context: ../..
+
+      dockerfile: deploy/ecosystem/docker/Dockerfile.lynx-cloud
+
+    ports:
+
+      - "127.0.0.1:3001:3001"
+
+    networks:
+
+      - waypoint_net
+
+    restart: unless-stopped
+
+
+
+networks:
+
+  waypoint_net:
+
+    external: true
+
+    name: waypoint_net
+

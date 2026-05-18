@@ -1,0 +1,12 @@
+FROM node:20-bookworm-slim AS build
+WORKDIR /app
+COPY Lynx/cloud/package.json Lynx/cloud/package-lock.json* ./
+RUN npm ci
+COPY Lynx/cloud/ .
+ENV NEXT_PUBLIC_LYNX_API_BASE=http://127.0.0.1:8082
+ENV NEXT_PUBLIC_WAYPOINT_CONSOLE_URL=http://127.0.0.1:3002
+ENV NEXT_PUBLIC_LYNX_HUB_URL=http://127.0.0.1:5175
+RUN npm run build
+
+EXPOSE 3001
+CMD ["npm", "run", "start", "--", "-p", "3001", "-H", "0.0.0.0"]

@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 const rozaApiTarget = process.env.VITE_ROZA_API_PROXY ?? 'http://127.0.0.1:8765';
 
 export default defineConfig({
+  base: process.env.VITE_BASE || '/',
   plugins: [react()],
   server: {
     port: 5180,

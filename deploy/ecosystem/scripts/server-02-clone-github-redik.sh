@@ -2,7 +2,7 @@
 set -euo pipefail
 
 DEPLOY_ROOT="${DEPLOY_ROOT:-/opt/waypoint}"
-GITHUB_REPO="${GITHUB_REPO:-Alegro-s/redik}"
+GITHUB_REPO="${GITHUB_REPO:-Alegro-s/redisant}"
 GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
 CLONE_URL="${CLONE_URL:-https://github.com/${GITHUB_REPO}.git}"
 
@@ -10,6 +10,8 @@ if [[ "${EUID:-0}" -ne 0 ]]; then
   echo "Run as root: sudo $0" >&2
   exit 1
 fi
+
+cd /tmp || cd /
 
 echo "==> Install packages (git, docker, nginx, node if missing)"
 export DEBIAN_FRONTEND=noninteractive
@@ -31,7 +33,7 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 
 mkdir -p "$DEPLOY_ROOT"
-mkdir -p /srv/waypointclub/web /srv/waypointmetric/dist /srv/lynx-hub/dist /srv/roza/web/dist
+mkdir -p /srv/waypointclub/web /srv/waypointmetric/dist /srv/waypointmetric/downloads /srv/lynx-hub/dist /srv/roza/web/dist
 mkdir -p /var/www/certbot
 
 echo "==> Clone or update ${CLONE_URL}"
@@ -107,6 +109,14 @@ if [[ -d "$PO_ROOT/Waypoint/web" ]]; then
   echo 'VITE_PUBLIC_SITE_MODE=metric' > .env.production.local
   npm run build
   rsync -a --delete dist/ /srv/waypointmetric/dist/
+  if [[ -d "$PO_ROOT/releases/waypoint-desktop" ]]; then
+    mkdir -p /srv/waypointmetric/downloads
+    cp -f "$PO_ROOT/releases/waypoint-desktop/"*.msi /srv/waypointmetric/downloads/ 2>/dev/null || true
+    cp -f "$PO_ROOT/releases/waypoint-desktop/"*.exe /srv/waypointmetric/downloads/ 2>/dev/null || true
+  fi
+  if [[ -d "$PO_ROOT/Waypoint/web/public/downloads" ]]; then
+    rsync -a "$PO_ROOT/Waypoint/web/public/downloads/" /srv/waypointmetric/downloads/
+  fi
 fi
 
 build_vite "$PO_ROOT/Lynx/hub" /srv/lynx-hub/dist
