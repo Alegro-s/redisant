@@ -82,7 +82,7 @@ npm ci
 npm run build
 # systemd unit или pm2 — пример через nohup:
 pkill -f "next start.*3001" 2>/dev/null || true
-nohup npm run start -- -p 3001 > /var/log/lynx-cloud.log 2>&1 &
+nohup npm run start -- -H 0.0.0.0 >> /var/log/lynx-cloud.log 2>&1 &
 
 echo "==> nginx"
 if [[ -f "$DEPLOY_ROOT/nginx/waypoint-ecosystem.conf" ]]; then

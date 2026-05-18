@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import '../styles/club.css';
-import { LINKS, rozaPath } from './links';
+import { LINKS, rozaPath, rozaAppPath } from './links';
 import { resolvePublicSiteMode } from './siteMode';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -62,11 +62,11 @@ export function ClubSeriesPage() {
           <h2>Подсерия Roza</h2>
           <p>
             Roza AI и Roza OS — ассистент и дистрибутив внутри экосистемы Waypoint.{' '}
-            <a href={rozaPath()}>Roza</a>
+            <Link to={rozaPath()}>Roza</Link>
             {' · '}
-            <a href={rozaPath('ai')}>Roza AI</a>
+            <a href={rozaAppPath('ai')}>Roza AI</a>
             {' · '}
-            <a href={rozaPath('os')}>Roza OS</a>
+            <a href={rozaAppPath('os')}>Roza OS</a>
           </p>
         </section>
         <section className="club-doc-section">

@@ -1,0 +1,184 @@
+/* Roza — витрина подсерии на Waypoint Club (как /tspu) */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+
+body.roza-body {
+  background: #0f0a0d !important;
+  margin: 0;
+}
+
+.roza-root {
+  --roza-bg: #0f0a0d;
+  --roza-card: #1a1218;
+  --roza-text: #fce7f3;
+  --roza-sub: #c4a3b5;
+  --roza-line: #3d2838;
+  --roza-accent: #e879a9;
+  --roza-accent-dim: #9d174d;
+  min-height: 100vh;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--roza-text);
+  background: var(--roza-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.roza-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 64px;
+  border-bottom: 1px solid var(--roza-line);
+  background: rgba(15, 10, 13, 0.92);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.roza-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--roza-text);
+}
+
+.roza-brand em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--roza-sub);
+}
+
+.roza-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.roza-nav a {
+  color: var(--roza-sub);
+  text-decoration: none;
+  margin-left: 20px;
+  font-size: 14px;
+}
+
+.roza-nav a:hover {
+  color: var(--roza-accent);
+}
+
+.roza-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.roza-hero h1 {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  margin: 12px 0 16px;
+  line-height: 1.15;
+}
+
+.roza-eyebrow {
+  color: var(--roza-accent);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.roza-lead {
+  color: var(--roza-sub);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 42rem;
+}
+
+.roza-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.roza-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.roza-btn-primary {
+  background: linear-gradient(135deg, #be185d, #9d174d);
+  color: #fff;
+}
+
+.roza-btn-ghost {
+  border-color: var(--roza-line);
+  color: var(--roza-text);
+}
+
+.roza-btn-ghost:hover {
+  border-color: var(--roza-accent);
+  color: var(--roza-accent);
+}
+
+.roza-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 48px;
+}
+
+.roza-tile {
+  background: var(--roza-card);
+  border: 1px solid var(--roza-line);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.roza-tile h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.roza-tile p {
+  margin: 0;
+  color: var(--roza-sub);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.roza-tile a {
+  color: var(--roza-accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.roza-footer {
+  text-align: center;
+  padding: 32px;
+  color: var(--roza-sub);
+  font-size: 13px;
+  border-top: 1px solid var(--roza-line);
+}
+
+.roza-footer a {
+  color: var(--roza-accent);
+}
+
+@media (max-width: 640px) {
+  .roza-nav {
+    padding: 0 16px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 64px;
+    gap: 8px;
+  }
+}

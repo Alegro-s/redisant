@@ -11,7 +11,13 @@ export default defineConfig(({ mode }) => {
     {
       name: 'html-favicon',
       transformIndexHtml(html) {
-        return html.replace(/href="\/favicon[^"]*"/g, `href="${favicon}"`);
+        let out = html.replace(/href="\/favicon[^"]*"/g, `href="${favicon}"`);
+        if (out.includes('apple-touch-icon')) {
+          out = out.replace(/rel="apple-touch-icon" href="[^"]*"/, `rel="apple-touch-icon" href="${favicon}"`);
+        } else {
+          out = out.replace('</head>', `    <link rel="apple-touch-icon" href="${favicon}" />\n  </head>`);
+        }
+        return out;
       },
     },
   ],

@@ -44,6 +44,13 @@ const productCatalog: CatalogItem[] = [
     site: LINKS.lynxCloud,
   },
   {
+    name: 'Roza',
+    desc: 'Подсерия ИИ: ассистент и ОС',
+    doc: '/club/docs/roza-ai',
+    internal: true,
+    href: '/roza',
+  },
+  {
     name: 'Roza AI',
     desc: 'Консультант Waypoint',
     doc: '/club/docs/roza-ai',
@@ -98,6 +105,15 @@ const products = [
     body: 'Витрина облака для авторов. Проекты и сборки — в кабинете после входа.',
     doc: '/club/docs/lynx',
     site: LINKS.lynxCloud,
+  },
+  {
+    span: 'club-span-4',
+    tag: 'ИИ',
+    title: 'Roza',
+    body: 'Подсерия Waypoint: витрина на Club, приложения по /roza/…',
+    doc: '/club/docs/roza-ai',
+    internal: true as const,
+    href: '/roza',
   },
   {
     span: 'club-span-4',

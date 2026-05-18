@@ -59,6 +59,17 @@ if [[ ! -d "$ECO" ]]; then
 fi
 
 echo "==> smtp.env"
+if [[ -f "$DEPLOY_ROOT/smtp.env" ]]; then
+  python3 - "$DEPLOY_ROOT/smtp.env" <<'PY'
+import re, sys
+p = sys.argv[1]
+t = open(p, encoding="utf-8").read()
+f = re.sub(r"\$(?!\$)", "$$", t)
+if f != t:
+    open(p, "w", encoding="utf-8").write(f)
+    print("smtp.env: escaped $ for docker compose")
+PY
+fi
 if [[ ! -f "$DEPLOY_ROOT/smtp.env" ]]; then
   if [[ -f "$ECO/smtp.env.example" ]]; then
     cp "$ECO/smtp.env.example" "$DEPLOY_ROOT/smtp.env"
@@ -115,6 +126,7 @@ VITE_FAVICON=/favicon-club.svg
 EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointclub/web/
+  sed -i 's|/favicon\.svg|/favicon-club.svg|g' /srv/waypointclub/web/manifest.webmanifest 2>/dev/null || true
   cat > .env.production.local <<'EOF'
 VITE_API_URL=/api
 VITE_AUTH_URL=/auth
@@ -123,6 +135,7 @@ VITE_FAVICON=/favicon-metric.svg
 EOF
   npm run build
   rsync -a --delete dist/ /srv/waypointmetric/dist/
+  sed -i 's|/favicon\.svg|/favicon-metric.svg|g' /srv/waypointmetric/dist/manifest.webmanifest 2>/dev/null || true
   if [[ -d "$PO_ROOT/releases/waypoint-desktop" ]]; then
     mkdir -p /srv/waypointmetric/downloads
     cp -f "$PO_ROOT/releases/waypoint-desktop/"*.msi /srv/waypointmetric/downloads/ 2>/dev/null || true
@@ -157,7 +170,7 @@ if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then
   pkill -f "next start.*3001" 2>/dev/null || true
   sleep 1
   export NODE_ENV=production
-  nohup npm run start >> /var/log/lynx-cloud.log 2>&1 &
+  nohup npm run start -- -H 0.0.0.0 >> /var/log/lynx-cloud.log 2>&1 &
   sleep 2
   if curl -fsS http://127.0.0.1:3001/ >/dev/null 2>&1; then
     echo "Lynx Cloud :3001 OK"

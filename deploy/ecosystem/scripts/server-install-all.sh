@@ -115,7 +115,7 @@ if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then
   cd "$PO_ROOT/Lynx/cloud"
   npm ci && npm run build
   pkill -f "next start.*3001" 2>/dev/null || true
-  nohup npm run start -- -p 3001 > /var/log/lynx-cloud.log 2>&1 &
+  nohup npm run start -- -H 0.0.0.0 >> /var/log/lynx-cloud.log 2>&1 &
 fi
 if [[ -f "$ECO/nginx/waypoint-ecosystem.conf" ]]; then
   cp "$ECO/nginx/waypoint-ecosystem.conf" /etc/nginx/sites-available/waypoint-ecosystem.conf

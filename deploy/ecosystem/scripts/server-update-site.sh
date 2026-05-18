@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Обновление: git pull + deploy без docker pull (обход rate limit Docker Hub).
+# Обновление на VPS: git pull + полный deploy (без docker pull — обход rate limit).
+# Запуск на сервере: sudo bash deploy/ecosystem/scripts/server-update-site.sh
 set -euo pipefail
 
 DEPLOY_ROOT="${DEPLOY_ROOT:-/opt/waypoint}"
@@ -9,16 +10,18 @@ SMTP_FILE="${SMTP_FILE:-$DEPLOY_ROOT/smtp.env}"
 
 [[ $EUID -eq 0 ]] || { echo "Запуск: sudo bash $0"; exit 1; }
 
+echo "==> Git pull"
 if [[ -d "$PO_ROOT/.git" ]]; then
   git -C "$PO_ROOT" fetch origin
   git -C "$PO_ROOT" checkout -f main
   git pull --ff-only origin main || git -C "$PO_ROOT" reset --hard origin/main
+  echo "    HEAD: $(git -C "$PO_ROOT" rev-parse --short HEAD) $(git -C "$PO_ROOT" log -1 --format=%s)"
 fi
 
 if [[ -f "$SMTP_FILE" ]]; then
-  python3 - <<'PY'
+  python3 - <<PY
 import re
-p = "/opt/waypoint/smtp.env"
+p = "$SMTP_FILE"
 t = open(p, encoding="utf-8").read()
 open(p, "w", encoding="utf-8").write(re.sub(r"\$(?!\$)", "$$", t))
 PY
@@ -29,7 +32,25 @@ export SKIP_SMTP_CHECK="${SKIP_SMTP_CHECK:-1}"
 chmod +x "$ECO/scripts/"*.sh
 "$ECO/scripts/server-02-clone-github-redik.sh"
 
-curl -fsS http://127.0.0.1:8090/health && echo " auth OK" || echo " auth FAIL — docker logs waypoint-auth-api"
-curl -fsS http://127.0.0.1:8080/health && echo " waypoint OK" || true
-curl -fsS http://127.0.0.1:8082/health && echo " lynx OK" || true
-echo "Done."
+echo ""
+echo "==> Health"
+ok=0
+curl -fsS http://127.0.0.1:8090/health >/dev/null && { echo "  auth-api OK"; ok=$((ok+1)); } || echo "  auth-api FAIL"
+curl -fsS http://127.0.0.1:8080/health >/dev/null && { echo "  waypoint-api OK"; ok=$((ok+1)); } || echo "  waypoint-api FAIL"
+curl -fsS http://127.0.0.1:8082/health >/dev/null && { echo "  lynx-api OK"; ok=$((ok+1)); } || echo "  lynx-api FAIL"
+curl -fsS http://127.0.0.1:3001/ >/dev/null && { echo "  lynx-cloud :3001 OK"; ok=$((ok+1)); } || {
+  echo "  lynx-cloud FAIL — последние строки лога:"
+  tail -20 /var/log/lynx-cloud.log 2>/dev/null || true
+}
+
+echo ""
+echo "==> Favicons (файлы в dist)"
+for f in /srv/waypointclub/web/favicon-club.svg /srv/waypointmetric/dist/favicon-metric.svg /srv/lynx-hub/dist/favicon.svg; do
+  [[ -f "$f" ]] && echo "  OK $f" || echo "  MISSING $f"
+done
+
+echo ""
+echo "Готово. Проверка снаружи:"
+echo "  https://waypointclub.ru/roza"
+echo "  https://lynx-hub.ru/"
+echo "  https://lynx-cloud.ru/"
