@@ -4,17 +4,27 @@ Param(
     [string]$Endpoint = "https://s3.twcstorage.ru",
     [string]$Prefix = "lynx/",
     [string]$SecretsFile = "",
-    [switch]$AlsoWaypointDesktop
+    [switch]$AlsoWaypointDesktop,
+    [switch]$DesktopOnly
 )
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
+$wpDir = Join-Path $RepoRoot "releases\waypoint-desktop"
+$wpPrefix = "project's/waypointdesktop/"
 
+if ($DesktopOnly) {
+    $AlsoWaypointDesktop = $true
+}
 if (-not $LocalDir) {
     $LocalDir = Join-Path $RepoRoot "releases\lynx-public"
 }
-if (-not (Test-Path $LocalDir)) {
-    throw "Нет папки: $LocalDir. Сначала: .\deploy\ecosystem\scripts\build-lynx-releases.ps1"
+$skipLynx = $DesktopOnly -or -not (Test-Path $LocalDir)
+if ($skipLynx -and -not $AlsoWaypointDesktop) {
+    throw "Missing folder: $LocalDir. Run build-lynx-releases.ps1 or use -DesktopOnly after pack-waypoint-desktop.ps1"
+}
+if ($skipLynx -and $AlsoWaypointDesktop -and -not (Test-Path $wpDir)) {
+    throw "Missing $wpDir. Run pack-waypoint-desktop.ps1 first"
 }
 
 if (-not $SecretsFile) {
@@ -31,45 +41,47 @@ if (Test-Path $SecretsFile) {
 }
 
 if (-not $env:AWS_ACCESS_KEY_ID -or -not $env:AWS_SECRET_ACCESS_KEY) {
-    throw @"
-Нет ключей S3. Создайте файл:
-  $SecretsFile
-
-Содержимое:
-  AWS_ACCESS_KEY_ID=ключ_из_панели_Timeweb
-  AWS_SECRET_ACCESS_KEY=секрет_из_панели_Timeweb
-"@
+    throw "Missing S3 keys in $SecretsFile (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)"
 }
 
 if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
-    Write-Host "Установите AWS CLI: winget install Amazon.AWSCLI"
-    throw "aws не найден в PATH"
+    Write-Host "Install AWS CLI: winget install Amazon.AWSCLI"
+    throw "aws not found in PATH"
 }
 
 $env:AWS_DEFAULT_REGION = "ru-1"
 $s3dest = "s3://${Bucket}/${Prefix}"
 
-Write-Host "[s3] Загрузка $LocalDir -> $s3dest"
-aws s3 sync $LocalDir $s3dest --endpoint-url $Endpoint
+if (-not $skipLynx) {
+    Write-Host "[s3] Upload $LocalDir -> $s3dest"
+    aws s3 sync $LocalDir $s3dest --endpoint-url $Endpoint
+} else {
+    Write-Host "[s3] Skip Lynx (no $LocalDir)"
+}
 
 if ($AlsoWaypointDesktop) {
-    $wpDir = Join-Path $RepoRoot "releases\waypoint-desktop"
-    $wpPrefix = "project's/waypointdesktop/"
     if (Test-Path $wpDir) {
         $wpDest = "s3://${Bucket}/${wpPrefix}"
         Write-Host "[s3] Waypoint Desktop -> $wpDest"
         aws s3 sync $wpDir $wpDest --endpoint-url $Endpoint
-        Write-Host "  URL: $Endpoint/${Bucket}/${wpPrefix}WaypointDesktop-setup.msi"
+        Write-Host "  MSI: $Endpoint/${Bucket}/${wpPrefix}WaypointDesktop-setup.msi"
     } else {
         Write-Host "[s3] Skip waypoint-desktop (run pack-waypoint-desktop.ps1 first)"
     }
 }
 
 Write-Host ""
-Write-Host "Публичные URL (если бакет публичный):"
-Get-ChildItem $LocalDir -File | ForEach-Object {
-    $key = "$Prefix$($_.Name)"
-    Write-Host "  $Endpoint/${Bucket}/${key}"
+Write-Host "Public URLs (if bucket is public):"
+if (-not $skipLynx) {
+    Get-ChildItem $LocalDir -File | ForEach-Object {
+        $key = "$Prefix$($_.Name)"
+        Write-Host "  $Endpoint/${Bucket}/${key}"
+    }
+}
+if ($AlsoWaypointDesktop -and (Test-Path $wpDir)) {
+    Get-ChildItem $wpDir -File | ForEach-Object {
+        Write-Host "  $Endpoint/${Bucket}/${wpPrefix}$($_.Name)"
+    }
 }
 Write-Host ""
-Write-Host "На сервере Hub подхватит файлы из /srv/lynx-hub/dist/downloads/ после deploy-all.sh"
+Write-Host "Server: copy s3.secrets to /opt/waypoint/s3.secrets, then bash /root/deploy-all.sh"

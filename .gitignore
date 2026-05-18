@@ -30,6 +30,10 @@ releases/
 smtp.env
 repos.env
 **/smtp.env
+deploy/ecosystem/s3.secrets
+deploy/ecosystem/docker.secrets
+**/s3.secrets
+**/docker.secrets
 
 # Export / caches
 _github_export/
