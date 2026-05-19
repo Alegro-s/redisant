@@ -37,7 +37,8 @@ function extractApiError(err: unknown): string | null {
     const direct = obj.error ?? obj.message ?? obj.detail;
     if (typeof direct === 'string' && direct.trim()) return direct.trim();
   }
-  if (e.response?.status) return `Ошибка API (${e.response.status})`;
+  if (e.response?.status === 400) return 'Проверьте данные формы или войдите, если аккаунт уже есть.';
+  if (e.response?.status) return 'Не удалось зарегистрироваться. Попробуйте позже.';
   return null;
 }
 
@@ -79,7 +80,7 @@ export default function Register() {
         return;
       }
       if (!data || typeof data !== 'object' || !(data as { token?: string }).token) {
-        enqueueSnackbar('Неожиданный ответ сервера. Обновите API.', { variant: 'warning' });
+        enqueueSnackbar('Сервер ответил неожиданно. Попробуйте войти или повторите позже.', { variant: 'warning' });
         return;
       }
       enqueueSnackbar('Аккаунт создан. Добро пожаловать в WaypointMetric.', { variant: 'success' });
@@ -118,7 +119,7 @@ export default function Register() {
               WaypointMetric
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Создайте аккаунт — те же учётные данные, что и в Lynx Launcher. Эта консоль — метрики, логи, BaaS и ingest; сам
+              Создайте аккаунт — те же данные, что и в Lynx Launcher. Здесь — облако Metric: базы, метрики и файлы; сам
               <strong> 2D-движок и редактор</strong> — в лаунчере и Lynx Cloud (релизы ядра — раздел «Ядро Lynx» в
               админке). <strong>Полная админ-консоль</strong> (хост, задания, инстансы) — только у пользователей с ролью{' '}
               <strong>admin</strong>, назначаемой владельцем сервера.

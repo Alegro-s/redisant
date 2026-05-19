@@ -42,7 +42,7 @@ export const DatabaseEnvironmentBar: React.FC = () => {
             Подпроект (изолированная БД)
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.45 }}>
-            У каждого подпроекта своя schema PostgreSQL и отдельные buckets (файлы): таблицы, SQL, ER и хранилище не
+            У каждого подпроекта своя база и папка с файлами: таблицы, запросы, схема и хранилище не
             пересекаются. Свой сервер подключается
             в{' '}
             <a href="/workspace/setup" style={{ color: 'inherit' }}>
@@ -111,11 +111,9 @@ export const DatabaseEnvironmentBar: React.FC = () => {
         </Stack>
 
         {schemaName ? (
-          <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-            schema: {schemaName}
-            {workspace.setupMode === 'connect' && workspace.connectionUrl
-              ? ` · агент: ${workspace.connectionUrl}`
-              : null}
+          <Typography variant="caption" color="text.secondary">
+            База: {schemaName}
+            {workspace.setupMode === 'connect' ? ' · подключён свой сервер' : null}
           </Typography>
         ) : null}
       </Stack>

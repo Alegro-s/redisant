@@ -115,7 +115,7 @@ export default function Login() {
               WaypointMetric
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-              метрики, логи, BaaS — не панель движка
+              базы, метрики и файлы — не панель движка Lynx
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
               Аккаунт Waypoint Metric — отдельная система. Можно зарегистрироваться здесь, войти через Яндекс (если настроено на

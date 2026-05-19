@@ -49,7 +49,7 @@ export const Onboarding: React.FC = () => {
   const finish = async () => {
     const ok = await saveWorkspace({ setupCompleted: true });
     if (!ok) {
-      showError('Не удалось сохранить — проверьте связь с API');
+      showError('Не удалось сохранить. Проверьте интернет и попробуйте снова.');
       return;
     }
     navigate('/dashboard', { replace: true });
@@ -109,8 +109,7 @@ export const Onboarding: React.FC = () => {
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Готовый хост для PostgreSQL, BaaS и ingest. В кабинете можно создать несколько подпроектов — у каждого своя
-              изолированная БД.
+              Готовый сервер в облаке. Можно создать несколько подпроектов — у каждого своя база и файлы.
             </Typography>
             <Button
               variant="contained"
@@ -137,13 +136,13 @@ export const Onboarding: React.FC = () => {
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              Свой VPS или домашний хост: агент отдаёт ER-схему, в облаке — отдельные БД на каждый подпроект.
+              Свой сервер или компьютер: установите агент, и в облаке появятся отдельные базы для каждого подпроекта.
             </Typography>
             <TextField
               fullWidth
               size="small"
-              label="URL агента"
-              placeholder="http://host:3000"
+              label="Адрес агента на вашем ПК"
+              placeholder="например порт 3000"
               value={connectionUrl}
               onChange={(e) => setConnectionUrl(e.target.value)}
               sx={{ mb: 1.5 }}
@@ -176,7 +175,7 @@ export const Onboarding: React.FC = () => {
           </Alert>
         ) : (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Выберите аренду или укажите URL своего сервера.
+            Выберите аренду в облаке или подключите свой сервер.
           </Alert>
         )}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>

@@ -1041,3 +1041,46 @@ button.cloud-login-btn {
   color: #248a3d;
   font-size: 0.875rem;
 }
+
+/* Кабинет и вход — светлая страница (раньше класс был без стилей) */
+.cloud-cabinet-page {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4.5rem;
+  text-align: center;
+}
+
+.cloud-cabinet-page h1 {
+  font-size: clamp(1.65rem, 4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1d1d1f;
+  margin: 0 0 0.75rem;
+  line-height: 1.15;
+}
+
+.cloud-cabinet-page .cloud-kicker {
+  color: #0071e3;
+}
+
+.cloud-cabinet-page .cloud-intro-lead {
+  max-width: 22rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cloud-cabinet-note {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #6e6e73;
+  margin: 0 0 1rem;
+}
+
+.cloud-intro-actions {
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+body.cloud-light .shell.cloud-shell {
+  padding-bottom: 0;
+}

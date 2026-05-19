@@ -35,13 +35,13 @@ export const metricPrimarySections: MetricNavSection[] = [
         icon: <Storage />,
         path: '/dashboard/database',
         requiresServer: true,
-        secondary: 'Серверы · таблицы · SQL · API',
+        secondary: 'Серверы, таблицы и запросы',
       },
       {
         text: 'Метрики',
         icon: <QueryStats />,
         path: '/dashboard/ingest-lab/summary',
-        secondary: 'События и ingest',
+        secondary: 'События и отчёты',
       },
       {
         text: 'Waypoint Desktop',
@@ -56,7 +56,7 @@ export const metricPrimarySections: MetricNavSection[] = [
   {
     title: 'Аккаунт',
     items: [
-      { text: 'API и ключи', icon: <Cable />, path: '/dashboard/connect', secondary: 'SDK · интеграции' },
+      { text: 'Ключи и подключение', icon: <Cable />, path: '/dashboard/connect', secondary: 'Для ваших приложений' },
       { text: 'Настройки', icon: <Settings />, path: '/dashboard/settings' },
       { text: 'Биллинг', icon: <AccountBalanceWallet />, path: '/dashboard/billing' },
     ],
@@ -75,7 +75,7 @@ export const metricInfraSections: MetricNavSection[] = [
         requiresServer: true,
         secondary: 'Проекты · сборки',
       },
-      { text: 'Ingest Lab', icon: <QueryStats />, path: '/dashboard/ingest-lab', secondary: 'Отправка · журнал' },
+      { text: 'Журнал событий', icon: <QueryStats />, path: '/dashboard/ingest-lab', secondary: 'Отправка и история' },
     ],
   },
 ];
@@ -153,13 +153,13 @@ export type HubZone = {
 export const hubZones: HubZone[] = [
   {
     title: 'База данных',
-    description: 'Подпроекты, таблицы, SQL-терминал, хранилище и API.',
+    description: 'Подпроекты, таблицы, запросы и файлы.',
     to: '/dashboard/database',
     icon: <Storage sx={{ fontSize: 28 }} />,
   },
   {
     title: 'Метрики',
-    description: 'Сводка ingest и поток событий.',
+    description: 'Сводка событий и отчётов.',
     to: '/dashboard/ingest-lab/summary',
     icon: <QueryStats sx={{ fontSize: 28 }} />,
   },
@@ -168,7 +168,7 @@ export const hubZones: HubZone[] = [
     description: 'Код привязки, устройства и синхронизация с ПК.',
     to: '/dashboard/settings/devices',
     icon: <Computer sx={{ fontSize: 28 }} />,
-    badge: 'В приложении — проекты, Docker, терминал',
+    badge: 'На ПК — проекты и терминал в Desktop',
   },
   {
     title: 'Обзор',
@@ -183,8 +183,8 @@ export const hubZones: HubZone[] = [
     icon: <SmartToy sx={{ fontSize: 28 }} />,
   },
   {
-    title: 'API и ключи',
-    description: 'Подключение SDK и внешних систем.',
+    title: 'Ключи и подключение',
+    description: 'Подключите свои приложения и сервисы.',
     to: '/dashboard/connect',
     icon: <Cable sx={{ fontSize: 28 }} />,
   },
@@ -198,8 +198,8 @@ export const infraHubZones: HubZone[] = [
     icon: <Hub sx={{ fontSize: 28 }} />,
   },
   {
-    title: 'Ingest Lab',
-    description: 'Отправка событий, журнал, ключи.',
+    title: 'Журнал событий',
+    description: 'Отправка событий и просмотр истории.',
     to: '/dashboard/ingest-lab',
     icon: <QueryStats sx={{ fontSize: 28 }} />,
   },

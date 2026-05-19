@@ -5,5 +5,5 @@ export function resolveLynxAuthBase(): string {
   if (typeof window !== 'undefined') {
     return `${window.location.origin}/auth`;
   }
-  return 'http://127.0.0.1:8090';
+  return '/auth';
 }

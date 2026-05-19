@@ -196,10 +196,10 @@ if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then
   cd "$PO_ROOT/Lynx/cloud"
   npm ci
   cat > .env.production.local <<'EOF'
-NEXT_PUBLIC_LYNX_AUTH_URL=https://lynx-cloud.ru/auth
-NEXT_PUBLIC_LYNX_API_BASE=https://lynx-cloud.ru
+NEXT_PUBLIC_LYNX_AUTH_URL=/auth
+NEXT_PUBLIC_LYNX_API_BASE=/lynx
 NEXT_PUBLIC_LYNX_HUB_URL=https://lynx-hub.ru
-NEXT_PUBLIC_LYNX_CABINET_URL=https://lynx-cloud.ru/cabinet
+NEXT_PUBLIC_LYNX_CABINET_URL=/cabinet
 EOF
   npm run build
   pkill -f "next start.*3001" 2>/dev/null || true

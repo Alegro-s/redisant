@@ -2,9 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/tspu-marketing.css';
 import { LINKS } from './links';
-import { TspuFeatureIcon, type TspuFeatureIcon as FeatureId } from './TspuIcons';
-
-const APP_ICON = '/tspu/app-icon.png';
+import { TspuAppMark, TspuFeatureIcon, type TspuFeatureIcon as FeatureId } from './TspuIcons';
 
 const tiles: { id: FeatureId; title: string; text: string }[] = [
   { id: 'schedule', title: 'Расписание', text: 'Пары, преподаватели и аудитории — всегда под рукой.' },
@@ -52,9 +50,9 @@ function TspuSyncGraph() {
         <p>Задания · материалы · сроки</p>
       </article>
       <article className="tspu-graph-node n-hub">
-        <img src={APP_ICON} alt="" width={40} height={40} />
+        <TspuAppMark size={40} />
         <strong>ТГПУ Профиль</strong>
-        <p>API · синхронизация · кэш профиля</p>
+        <p>Синхронизация · профиль · офлайн</p>
       </article>
       <article className="tspu-graph-node n-student">
         <strong>Студент</strong>
@@ -74,7 +72,7 @@ export function TspuProductPage() {
     <div className="tspu-root">
       <header className="tspu-nav">
         <Link to="/tspu" className="tspu-brand">
-          <img src={APP_ICON} alt="" className="tspu-brand-icon" width={36} height={36} />
+          <TspuAppMark className="tspu-brand-icon" size={36} />
           <span>
             ТГПУ <em>профиль</em>
           </span>
@@ -106,22 +104,15 @@ export function TspuProductPage() {
           </div>
 
           <div className="tspu-hero-icon-showcase">
-            <img
-              src={APP_ICON}
-              alt="Иконка приложения ТГПУ Профиль"
-              className="tspu-hero-app-icon"
-              width={280}
-              height={280}
-              loading="eager"
-            />
+            <TspuAppMark className="tspu-hero-app-icon" size={280} />
           </div>
         </section>
 
         <section className="tspu-sync-section" id="sync">
           <h2>Как данные попадают в приложение</h2>
           <p className="tspu-sync-lead">
-            Учётные системы вуза отдают информацию через API. Приложение собирает её в единый профиль и показывает
-            студенту в удобном виде — без лишних шагов.
+            Данные из систем вуза автоматически собираются в одном приложении — расписание, оценки и сервисы на одном
+            экране, без лишних шагов.
           </p>
           <TspuSyncGraph />
         </section>

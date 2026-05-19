@@ -1,7 +1,35 @@
 import type { ReactNode } from 'react';
 
 /** Иконки в стиле Phosphor (как в приложении ТГПУ Профиль) */
-type IconProps = { className?: string };
+type IconProps = { className?: string; size?: number };
+
+/** Логотип приложения (встроенный, без отдельного файла) */
+export function TspuAppMark({ className, size = 120 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 120 120"
+      aria-hidden
+      role="img"
+    >
+      <rect width="120" height="120" rx="28" fill="#f3ebe8" />
+      <rect x="8" y="8" width="104" height="104" rx="24" fill="none" stroke="#c45d45" strokeWidth="3" />
+      <text
+        x="60"
+        y="78"
+        textAnchor="middle"
+        fontSize="48"
+        fontWeight="700"
+        fill="#c45d45"
+        fontFamily="system-ui, Segoe UI, sans-serif"
+      >
+        Т
+      </text>
+    </svg>
+  );
+}
 
 function Icon({ children, className }: { children: ReactNode; className?: string }) {
   return (

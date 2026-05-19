@@ -135,8 +135,8 @@ export const Database: React.FC = () => {
         !ax.response &&
         (ax.code === 'ERR_NETWORK' || /network|ERR_CONNECTION|failed/i.test(ax.message ?? ''));
       const msg = net
-        ? 'Нет связи с API. Убедитесь, что сайт открыт по домену/IP, а не как file://, и что nginx проксирует /api.'
-        : ax.response?.data?.error || 'Ошибка выполнения запроса';
+        ? 'Нет связи с облаком. Откройте сайт в браузере и проверьте подключение к интернету.'
+        : ax.response?.data?.error || 'Не удалось выполнить запрос.';
       setError(msg);
       showError(msg);
       enqueueSnackbar(msg, { variant: 'error', autoHideDuration: 10000 });
