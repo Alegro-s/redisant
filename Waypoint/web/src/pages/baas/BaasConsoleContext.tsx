@@ -109,7 +109,7 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setRestTable((prev) => prev || (b.tables[0] ?? ''));
       setUploadBucket((prev) => prev || (b.buckets[0]?.name ?? ''));
     } catch {
-      showError('Не удалось загрузить BaaS (схема / таблицы / buckets)');
+      showError('Не удалось загрузить базу. Проверьте настройку облака и обновите страницу.');
       setSchemaName(null);
       setTables([]);
       setBuckets([]);
@@ -153,7 +153,7 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
         localStorage.setItem(BAAS_ENV_STORAGE_KEY, pick);
       }
     } catch {
-      showError('Не удалось загрузить подпроекты БД');
+      showError('Не удалось загрузить список подпроектов');
     }
   }, [showError]);
 
@@ -242,7 +242,7 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
       showSuccess('Таблица создана');
       await refreshTables();
     } catch {
-      showError('CREATE table не удался (нужен WM_BAAS_SQL_WRITE / ADMIN_ALLOW_SQL_WRITE на сервере)');
+      showError('Не удалось создать таблицу. Попробуйте позже или обратитесь в поддержку.');
     } finally {
       setLoading(false);
     }

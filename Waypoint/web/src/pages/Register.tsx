@@ -12,7 +12,8 @@ import {
   Link as MuiLink,
 } from '@mui/material';
 import { LockOutlined, Visibility, VisibilityOff, Person, Email } from '@mui/icons-material';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../app/contexts/AuthContext';
 import { useSnackbar } from 'notistack';
 import authApi from '../services/authApi';
 import { setPreferredPlan } from '../utils/preferredPlan';
@@ -53,6 +54,8 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const theme = useTheme();
+  const navigate = useNavigate();
+  const { establishSession } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const [searchParams] = useSearchParams();
   const preselectedPlan = searchParams.get('plan');
@@ -83,9 +86,11 @@ export default function Register() {
         enqueueSnackbar('Сервер ответил неожиданно. Попробуйте войти или повторите позже.', { variant: 'warning' });
         return;
       }
-      enqueueSnackbar('Аккаунт создан. Добро пожаловать в WaypointMetric.', { variant: 'success' });
+      const token = (data as { token: string }).token;
+      await establishSession(token);
+      enqueueSnackbar('Аккаунт создан. Добро пожаловать в Waypoint Metric.', { variant: 'success' });
       setPreferredPlan(preselectedPlan);
-      window.location.href = '/dashboard/onboarding';
+      navigate('/workspace/setup', { replace: true });
     } catch (err: unknown) {
       const msg =
         extractApiError(err) ||

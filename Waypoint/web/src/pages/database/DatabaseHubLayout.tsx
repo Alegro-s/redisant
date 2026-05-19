@@ -18,23 +18,22 @@ function DatabaseHubInner() {
         База данных
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: 720, lineHeight: 1.6 }}>
-        Ваша PostgreSQL в облаке: таблицы, ER-диаграмма, SQL-терминал и доступ по API. Локальная работа с файлами и Docker —
-        в Waypoint Desktop.
+        Таблицы, схема связей, запросы и файлы — в облаке. Проекты на своём компьютере — в Waypoint Desktop.
       </Typography>
 
       {!hasServer && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Подключите сервер в{' '}
-          <a href="/workspace/setup" style={{ color: 'inherit' }}>
-            настройке workspace
+          Сначала подключите облако в{' '}
+          <a href="/workspace/setup" style={{ color: 'inherit', fontWeight: 600 }}>
+            настройке
           </a>
-          , чтобы создавать таблицы и выполнять SQL. Раздел «API и ключи» доступен уже сейчас.
+          — тогда можно создавать таблицы. Раздел «Ключи» доступен уже сейчас.
         </Alert>
       )}
 
       {hasServer && !schemaName && !loading && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          BaaS-схема на сервере ещё не инициализирована. Проверьте WM_BAAS_ENABLED на API или выберите аренду в настройке.
+          База ещё готовится. Нажмите «Включить аренду» в настройке или подождите минуту и обновите страницу.
         </Alert>
       )}
 
@@ -47,7 +46,7 @@ function DatabaseHubInner() {
 
       {schemaName ? (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          Схема: <strong>{schemaName}</strong>
+          Подпроект: <strong>{schemaName}</strong>
         </Typography>
       ) : null}
 

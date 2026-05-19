@@ -58,7 +58,7 @@ export default function Login() {
       await authLogin(login, password);
       enqueueSnackbar('Вход выполнен.', { variant: 'success' });
       setPreferredPlan(searchParams.get('plan'));
-      navigate('/dashboard/onboarding');
+      navigate('/workspace/setup', { replace: true });
     } catch (err: unknown) {
       const ax = err as {
         response?: { status?: number; data?: { error_code?: string; email?: string } };

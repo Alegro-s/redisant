@@ -2,7 +2,9 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/tspu-marketing.css';
 import { LINKS } from './links';
-import { TspuAppMark, TspuFeatureIcon, type TspuFeatureIcon as FeatureId } from './TspuIcons';
+import { TspuFeatureIcon, type TspuFeatureIcon as FeatureId } from './TspuIcons';
+
+const APP_ICON = '/tspu/app-icon.png';
 
 const tiles: { id: FeatureId; title: string; text: string }[] = [
   { id: 'schedule', title: 'Расписание', text: 'Пары, преподаватели и аудитории — всегда под рукой.' },
@@ -50,7 +52,7 @@ function TspuSyncGraph() {
         <p>Задания · материалы · сроки</p>
       </article>
       <article className="tspu-graph-node n-hub">
-        <TspuAppMark size={40} />
+        <img src={APP_ICON} alt="" width={40} height={40} />
         <strong>ТГПУ Профиль</strong>
         <p>Синхронизация · профиль · офлайн</p>
       </article>
@@ -72,7 +74,7 @@ export function TspuProductPage() {
     <div className="tspu-root">
       <header className="tspu-nav">
         <Link to="/tspu" className="tspu-brand">
-          <TspuAppMark className="tspu-brand-icon" size={36} />
+          <img src={APP_ICON} alt="" className="tspu-brand-icon" width={36} height={36} />
           <span>
             ТГПУ <em>профиль</em>
           </span>
@@ -104,7 +106,7 @@ export function TspuProductPage() {
           </div>
 
           <div className="tspu-hero-icon-showcase">
-            <TspuAppMark className="tspu-hero-app-icon" size={280} />
+            <img src={APP_ICON} alt="ТГПУ Профиль" className="tspu-hero-app-icon" width={280} height={280} loading="eager" />
           </div>
         </section>
 

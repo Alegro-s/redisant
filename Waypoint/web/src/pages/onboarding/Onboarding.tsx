@@ -55,8 +55,16 @@ export const Onboarding: React.FC = () => {
     navigate('/dashboard', { replace: true });
   };
 
+  const cardSx = {
+    p: 2.5,
+    borderRadius: 2,
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column' as const,
+  };
+
   return (
-    <Box sx={{ maxWidth: 720, mx: 'auto', py: { xs: 2, md: 3 }, px: 2 }}>
+    <Box sx={{ maxWidth: 800, mx: 'auto', py: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
         Настройка облака
       </Typography>
@@ -64,7 +72,7 @@ export const Onboarding: React.FC = () => {
         Три шага: тариф → сервер (для БД и метрик) → рабочий стол. Waypoint Desktop ставится отдельно.
       </Typography>
 
-      <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+      <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
         {STEPS.map((label) => (
           <Step key={label}>
             <StepLabel>{label}</StepLabel>
@@ -100,21 +108,22 @@ export const Onboarding: React.FC = () => {
       </Paper>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, height: '100%' }}>
+        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+          <Paper sx={cardSx}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <PremiumIconBadge icon={<Cloud fontSize="small" />} />
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                2a. Аренда сервера
+                Облако Waypoint
               </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Готовый сервер в облаке. Можно создать несколько подпроектов — у каждого своя база и файлы.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+              Готовый сервер: база, метрики и файлы без настройки на своём ПК.
             </Typography>
             <Button
               variant="contained"
               fullWidth
               disabled={isLoading}
+              sx={{ mt: 'auto' }}
               onClick={() =>
                 void saveWorkspace({
                   setupMode: 'rent',
@@ -127,22 +136,22 @@ export const Onboarding: React.FC = () => {
             </Button>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, height: '100%' }}>
+        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+          <Paper sx={cardSx}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <PremiumIconBadge icon={<Dns fontSize="small" />} />
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                2b. Свой сервер
+                Свой компьютер
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              Свой сервер или компьютер: установите агент, и в облаке появятся отдельные базы для каждого подпроекта.
+              Установите агент Waypoint — данные будут синхронизироваться с облаком.
             </Typography>
             <TextField
               fullWidth
               size="small"
-              label="Адрес агента на вашем ПК"
-              placeholder="например порт 3000"
+              label="Код подключения агента"
+              placeholder="из приложения Desktop"
               value={connectionUrl}
               onChange={(e) => setConnectionUrl(e.target.value)}
               sx={{ mb: 1.5 }}
@@ -151,6 +160,7 @@ export const Onboarding: React.FC = () => {
               variant="outlined"
               fullWidth
               disabled={isLoading}
+              sx={{ mt: 'auto' }}
               onClick={() =>
                 void saveWorkspace({
                   setupMode: 'connect',
@@ -178,19 +188,26 @@ export const Onboarding: React.FC = () => {
             Выберите аренду в облаке или подключите свой сервер.
           </Alert>
         )}
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ alignItems: { sm: 'center' } }}>
           <Button
             variant="contained"
             startIcon={<CheckCircle />}
             disabled={!workspace.serverConnected || isLoading}
             onClick={() => void finish()}
+            sx={{ minWidth: { sm: 220 } }}
           >
             Открыть рабочий стол
           </Button>
-          <Button component={RouterLink} to="/dashboard/database" variant="outlined" disabled={!workspace.serverConnected}>
+          <Button
+            component={RouterLink}
+            to="/dashboard/database"
+            variant="outlined"
+            disabled={!workspace.serverConnected}
+            sx={{ minWidth: { sm: 160 } }}
+          >
             База данных
           </Button>
-          <Button component={RouterLink} to="/desktop/releases" variant="text">
+          <Button component={RouterLink} to="/desktop/releases" variant="text" sx={{ minWidth: { sm: 160 } }}>
             Скачать Desktop
           </Button>
         </Stack>

@@ -65,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path === '/workspace/setup') return 'Setup';
+    if (path === '/workspace/setup' || path === '/dashboard/onboarding') return 'Настройка облака';
     if (path === '/dashboard') return 'Рабочий стол';
     if (path.startsWith('/dashboard/business/ai')) return 'Помощник';
     if (path.startsWith('/dashboard/settings/devices')) return 'Waypoint Desktop';
@@ -252,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         <PwaInstallButton sx={{ mr: 1, display: { xs: 'none', md: 'inline-flex' } }} />
 
         <IconButton sx={{ mr: 0.5 }} onClick={(e) => setNotificationAnchor(e.currentTarget)} size="small" color="inherit">
-          <Badge badgeContent={3} color="error">
+          <Badge badgeContent={0} color="error" invisible>
             <Notifications />
           </Badge>
         </IconButton>
@@ -430,29 +430,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             },
           }}
         >
-          <MenuItem>
-            <Box>
-              <Typography variant="subtitle2">Обновление</Typography>
-              <Typography variant="caption" color="text.secondary">
-                Доступна новая версия консоли
-              </Typography>
-            </Box>
-          </MenuItem>
-          <MenuItem>
-            <Box>
-              <Typography variant="subtitle2">Высокая нагрузка CPU</Typography>
-              <Typography variant="caption" color="text.secondary">
-                Использование CPU выше 80%
-              </Typography>
-            </Box>
-          </MenuItem>
-          <MenuItem>
-            <Box>
-              <Typography variant="subtitle2">Резервная копия</Typography>
-              <Typography variant="caption" color="text.secondary">
-                Копия базы успешно создана
-              </Typography>
-            </Box>
+          <MenuItem disabled>
+            <Typography variant="body2" color="text.secondary">
+              Пока нет новых уведомлений
+            </Typography>
           </MenuItem>
         </Menu>
       </Toolbar>

@@ -19,6 +19,8 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (login: string, password: string) => Promise<void>;
+  /** Сохранить JWT после регистрации / подтверждения почты */
+  establishSession: (token: string) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
   linkRealm: (realm: 'nexus' | 'metric', password: string) => Promise<void>;
@@ -106,13 +108,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (loginStr: string, password: string) => {
-    const response = await authApi.post<{ token: string }>('/login', { login: loginStr, password });
-    setToken(response.data.token);
-    applyBearer(response.data.token);
-    sessionStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
+  const establishSession = async (tokenStr: string) => {
+    setToken(tokenStr);
+    applyBearer(tokenStr);
+    sessionStorage.setItem(AUTH_TOKEN_KEY, tokenStr);
     const userResponse = await authApi.get<Record<string, unknown>>('/profile');
     setUser(mapProfile(userResponse.data));
+  };
+
+  const login = async (loginStr: string, password: string) => {
+    const response = await authApi.post<{ token: string }>('/login', { login: loginStr, password });
+    await establishSession(response.data.token);
   };
 
   const refreshProfile = async () => {
@@ -158,6 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         token,
         isLoading,
         login,
+        establishSession,
         logout,
         refreshProfile,
         linkRealm,

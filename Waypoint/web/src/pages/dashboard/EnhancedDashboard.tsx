@@ -11,7 +11,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { Refresh, Download, Share, Timeline, WarningAmber } from '@mui/icons-material';
+import { Refresh, Timeline, WarningAmber } from '@mui/icons-material';
 import {
   Bar,
   BarChart,
@@ -84,7 +84,7 @@ export const EnhancedDashboard: React.FC = () => {
         const { data } = await api.get<MetricsSummary>('/me/metrics/summary');
         setIngestSummary(data);
       } catch {
-        setIngestSummaryErr('Сводка ingest недоступна (нужен JWT пользователя с ключом ingest).');
+        setIngestSummaryErr('Сводка метрик пока недоступна. Завершите настройку облака или подключите ключ в разделе «Ключи».');
         setIngestSummary(null);
       } finally {
         setIngestSummaryLoading(false);
@@ -105,10 +105,10 @@ export const EnhancedDashboard: React.FC = () => {
   }));
 
   const statsCards = [
-    { title: 'Users', value: stats?.users || 0, icon: <People />, color: '#3ECF8E', trend: 12 },
-    { title: 'Projects', value: stats?.projects || 0, icon: <Folder />, color: '#8B5CF6', trend: 5 },
-    { title: 'Assets', value: stats?.assets || 0, icon: <Image />, color: '#F59E0B', trend: 23 },
-    { title: 'Active Sessions', value: stats?.active_sessions || 0, icon: <Schedule />, color: '#06B6D4', trend: -2 },
+    { title: 'Пользователи', value: stats?.users || 0, icon: <People />, color: '#3ECF8E', trend: 12 },
+    { title: 'Проекты', value: stats?.projects || 0, icon: <Folder />, color: '#8B5CF6', trend: 5 },
+    { title: 'Файлы', value: stats?.assets || 0, icon: <Image />, color: '#F59E0B', trend: 23 },
+    { title: 'Сессии', value: stats?.active_sessions || 0, icon: <Schedule />, color: '#06B6D4', trend: -2 },
   ];
 
   if (isLoading && metrics.length === 0) {
@@ -123,9 +123,9 @@ export const EnhancedDashboard: React.FC = () => {
     <Box>
       <PageSubNav
         items={[
-          { label: 'Дашборд', to: '/dashboard/overview', end: true },
-          { label: 'WaypointMetric', to: '/dashboard/ingest-lab' },
-          { label: 'BaaS', to: '/dashboard/baas' },
+          { label: 'Сводка', to: '/dashboard/overview', end: true },
+          { label: 'Метрики', to: '/dashboard/ingest-lab/summary' },
+          { label: 'База', to: '/dashboard/database' },
           { label: 'Подключение', to: '/dashboard/connect' },
           { label: 'Настройки', to: '/dashboard/settings' },
         ]}
@@ -143,26 +143,16 @@ export const EnhancedDashboard: React.FC = () => {
       >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, fontSize: { xs: '1.35rem', sm: '2rem' } }}>
-            Обзор платформы
+            Сводка
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720, lineHeight: 1.65 }}>
             {isAdmin
-              ? 'Сводка хоста API и ingest: это операционная консоль WaypointMetric (метрики, ИИ, данные) — не панель игрового редактора.'
-              : 'Ваши метрики ingest и проверка потока событий. Расширенный доступ к хосту и инстансам — у назначенных администраторов.'}
+              ? 'Главные цифры по аккаунтам и нагрузке облака Waypoint Metric.'
+              : 'Ваши события, метрики и состояние подключённого сервера в одном месте.'}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="Export Report">
-            <IconButton sx={{ bgcolor: theme.palette.background.paper }}>
-              <Download />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Share">
-            <IconButton sx={{ bgcolor: theme.palette.background.paper }}>
-              <Share />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Refresh">
+          <Tooltip title="Обновить данные">
             <IconButton onClick={refreshMetrics} sx={{ bgcolor: theme.palette.background.paper }}>
               <Refresh />
             </IconButton>
@@ -172,9 +162,7 @@ export const EnhancedDashboard: React.FC = () => {
 
       {!isAdmin && (
         <Alert severity="info" sx={{ mb: 3 }}>
-          Режим <strong>Observer</strong>: метрики, Ingest Lab, проекты, ассеты и безопасные SQL на чтение.
-          Полный доступ к инфраструктуре <strong>Lynx Core</strong> (инстансы, задания, релизы ядра Lynx, расширенный SQL) — после
-          назначения роли <strong>admin</strong> на ваш аккаунт.
+          Расширенные разделы для администраторов появятся после назначения прав на аккаунте.
         </Alert>
       )}
 
@@ -202,7 +190,7 @@ export const EnhancedDashboard: React.FC = () => {
       )}
 
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        Ingest и метрики
+        События и метрики
       </Typography>
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12}>
@@ -217,10 +205,10 @@ export const EnhancedDashboard: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
               <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Timeline fontSize="small" />
-                Данные из POST /api/waypoint/ingest (ваш API-ключ)
+                Последние показатели из вашего облака
               </Typography>
-              <Button component={RouterLink} to="/dashboard/ingest-lab" variant="outlined" size="small">
-                Ingest Lab: таблица, симуляция, анализ
+              <Button component={RouterLink} to="/dashboard/ingest-lab/summary" variant="outlined" size="small">
+                Открыть метрики
               </Button>
             </Box>
             {ingestSummaryErr && (
@@ -282,7 +270,7 @@ export const EnhancedDashboard: React.FC = () => {
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    Пока нет серий — отправьте метрики или прогоните симуляцию в Ingest Lab, затем реальный ingest.
+                    Пока нет данных. Отправьте первое событие из приложения или откройте раздел «Метрики».
                   </Typography>
                 )}
               </>
@@ -294,19 +282,16 @@ export const EnhancedDashboard: React.FC = () => {
       {!isLoading && (
         <>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        System Health
+        Состояние сервера
       </Typography>
       <Alert severity="info" sx={{ mb: 2 }}>
-        Показатели CPU/RAM — по данным{' '}
-        <strong>sysinfo</strong> на машине, где крутится API (в Docker это часто хост или cgroup; не «удалённый» сервер
-        пользователя). Диск и сеть в контейнере часто близки к нулю без нагрузки. Линии могут быть почти ровными при
-        стабильной нагрузке и опросе раз в несколько секунд. Для метрик <em>вашего</em> отдельного сервера нужен агент с{' '}
-        <code>POST /integrations/agent/heartbeat</code> и полем <code>metrics</code>.
+        Здесь видна нагрузка на облако Waypoint Metric. Если подключили свой сервер — установите агент, чтобы видеть его
+        отдельно.
       </Alert>
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <HealthGauge
-            title="CPU Usage"
+            title="Процессор"
             value={latestMetrics?.cpu || 0}
             threshold={80}
             warningThreshold={60}
@@ -315,7 +300,7 @@ export const EnhancedDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <HealthGauge
-            title="Memory Usage"
+            title="Память"
             value={
               latestMetrics && latestMetrics.total_memory > 0
                 ? (latestMetrics.memory / latestMetrics.total_memory) * 100
@@ -328,7 +313,7 @@ export const EnhancedDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <HealthGauge
-            title="Disk I/O"
+            title="Диск"
             value={latestMetrics?.disk_io || 0}
             unit=" MB/s"
             threshold={100}
@@ -338,7 +323,7 @@ export const EnhancedDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <HealthGauge
-            title="Network"
+            title="Сеть"
             value={(latestMetrics?.network_rx || 0) + (latestMetrics?.network_tx || 0)}
             unit=" KB/s"
             threshold={5000}
@@ -357,16 +342,15 @@ export const EnhancedDashboard: React.FC = () => {
         <Grid item xs={12} lg={5}>
           <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-              Интенсивность запросов к API
+              Активность
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Значение <strong>Requests</strong> на графике слева — среднее число HTTP-запросов в секунду за интервал опроса
-              (~5 с), дошедших до обработчика после rate-limit (не фиктивные доли, как в старом макете круговой диаграммы).
+              Сколько обращений к облаку в секунду — по данным за последние минуты.
             </Typography>
             <Typography variant="h3" component="p" sx={{ fontWeight: 700 }}>
               {latestMetrics?.requests ?? 0}
               <Typography component="span" variant="body1" color="text.secondary" sx={{ ml: 1 }}>
-                запр./с (оценка)
+                в секунду
               </Typography>
             </Typography>
           </Box>

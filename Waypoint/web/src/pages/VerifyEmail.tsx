@@ -10,7 +10,8 @@ import {
   Link as MuiLink,
 } from '@mui/material';
 import { MarkEmailReadOutlined } from '@mui/icons-material';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../app/contexts/AuthContext';
 import { useSnackbar } from 'notistack';
 import authApi from '../services/authApi';
 
@@ -26,6 +27,8 @@ function extractApiError(err: unknown): string | null {
 
 export default function VerifyEmail() {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const { establishSession } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const [searchParams] = useSearchParams();
   const qpEmail = searchParams.get('email') ?? '';
@@ -56,8 +59,9 @@ export default function VerifyEmail() {
         code: code.replace(/\s/g, ''),
       });
       if (data && typeof data === 'object' && 'token' in data) {
-        enqueueSnackbar('Email подтверждён. Добро пожаловать.', { variant: 'success' });
-        window.location.href = '/dashboard/onboarding';
+        await establishSession(data.token);
+        enqueueSnackbar('Почта подтверждена. Добро пожаловать.', { variant: 'success' });
+        navigate('/workspace/setup', { replace: true });
       }
     } catch (err: unknown) {
       const msg = extractApiError(err) ?? 'Не удалось подтвердить. Проверьте код.';
