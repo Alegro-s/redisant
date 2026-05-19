@@ -152,7 +152,13 @@ export function WaypointClubPage() {
   useDocumentTitle('Waypoint Club — экосистема Waypoint');
   return (
     <div className="club-root">
-      <nav className="club-nav">
+      <section className="club-splash" aria-hidden>
+        <div className="club-splash-glow" />
+        <p className="club-splash-title">
+          Waypoint <em>Club</em>
+        </p>
+      </section>
+      <nav className="club-nav club-nav-over-splash">
         <Link to="/" className="club-logo">
           Waypoint <em>Club</em>
         </Link>

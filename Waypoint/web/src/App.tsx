@@ -254,13 +254,7 @@ function AppRoutes() {
       />
       <Route
         path="/dashboard/overview"
-        element={
-          <PrivateRoute>
-            <ModernLayout>
-              <EnhancedDashboard />
-            </ModernLayout>
-          </PrivateRoute>
-        }
+        element={<Navigate to="/dashboard" replace />}
       />
       <Route
         path="/dashboard/users"

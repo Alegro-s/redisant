@@ -176,22 +176,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </Typography>
         </Box>
 
-        <ToggleButtonGroup
-          exclusive
-          value={cabinetMode}
-          onChange={onCabinetModeChange}
-          size="small"
-          sx={{
-            display: { xs: 'none', md: 'flex' },
-            mr: 1.5,
-            flexShrink: 0,
-            '& .MuiToggleButton-root': { px: 1.25, py: 0.35, fontSize: '0.72rem', textTransform: 'none' },
-          }}
-        >
-          <ToggleButton value="business">Стандарт</ToggleButton>
-          <ToggleButton value="developer">Расширенный</ToggleButton>
-        </ToggleButtonGroup>
-
         <Typography
           variant="subtitle1"
           noWrap
@@ -308,31 +292,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               <Close />
             </IconButton>
           </Box>
-          <Box sx={{ px: 2, pb: 2 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75, fontWeight: 600 }}>
-              Режим кабинета
-            </Typography>
-            <ToggleButtonGroup
-              exclusive
-              fullWidth
-              value={cabinetMode}
-              onChange={(_, next) => {
-                if (!next) return;
-                setCabinetMode(next);
-                if (next === 'business' && location.pathname.startsWith('/dashboard/lynx-cloud')) navigate('/dashboard');
-                if (next === 'developer' && location.pathname.startsWith('/dashboard/business/ai')) navigate('/dashboard/lynx-cloud');
-              }}
-              size="medium"
-              sx={{ '& .MuiToggleButton-root': { py: 1, textTransform: 'none', fontWeight: 600 } }}
-            >
-              <ToggleButton value="business">Стандарт</ToggleButton>
-              <ToggleButton value="developer">Расширенный</ToggleButton>
-            </ToggleButtonGroup>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', lineHeight: 1.45 }}>
-              Стандарт — база, метрики и Desktop. Расширенный — Lynx Cloud и журнал событий.
-            </Typography>
-          </Box>
-          <Divider />
+          <Divider sx={{ mt: 1 }} />
           <List sx={{ py: 1, '& .MuiListItemIcon-root': { minWidth: 44 } }}>
             <ListItemButton
               sx={{ py: 1.25 }}

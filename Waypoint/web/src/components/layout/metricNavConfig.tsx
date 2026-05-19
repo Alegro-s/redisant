@@ -2,14 +2,10 @@ import React from 'react';
 import {
   Cable,
   Computer,
-  Dashboard,
   HomeWork,
-  Hub,
   QueryStats,
   Settings,
-  SmartToy,
   AccountBalanceWallet,
-  CloudQueue,
   Storage,
 } from '@mui/icons-material';
 import type { CabinetMode } from '../../app/contexts/CabinetModeContext';
@@ -24,18 +20,24 @@ export type MetricNavItem = {
 
 export type MetricNavSection = { title: string; items: MetricNavItem[] };
 
-/** Основное меню — облако дополняет Desktop (привязка, метрики, ключи). */
+/** Кабинет Metric: только облако + связка с Desktop. */
 export const metricPrimarySections: MetricNavSection[] = [
   {
-    title: 'Облако',
+    title: 'Работа',
     items: [
-      { text: 'Рабочий стол', icon: <HomeWork />, path: '/dashboard', secondary: 'Быстрый доступ' },
+      { text: 'Главная', icon: <HomeWork />, path: '/dashboard', secondary: 'С чего начать' },
+      {
+        text: 'Waypoint Desktop',
+        icon: <Computer />,
+        path: '/dashboard/settings/devices',
+        secondary: 'Привязка компьютера',
+      },
       {
         text: 'База данных',
         icon: <Storage />,
         path: '/dashboard/database',
         requiresServer: true,
-        secondary: 'Серверы, таблицы и запросы',
+        secondary: 'Таблицы и файлы',
       },
       {
         text: 'Метрики',
@@ -43,69 +45,26 @@ export const metricPrimarySections: MetricNavSection[] = [
         path: '/dashboard/ingest-lab/summary',
         secondary: 'События и отчёты',
       },
-      {
-        text: 'Waypoint Desktop',
-        icon: <Computer />,
-        path: '/dashboard/settings/devices',
-        secondary: 'Привязка ПК · синхронизация',
-      },
-      { text: 'Обзор', icon: <Dashboard />, path: '/dashboard/overview', secondary: 'Сводка и графики' },
-      { text: 'Помощник', icon: <SmartToy />, path: '/dashboard/business/ai', secondary: 'Вопросы по данным' },
     ],
   },
   {
     title: 'Аккаунт',
     items: [
-      { text: 'Ключи и подключение', icon: <Cable />, path: '/dashboard/connect', secondary: 'Для ваших приложений' },
+      { text: 'Ключи', icon: <Cable />, path: '/dashboard/connect', secondary: 'Для приложений' },
       { text: 'Настройки', icon: <Settings />, path: '/dashboard/settings' },
-      { text: 'Биллинг', icon: <AccountBalanceWallet />, path: '/dashboard/billing' },
+      { text: 'Тариф', icon: <AccountBalanceWallet />, path: '/dashboard/billing' },
     ],
   },
 ];
 
-/** Серверная инфраструктура — в приложении это Docker/терминал локально. */
-export const metricInfraSections: MetricNavSection[] = [
-  {
-    title: 'Дополнительно',
-    items: [
-      {
-        text: 'Lynx Cloud',
-        icon: <Hub />,
-        path: '/dashboard/lynx-cloud',
-        requiresServer: true,
-        secondary: 'Проекты · сборки',
-      },
-      { text: 'Журнал событий', icon: <QueryStats />, path: '/dashboard/ingest-lab', secondary: 'Отправка и история' },
-    ],
-  },
-];
+export const metricInfraSections: MetricNavSection[] = [];
 
-export function navSectionsForMode(mode: CabinetMode): MetricNavSection[] {
-  if (mode === 'developer') {
-    return [...metricPrimarySections, ...metricInfraSections];
-  }
+export function navSectionsForMode(_mode: CabinetMode): MetricNavSection[] {
   return metricPrimarySections;
 }
 
 export const metricRailItems = [
-  {
-    icon: <HomeWork />,
-    path: '/dashboard',
-    label: 'Стол',
-    match: (p: string) => p === '/dashboard',
-  },
-  {
-    icon: <Dashboard />,
-    path: '/dashboard/overview',
-    label: 'Обзор',
-    match: (p: string) => p === '/dashboard/overview',
-  },
-  {
-    icon: <QueryStats />,
-    path: '/dashboard/ingest-lab/summary',
-    label: 'Метрики',
-    match: (p: string) => p.startsWith('/dashboard/ingest-lab'),
-  },
+  { icon: <HomeWork />, path: '/dashboard', label: 'Главная', match: (p: string) => p === '/dashboard' },
   {
     icon: <Computer />,
     path: '/dashboard/settings/devices',
@@ -115,29 +74,32 @@ export const metricRailItems = [
   {
     icon: <Storage />,
     path: '/dashboard/database',
-    label: 'БД',
-    match: (p: string) => p.startsWith('/dashboard/database') || p.startsWith('/dashboard/baas'),
+    label: 'База',
+    match: (p: string) => p.startsWith('/dashboard/database'),
   },
   {
-    icon: <SmartToy />,
-    path: '/dashboard/business/ai',
-    label: 'Помощник',
-    match: (p: string) => p.startsWith('/dashboard/business/ai') || p.startsWith('/dashboard/developer/ai'),
+    icon: <QueryStats />,
+    path: '/dashboard/ingest-lab/summary',
+    label: 'Метрики',
+    match: (p: string) => p.startsWith('/dashboard/ingest-lab'),
   },
   {
     icon: <Settings />,
     path: '/dashboard/settings',
-    label: 'Настройки',
-    match: (p: string) => p.startsWith('/dashboard/settings'),
+    label: 'Ещё',
+    match: (p: string) =>
+      p.startsWith('/dashboard/settings') ||
+      p.startsWith('/dashboard/connect') ||
+      p.startsWith('/dashboard/billing'),
   },
 ] as const;
 
 export function mobileNavForMode(_mode: CabinetMode) {
   return [
-    { label: 'Стол', icon: <HomeWork />, path: '/dashboard' },
-    { label: 'Обзор', icon: <Dashboard />, path: '/dashboard/overview' },
-    { label: 'Метрики', icon: <QueryStats />, path: '/dashboard/ingest-lab/summary' },
+    { label: 'Главная', icon: <HomeWork />, path: '/dashboard' },
     { label: 'Desktop', icon: <Computer />, path: '/dashboard/settings/devices' },
+    { label: 'База', icon: <Storage />, path: '/dashboard/database' },
+    { label: 'Метрики', icon: <QueryStats />, path: '/dashboard/ingest-lab/summary' },
     { label: 'Ещё', icon: <Settings />, path: '/dashboard/settings' },
   ];
 }
@@ -152,55 +114,30 @@ export type HubZone = {
 
 export const hubZones: HubZone[] = [
   {
+    title: 'Waypoint Desktop',
+    description: 'Код для привязки и список ваших компьютеров.',
+    to: '/dashboard/settings/devices',
+    icon: <Computer sx={{ fontSize: 28 }} />,
+    badge: 'Проекты и терминал — в программе на ПК',
+  },
+  {
     title: 'База данных',
-    description: 'Подпроекты, таблицы, запросы и файлы.',
+    description: 'Таблицы, файлы и ключи для приложений.',
     to: '/dashboard/database',
     icon: <Storage sx={{ fontSize: 28 }} />,
   },
   {
     title: 'Метрики',
-    description: 'Сводка событий и отчётов.',
+    description: 'Что происходит в ваших сервисах — в одной сводке.',
     to: '/dashboard/ingest-lab/summary',
     icon: <QueryStats sx={{ fontSize: 28 }} />,
   },
   {
-    title: 'Waypoint Desktop',
-    description: 'Код привязки, устройства и синхронизация с ПК.',
-    to: '/dashboard/settings/devices',
-    icon: <Computer sx={{ fontSize: 28 }} />,
-    badge: 'На ПК — проекты и терминал в Desktop',
-  },
-  {
-    title: 'Обзор',
-    description: 'Главные показатели и состояние сервисов.',
-    to: '/dashboard/overview',
-    icon: <Dashboard sx={{ fontSize: 28 }} />,
-  },
-  {
-    title: 'Помощник',
-    description: 'Вопросы по метрикам и операциям в облаке.',
-    to: '/dashboard/business/ai',
-    icon: <SmartToy sx={{ fontSize: 28 }} />,
-  },
-  {
-    title: 'Ключи и подключение',
-    description: 'Подключите свои приложения и сервисы.',
+    title: 'Ключи',
+    description: 'Подключите сайт или приложение к облаку.',
     to: '/dashboard/connect',
     icon: <Cable sx={{ fontSize: 28 }} />,
   },
 ];
 
-export const infraHubZones: HubZone[] = [
-  {
-    title: 'Lynx Cloud',
-    description: 'Облачные проекты и сборки (нужен сервер).',
-    to: '/dashboard/lynx-cloud',
-    icon: <Hub sx={{ fontSize: 28 }} />,
-  },
-  {
-    title: 'Журнал событий',
-    description: 'Отправка событий и просмотр истории.',
-    to: '/dashboard/ingest-lab',
-    icon: <QueryStats sx={{ fontSize: 28 }} />,
-  },
-];
+export const infraHubZones: HubZone[] = [];

@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
   createBaasEnvironment,
   createBaasTable,
@@ -19,9 +19,14 @@ import {
 import { BAAS_ENV_STORAGE_KEY } from '../../services/api';
 import { deepseekChat } from '../../services/waypoint-chat.service';
 import { useNotification } from '../../app/hooks/useNotification';
+import { isAxiosError } from 'axios';
+
+const RATE_LIMIT_COOLDOWN_MS = 90_000;
 
 export type BaasConsoleContextValue = {
   loading: boolean;
+  rateLimited: boolean;
+  rateLimitSecondsLeft: number;
   environments: BaasEnvironment[];
   activeEnvironmentId: string | null;
   activeEnvironment: BaasEnvironment | null;
@@ -67,9 +72,23 @@ export type BaasConsoleContextValue = {
 
 const BaasConsoleContext = createContext<BaasConsoleContextValue | null>(null);
 
+function isRateLimitedError(err: unknown): boolean {
+  return isAxiosError(err) && err.response?.status === 429;
+}
+
 export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { showError, showSuccess } = useNotification();
+  const notifyRef = useRef({ showError, showSuccess });
+  notifyRef.current = { showError, showSuccess };
+
+  const bootstrapInFlight = useRef(false);
+  const envInFlight = useRef(false);
+  const rateLimitUntil = useRef(0);
+  const lastRateLimitToast = useRef(0);
+  const initStarted = useRef(false);
+
   const [loading, setLoading] = useState(false);
+  const [rateLimitTick, setRateLimitTick] = useState(0);
   const [schemaName, setSchemaName] = useState<string | null>(null);
   const [sql, setSql] = useState('SELECT 1 AS ok');
   const [sqlResult, setSqlResult] = useState<string>('');
@@ -82,7 +101,7 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [newBucket, setNewBucket] = useState('default');
   const [uploadBucket, setUploadBucket] = useState('');
   const [objectKey, setObjectKey] = useState('demo.txt');
-  const [chatIn, setChatIn] = useState('Кратко опиши, что такое JSONB в PostgreSQL.');
+  const [chatIn, setChatIn] = useState('');
   const [chatOut, setChatOut] = useState('');
   const [environments, setEnvironments] = useState<BaasEnvironment[]>([]);
   const [activeEnvironmentId, setActiveEnvironmentIdState] = useState<string | null>(() => {
@@ -93,6 +112,29 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   });
 
+  const rateLimited = rateLimitUntil.current > Date.now();
+  const rateLimitSecondsLeft = rateLimited
+    ? Math.max(0, Math.ceil((rateLimitUntil.current - Date.now()) / 1000))
+    : 0;
+
+  useEffect(() => {
+    if (!rateLimited) return;
+    const id = window.setInterval(() => setRateLimitTick((t) => t + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [rateLimited, rateLimitTick]);
+
+  const handleRateLimit = useCallback(() => {
+    rateLimitUntil.current = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+    setRateLimitTick((t) => t + 1);
+    const now = Date.now();
+    if (now - lastRateLimitToast.current > 8000) {
+      lastRateLimitToast.current = now;
+      notifyRef.current.showError(
+        'Слишком много запросов. Подождите около минуты и обновите страницу.',
+      );
+    }
+  }, []);
+
   const activeEnvironment =
     environments.find((e) => e.id === activeEnvironmentId) ??
     environments.find((e) => e.is_default) ??
@@ -100,6 +142,9 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     null;
 
   const loadBaasBootstrap = useCallback(async () => {
+    if (rateLimitUntil.current > Date.now()) return;
+    if (bootstrapInFlight.current) return;
+    bootstrapInFlight.current = true;
     setLoading(true);
     try {
       const b = await fetchBaasBootstrap();
@@ -108,37 +153,25 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setBuckets(b.buckets);
       setRestTable((prev) => prev || (b.tables[0] ?? ''));
       setUploadBucket((prev) => prev || (b.buckets[0]?.name ?? ''));
-    } catch {
-      showError('Не удалось загрузить базу. Проверьте настройку облака и обновите страницу.');
+    } catch (err) {
+      if (isRateLimitedError(err)) {
+        handleRateLimit();
+      } else {
+        notifyRef.current.showError('Не удалось загрузить базу. Проверьте настройку облака.');
+      }
       setSchemaName(null);
       setTables([]);
       setBuckets([]);
     } finally {
+      bootstrapInFlight.current = false;
       setLoading(false);
     }
-  }, [showError]);
-
-  const refreshTables = useCallback(async () => {
-    try {
-      const t = await listBaasTables();
-      setTables(t);
-      setRestTable((prev) => prev || (t[0] ?? ''));
-    } catch {
-      showError('Список таблиц недоступен');
-    }
-  }, [showError]);
-
-  const refreshBuckets = useCallback(async () => {
-    try {
-      const list = await listBuckets();
-      setBuckets(list);
-      setUploadBucket((prev) => prev || (list[0]?.name ?? ''));
-    } catch {
-      showError('Список bucket недоступен');
-    }
-  }, [showError]);
+  }, [handleRateLimit]);
 
   const reloadEnvironments = useCallback(async () => {
+    if (rateLimitUntil.current > Date.now()) return;
+    if (envInFlight.current) return;
+    envInFlight.current = true;
     try {
       const list = await listBaasEnvironments();
       setEnvironments(list);
@@ -152,70 +185,97 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setActiveEnvironmentIdState(pick);
         localStorage.setItem(BAAS_ENV_STORAGE_KEY, pick);
       }
-    } catch {
-      showError('Не удалось загрузить список подпроектов');
-    }
-  }, [showError]);
-
-  const setActiveEnvironmentId = useCallback(
-    (id: string) => {
-      setActiveEnvironmentIdState(id);
-      try {
-        localStorage.setItem(BAAS_ENV_STORAGE_KEY, id);
-      } catch {
-        void 0;
+    } catch (err) {
+      if (isRateLimitedError(err)) {
+        handleRateLimit();
+      } else {
+        notifyRef.current.showError('Не удалось загрузить список подпроектов');
       }
-    },
-    [],
-  );
+    } finally {
+      envInFlight.current = false;
+    }
+  }, [handleRateLimit]);
+
+  const setActiveEnvironmentId = useCallback((id: string) => {
+    setActiveEnvironmentIdState(id);
+    try {
+      localStorage.setItem(BAAS_ENV_STORAGE_KEY, id);
+    } catch {
+      void 0;
+    }
+  }, []);
 
   useEffect(() => {
+    if (initStarted.current) return;
+    initStarted.current = true;
     void reloadEnvironments();
   }, [reloadEnvironments]);
 
   useEffect(() => {
     if (!activeEnvironmentId) return;
-    void loadBaasBootstrap();
+    const t = window.setTimeout(() => {
+      void loadBaasBootstrap();
+    }, 200);
+    return () => window.clearTimeout(t);
   }, [activeEnvironmentId, loadBaasBootstrap]);
 
   const createEnvironment = async (name: string) => {
     setLoading(true);
     try {
       const env = await createBaasEnvironment(name.trim());
-      showSuccess(`Подпроект «${env.name}» создан`);
+      notifyRef.current.showSuccess(`Подпроект «${env.name}» создан`);
       await reloadEnvironments();
       setActiveEnvironmentId(env.id);
       await loadBaasBootstrap();
-    } catch {
-      showError('Не удалось создать подпроект');
+    } catch (err) {
+      if (isRateLimitedError(err)) handleRateLimit();
+      else notifyRef.current.showError('Не удалось создать подпроект');
     } finally {
       setLoading(false);
     }
   };
 
   const deleteEnvironment = async (id: string) => {
-    if (
-      !window.confirm(
-        'Удалить подпроект, все его таблицы и buckets с файлами? Действие необратимо.',
-      )
-    )
-      return;
+    if (!window.confirm('Удалить подпроект и все его данные? Это нельзя отменить.')) return;
     setLoading(true);
     try {
       await deleteBaasEnvironment(id);
-      showSuccess('Подпроект удалён');
+      notifyRef.current.showSuccess('Подпроект удалён');
       if (activeEnvironmentId === id) {
         localStorage.removeItem(BAAS_ENV_STORAGE_KEY);
         setActiveEnvironmentIdState(null);
       }
       await reloadEnvironments();
       await loadBaasBootstrap();
-    } catch {
-      showError('Не удалось удалить подпроект');
+    } catch (err) {
+      if (isRateLimitedError(err)) handleRateLimit();
+      else notifyRef.current.showError('Не удалось удалить подпроект');
     } finally {
       setLoading(false);
     }
   };
+
+  const refreshTables = useCallback(async () => {
+    try {
+      const t = await listBaasTables();
+      setTables(t);
+      setRestTable((prev) => prev || (t[0] ?? ''));
+    } catch (err) {
+      if (isRateLimitedError(err)) handleRateLimit();
+      else notifyRef.current.showError('Список таблиц недоступен');
+    }
+  }, [handleRateLimit]);
+
+  const refreshBuckets = useCallback(async () => {
+    try {
+      const list = await listBuckets();
+      setBuckets(list);
+      setUploadBucket((prev) => prev || (list[0]?.name ?? ''));
+    } catch (err) {
+      if (isRateLimitedError(err)) handleRateLimit();
+      else notifyRef.current.showError('Список файлов недоступен');
+    }
+  }, [handleRateLimit]);
 
   const onRunSql = async () => {
     setLoading(true);
@@ -223,13 +283,8 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       const r = await runBaasSql(sql);
       setSqlResult(JSON.stringify(r, null, 2));
-    } catch (e: unknown) {
-      const msg =
-        e && typeof e === 'object' && 'response' in e
-          ? String((e as { response?: { data?: { error?: string } } }).response?.data?.error)
-          : 'SQL error';
-      setSqlResult(msg);
-      showError('Ошибка SQL');
+    } catch {
+      notifyRef.current.showError('Не удалось выполнить запрос');
     } finally {
       setLoading(false);
     }
@@ -239,10 +294,10 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(true);
     try {
       await createBaasTable(newTable.trim());
-      showSuccess('Таблица создана');
+      notifyRef.current.showSuccess('Таблица создана');
       await refreshTables();
     } catch {
-      showError('Не удалось создать таблицу. Попробуйте позже или обратитесь в поддержку.');
+      notifyRef.current.showError('Не удалось создать таблицу');
     } finally {
       setLoading(false);
     }
@@ -255,7 +310,7 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const rows = await listBaasRestRows(restTable);
       setRestRows(rows);
     } catch {
-      showError('REST: не удалось прочитать строки');
+      notifyRef.current.showError('Не удалось загрузить строки');
     } finally {
       setLoading(false);
     }
@@ -267,10 +322,10 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       const obj = JSON.parse(restJson) as Record<string, unknown>;
       await insertBaasRow(restTable, obj);
-      showSuccess('Строка добавлена');
+      notifyRef.current.showSuccess('Строка добавлена');
       await onLoadRest();
     } catch {
-      showError('Некорректный JSON или ошибка вставки');
+      notifyRef.current.showError('Проверьте формат данных');
     } finally {
       setLoading(false);
     }
@@ -281,10 +336,10 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(true);
     try {
       await deleteBaasRow(restTable, id);
-      showSuccess('Удалено');
+      notifyRef.current.showSuccess('Удалено');
       await onLoadRest();
     } catch {
-      showError('Удаление не удалось');
+      notifyRef.current.showError('Удаление не удалось');
     } finally {
       setLoading(false);
     }
@@ -294,10 +349,10 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(true);
     try {
       await createBucket(newBucket.trim());
-      showSuccess('Bucket создан');
+      notifyRef.current.showSuccess('Папка создана');
       await refreshBuckets();
     } catch {
-      showError('Bucket не создан');
+      notifyRef.current.showError('Не удалось создать папку');
     } finally {
       setLoading(false);
     }
@@ -309,9 +364,9 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(true);
     try {
       await uploadBaasObject(uploadBucket, objectKey.trim() || f.name, f);
-      showSuccess('Файл загружен');
+      notifyRef.current.showSuccess('Файл загружен');
     } catch {
-      showError('Загрузка не удалась');
+      notifyRef.current.showError('Загрузка не удалась');
     } finally {
       setLoading(false);
       e.target.value = '';
@@ -330,7 +385,7 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      showError('Скачивание не удалось');
+      notifyRef.current.showError('Скачивание не удалось');
     } finally {
       setLoading(false);
     }
@@ -343,7 +398,7 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const r = await deepseekChat([{ role: 'user', content: chatIn }]);
       setChatOut(JSON.stringify(r, null, 2));
     } catch {
-      showError('Чат недоступен (проверьте DEEPSEEK_API_KEY на сервере)');
+      notifyRef.current.showError('Помощник временно недоступен');
     } finally {
       setLoading(false);
     }
@@ -351,6 +406,8 @@ export const BaasConsoleProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const value: BaasConsoleContextValue = {
     loading,
+    rateLimited,
+    rateLimitSecondsLeft,
     environments,
     activeEnvironmentId,
     activeEnvironment,

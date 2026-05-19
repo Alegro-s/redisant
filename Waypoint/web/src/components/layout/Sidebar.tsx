@@ -13,15 +13,12 @@ import {
   Chip,
   Tooltip,
   IconButton,
-  ToggleButton,
-  ToggleButtonGroup,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { Cloud, Group, Cloud as CloudIcon, Folder, Launch, LockOutlined, MenuBook } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../app/contexts/AuthContext';
 import { useWorkspace } from '../../app/contexts/WorkspaceContext';
-import { useCabinetMode, type CabinetMode } from '../../app/contexts/CabinetModeContext';
 import { PremiumIconBadge } from '../common/PremiumIconBadge';
 import { DRAWER_WIDTH, RAIL_WIDTH } from './layoutConstants';
 import { WM_CLOUD } from './cloudShell';
@@ -57,18 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const theme = useTheme();
   const { can } = useAuth();
   const { workspace } = useWorkspace();
-  const { mode, setMode } = useCabinetMode();
-  const visibleSections = workspace.setupCompleted ? navSectionsForMode(mode) : [];
+  const visibleSections = workspace.setupCompleted ? navSectionsForMode('business') : [];
   const hasServerConnection = workspace.serverConnected || workspace.setupMode === 'rent' || workspace.plan === 'pro';
-
-  const onCabinetModeChange = (_: React.MouseEvent<HTMLElement>, next: CabinetMode | null) => {
-    if (!next) return;
-    setMode(next);
-    if (next === 'business' && location.pathname.startsWith('/dashboard/lynx-cloud')) {
-      navigate('/dashboard');
-      onClose?.();
-    }
-  };
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -144,18 +131,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         <Box sx={{ px: 2, pt: 2, pb: 1 }}>
           <Typography sx={{ fontWeight: 750, letterSpacing: '-0.03em', fontSize: '0.95rem' }}>Waypoint Metric</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.45 }}>
-            Облако: метрики, устройства, ключи. Проекты и терминал — в Desktop.
+            Облако и Waypoint Desktop на вашем ПК.
           </Typography>
-          <ToggleButtonGroup
-            exclusive
-            value={mode}
-            onChange={onCabinetModeChange}
-            size="small"
-            sx={{ mt: 1.25, width: '100%', '& .MuiToggleButton-root': { flex: 1, py: 0.5, fontSize: '0.72rem' } }}
-          >
-            <ToggleButton value="business">Стандарт</ToggleButton>
-            <ToggleButton value="developer">Расширенный</ToggleButton>
-          </ToggleButtonGroup>
         </Box>
 
         <Divider sx={{ mx: 2, borderColor: theme.palette.mode === 'dark' ? WM_CLOUD.border : undefined }} />
@@ -229,13 +206,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
               })}
             </React.Fragment>
           ))}
-          {workspace.setupCompleted && !hasServerConnection && mode === 'developer' && (
-            <Box sx={{ px: 1.75, pt: 1 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45 }}>
-                Разделы «Инфраструктура» доступны после подключения сервера.
-              </Typography>
-            </Box>
-          )}
           {can('users:manage') && workspace.setupCompleted && (
             <>
               <Divider sx={{ my: 1.25 }} />

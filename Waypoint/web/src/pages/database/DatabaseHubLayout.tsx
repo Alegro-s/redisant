@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import { PageSubNav } from '../../components/layout/PageSubNav';
 import { useWorkspace } from '../../app/contexts/WorkspaceContext';
@@ -9,7 +9,8 @@ import { DatabaseEnvironmentBar } from './DatabaseEnvironmentBar';
 
 function DatabaseHubInner() {
   const { workspace } = useWorkspace();
-  const { loading, schemaName } = useBaasConsole();
+  const { loading, schemaName, rateLimited, rateLimitSecondsLeft, reloadEnvironments, loadBaasBootstrap } =
+    useBaasConsole();
   const hasServer = workspace.serverConnected || workspace.setupMode === 'rent' || workspace.plan === 'pro';
 
   return (
@@ -20,6 +21,20 @@ function DatabaseHubInner() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: 720, lineHeight: 1.6 }}>
         Таблицы, схема связей, запросы и файлы — в облаке. Проекты на своём компьютере — в Waypoint Desktop.
       </Typography>
+
+      {rateLimited && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Слишком много запросов к серверу. Подождите {rateLimitSecondsLeft} сек. или{' '}
+          <Button
+            size="small"
+            onClick={() => {
+              void reloadEnvironments().then(() => loadBaasBootstrap());
+            }}
+          >
+            обновить
+          </Button>
+        </Alert>
+      )}
 
       {!hasServer && (
         <Alert severity="info" sx={{ mb: 2 }}>
