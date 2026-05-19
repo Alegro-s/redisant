@@ -229,3 +229,164 @@ pre.log {
   font: inherit;
   text-decoration: underline;
 }
+
+/* —— Экран входа (Google-style) —— */
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(160deg, #e8f0fe 0%, #f8fafc 45%, #eef2ff 100%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 1.75rem 1.75rem;
+  box-shadow: 0 4px 24px rgba(30, 58, 110, 0.12);
+  border: 1px solid #e2e8f0;
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.auth-logo {
+  display: block;
+  margin: 0 auto 0.75rem;
+}
+
+.auth-brand h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.auth-brand p {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.auth-hint {
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+}
+
+.auth-card label {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.auth-field {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  margin-bottom: 0.85rem;
+  font-size: 0.95rem;
+}
+
+.auth-field:focus {
+  outline: none;
+  border-color: #5b8def;
+  box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.2);
+}
+
+.auth-error {
+  color: #dc2626;
+  font-size: 0.82rem;
+  margin: 0 0 0.75rem;
+}
+
+.auth-btn-primary {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+  background: #1557b0;
+}
+
+.auth-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-btn-ghost {
+  width: 100%;
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #1a73e8;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.auth-btn-ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+/* —— Шапка после входа —— */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.header-logo {
+  flex-shrink: 0;
+}
+
+/* —— Панель Metric —— */
+.panel-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.panel-lead {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.metric-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.metric-pill {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.metric-pill.ok {
+  color: var(--ok);
+  border-color: rgba(74, 222, 128, 0.35);
+}

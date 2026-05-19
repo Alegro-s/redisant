@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Waypoint">
+  <defs>
+    <linearGradient id="wp_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a6e"/>
+      <stop offset="100%" stop-color="#0f1f3d"/>
+    </linearGradient>
+    <linearGradient id="wp_w" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#7ba3f5"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#wp_bg)" stroke="#5b8def" stroke-width="1.5"/>
+  <text x="32" y="43" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="30" font-weight="700" fill="url(#wp_w)">W</text>
+</svg>

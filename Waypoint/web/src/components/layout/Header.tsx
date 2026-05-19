@@ -4,7 +4,6 @@ import {
   Toolbar,
   IconButton,
   Typography,
-  Badge,
   Avatar,
   Menu,
   MenuItem,
@@ -28,7 +27,6 @@ import { GlobalSearch } from './GlobalSearch';
 import {
   Menu as MenuIcon,
   Search,
-  Notifications,
   Brightness4,
   Brightness7,
   AccountCircle,
@@ -45,7 +43,7 @@ import { useThemeContext } from '../../app/contexts/ThemeContext';
 import { useAuth } from '../../app/contexts/AuthContext';
 import { useCabinetMode, type CabinetMode } from '../../app/contexts/CabinetModeContext';
 import { PwaInstallButton } from '../common/PwaInstallButton';
-import { WM_CLOUD } from './cloudShell';
+import { WM_CLOUD, APP_BAR_HEIGHT } from './cloudShell';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -54,7 +52,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [accountDrawerOpen, setAccountDrawerOpen] = useState(false);
-  const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { mode, toggleTheme } = useThemeContext();
@@ -77,7 +74,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     if (path === '/dashboard/api') return 'API';
     if (path === '/dashboard/realtime') return 'Realtime';
     if (path === '/dashboard/users') return 'Пользователи';
-    if (path === '/dashboard/projects') return 'Проекты';
     if (path === '/dashboard/assets') return 'Ассеты';
     if (path.startsWith('/dashboard/database')) return 'База данных';
     if (path === '/dashboard/logs') return 'Логи сервера';
@@ -122,7 +118,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     else setAnchorEl(e.currentTarget);
   };
 
-  const headerBg = theme.palette.mode === 'dark' ? WM_CLOUD.header : alpha(theme.palette.background.paper, 0.92);
+  const headerBg =
+    theme.palette.mode === 'dark'
+      ? alpha(WM_CLOUD.header, 0.94)
+      : alpha(theme.palette.background.paper, 0.94);
 
   return (
     <AppBar
@@ -133,11 +132,22 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         left: 0,
         zIndex: (t) => t.zIndex.drawer + 1,
         bgcolor: headerBg,
+        backdropFilter: 'blur(16px)',
         borderBottom: `1px solid ${theme.palette.divider}`,
         boxShadow: 'none',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 1,
+          background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.primary.main, 0.45)}, transparent)`,
+          pointerEvents: 'none',
+        },
       }}
     >
-      <Toolbar sx={{ px: { xs: 1, sm: 2 } }}>
+      <Toolbar sx={{ px: { xs: 1.25, sm: 2.25 }, minHeight: `${APP_BAR_HEIGHT}px !important` }}>
         <IconButton
           color="inherit"
           edge="start"
@@ -181,12 +191,13 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           noWrap
           sx={{
             flexGrow: 1,
-            fontWeight: 600,
-            letterSpacing: '-0.02em',
-            fontSize: { xs: '0.8rem', sm: '0.95rem' },
-            color: 'text.secondary',
+            fontWeight: 650,
+            letterSpacing: '-0.03em',
+            fontSize: { xs: '0.85rem', sm: '1rem' },
+            color: 'text.primary',
             display: { xs: 'block', sm: 'block' },
             minWidth: 0,
+            opacity: 0.92,
           }}
         >
           {getPageTitle()}
@@ -234,12 +245,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
         </IconButton>
         <PwaInstallButton sx={{ mr: 1, display: { xs: 'none', md: 'inline-flex' } }} />
-
-        <IconButton sx={{ mr: 0.5 }} onClick={(e) => setNotificationAnchor(e.currentTarget)} size="small" color="inherit">
-          <Badge badgeContent={0} color="error" invisible>
-            <Notifications />
-          </Badge>
-        </IconButton>
 
         <IconButton
           sx={{ mr: 0.5 }}
@@ -377,25 +382,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </MenuItem>
         </Menu>
 
-        <Menu
-          anchorEl={notificationAnchor}
-          open={Boolean(notificationAnchor)}
-          onClose={() => setNotificationAnchor(null)}
-          PaperProps={{
-            sx: {
-              borderRadius: 2,
-              mt: 1,
-              width: 320,
-              maxHeight: 400,
-            },
-          }}
-        >
-          <MenuItem disabled>
-            <Typography variant="body2" color="text.secondary">
-              Пока нет новых уведомлений
-            </Typography>
-          </MenuItem>
-        </Menu>
       </Toolbar>
     </AppBar>
   );

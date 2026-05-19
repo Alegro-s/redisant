@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { CloudPanel } from './components/CloudPanel';
+import { AuthScreen } from './components/AuthScreen';
+import { MetricCloudPanel } from './components/MetricCloudPanel';
 import type { CloudConfig } from './services/config';
 import { defaultConfig } from './services/config';
 import { loadConfig, saveConfig, loadSecure, saveSecure } from './services/store';
-import { heartbeat, metricOpenUrl } from './services/cloud';
+import { heartbeat, metricOpenUrl, refreshAccess } from './services/cloud';
 import { flushQueue, pushTelemetry } from './services/ingestQueue';
 import { checkForUpdate } from './services/updates';
 
@@ -15,7 +16,6 @@ type Tab = 'cloud' | 'docker' | 'terminal' | 'liza' | 'about';
 export default function App() {
   const [tab, setTab] = useState<Tab>('cloud');
   const [cfg, setCfg] = useState<CloudConfig>(defaultConfig());
-  const [password, setPassword] = useState('');
   const [pairCode, setPairCode] = useState('');
   const [status, setStatus] = useState('');
   const [online, setOnline] = useState(navigator.onLine);
@@ -23,6 +23,7 @@ export default function App() {
   const [termOut, setTermOut] = useState('');
   const [termCmd, setTermCmd] = useState('echo hello');
   const [updateInfo, setUpdateInfo] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   const persist = useCallback(async (next: CloudConfig) => {
     setCfg(next);
@@ -40,6 +41,7 @@ export default function App() {
         loaded.deviceId = `wd-${crypto.randomUUID().slice(0, 8)}`;
       }
       await persist({ ...loaded, apiKey: apiKey || loaded.apiKey, refreshToken: refreshToken || loaded.refreshToken });
+      setReady(true);
     })();
   }, [persist]);
 
@@ -87,7 +89,25 @@ export default function App() {
     });
   }, [cfg.cloudUrl]);
 
-  const openMetric = () => openUrl(metricOpenUrl(cfg, '/dashboard/settings/devices'));
+  const openMetric = () => openUrl(metricOpenUrl(cfg, '/dashboard'));
+  const openDevices = () => openUrl(metricOpenUrl(cfg, '/dashboard/settings/devices'));
+
+  const signOut = async () => {
+    await persist({ ...cfg, accessToken: '', refreshToken: '', apiKey: '' });
+    setPairCode('');
+    setStatus('');
+    setTab('cloud');
+  };
+
+  const refreshToken = async () => {
+    try {
+      const t = await refreshAccess(cfg);
+      await persist({ ...cfg, accessToken: t });
+      setStatus('Токен обновлён');
+    } catch {
+      setStatus('Не удалось обновить токен');
+    }
+  };
 
   const refreshDocker = async () => {
     try {
@@ -127,19 +147,35 @@ export default function App() {
     return () => clearInterval(id);
   }, [handleDeepLink]);
 
+  if (!ready) {
+    return null;
+  }
+
+  if (!cfg.accessToken) {
+    return <AuthScreen cfg={cfg} setCfg={setCfg} persist={persist} onSignedIn={() => setTab('cloud')} />;
+  }
+
   return (
     <div className="app">
       <header>
-        <div>
-          <h1>Waypoint Desktop</h1>
-          <span>
-            v{VERSION} · {online ? 'онлайн' : 'офлайн'}
-            {updateInfo ? ` · ${updateInfo}` : ''}
-          </span>
+        <div className="header-brand">
+          <img src="/logo.svg" alt="" className="header-logo" width={36} height={36} />
+          <div>
+            <h1>Waypoint Desktop</h1>
+            <span>
+              v{VERSION} · {online ? 'онлайн' : 'офлайн'}
+              {updateInfo ? ` · ${updateInfo}` : ''}
+            </span>
+          </div>
         </div>
-        <button type="button" className="btn ghost" onClick={openMetric}>
-          Открыть Metric
-        </button>
+        <div className="row">
+          <button type="button" className="btn ghost" onClick={openMetric}>
+            Metric
+          </button>
+          <button type="button" className="btn ghost" onClick={signOut}>
+            Выйти
+          </button>
+        </div>
       </header>
 
       <nav className="tabs">
@@ -151,17 +187,16 @@ export default function App() {
       </nav>
 
       {tab === 'cloud' && (
-        <CloudPanel
+        <MetricCloudPanel
           cfg={cfg}
           setCfg={setCfg}
-          password={password}
-          setPassword={setPassword}
+          persist={persist}
           pairCode={pairCode}
           setPairCode={setPairCode}
           status={status}
           setStatus={setStatus}
-          persist={persist}
           onOpenMetric={openMetric}
+          onOpenDevices={openDevices}
         />
       )}
 
@@ -208,7 +243,13 @@ export default function App() {
         <div className="panel">
           <p>Waypoint Desktop — локальный клиент серии Waypoint.</p>
           <p className="status">Device ID: {cfg.deviceId}</p>
-          <a href={`${cfg.cloudUrl}/desktop/docs/cloud`} style={{ color: 'var(--accent-soft)' }}>
+          <p className="status">{cfg.email}</p>
+          <div className="row" style={{ marginTop: '0.75rem' }}>
+            <button type="button" className="btn ghost" onClick={refreshToken}>
+              Обновить токен
+            </button>
+          </div>
+          <a href={`${cfg.cloudUrl}/desktop/docs/cloud`} style={{ color: 'var(--accent-soft)', display: 'block', marginTop: '0.75rem' }}>
             Документация: связь с облаком
           </a>
         </div>

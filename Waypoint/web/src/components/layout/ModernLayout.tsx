@@ -93,8 +93,8 @@ export const ModernLayout: React.FC<ModernLayoutProps> = ({ children }) => {
             width: { sm: `calc(100% - ${drawerWidth}px)` },
             minWidth: 0,
             bgcolor: 'background.default',
-            backgroundImage: `radial-gradient(ellipse 70% 45% at 0% 0%, ${alpha(t.palette.primary.main, 0.06)}, transparent 55%),
-              radial-gradient(ellipse 50% 35% at 100% 0%, ${alpha(t.palette.primary.dark, 0.05)}, transparent 50%)`,
+            backgroundImage: `radial-gradient(ellipse 80% 50% at 0% -10%, ${alpha(t.palette.primary.main, 0.07)}, transparent 50%),
+              radial-gradient(ellipse 60% 40% at 100% 0%, ${alpha(t.palette.primary.dark, 0.04)}, transparent 45%)`,
           })}
         >
           <Box

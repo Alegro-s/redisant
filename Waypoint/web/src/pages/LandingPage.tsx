@@ -27,12 +27,9 @@ import {
   Menu as MenuIcon,
   ChatBubbleOutline,
   InstallMobile,
-  Dashboard,
-  Source,
-  Science,
-  Api,
-  AutoGraph,
   TableChart,
+  Computer,
+  VpnKey,
   LightbulbOutlined,
   MenuBook,
   MoreHoriz,
@@ -53,81 +50,49 @@ const MODULE_CARD_MIN_PX = 268;
 
 const moduleLinks = [
   {
-    title: 'Dashboard',
-    to: '/register?plan=basic',
-    icon: <Dashboard fontSize="small" />,
-    description: (
-      <>
-        <strong>Статусы, загрузка и алерты</strong> в одном обзоре после входа.
-      </>
-    ),
-  },
-  {
-    title: 'Git Workspace',
-    to: '/register?plan=basic',
-    icon: <Source fontSize="small" />,
-    description: (
-      <>
-        <strong>Репозитории и лимиты</strong> хранения с контролем версий.
-      </>
-    ),
-  },
-  {
-    title: 'Waypoint Metric',
-    to: '/register?plan=basic',
-    icon: <Insights fontSize="small" />,
-    description: (
-      <>
-        <strong>Ingest Lab</strong>, метрики, логи, PostgreSQL и BaaS — облачная инфраструктура серии Waypoint для ваших
-        приложений.
-      </>
-    ),
-  },
-  {
-    title: 'Тестирование модулей',
-    to: '/register?plan=basic',
-    icon: <Science fontSize="small" />,
-    description: (
-      <>
-        <strong>Прогоны кодовых баз</strong> и сравнение результатов прогонов.
-      </>
-    ),
-  },
-  {
-    title: 'PostgreSQL',
+    title: 'Облачная база',
     to: '/register?plan=basic',
     icon: <TableChart fontSize="small" />,
     description: (
       <>
-        <strong>Запросы и схемы</strong> с контролем доступа к данным.
+        <strong>Таблицы, файлы и запросы</strong> в PostgreSQL — без отдельного сервера для старта.
       </>
     ),
   },
   {
-    title: 'Графика',
+    title: 'Метрики и события',
     to: '/register?plan=basic',
-    icon: <AutoGraph fontSize="small" />,
+    icon: <Insights fontSize="small" />,
     description: (
       <>
-        <strong>Визуальные пайплайны</strong> в рабочем кабинете.
+        <strong>Сбор событий</strong> из приложений, ботов и сервисов — сводки в кабинете.
       </>
     ),
   },
   {
-    title: 'API',
+    title: 'Waypoint Desktop',
     to: '/register?plan=basic',
-    icon: <Api fontSize="small" />,
+    icon: <Computer fontSize="small" />,
     description: (
       <>
-        <strong>Консолидация эндпоинтов</strong> и статусы сервисов.
+        <strong>Привязка программы на ПК</strong> к вашему облаку: терминал и работа рядом с Metric.
+      </>
+    ),
+  },
+  {
+    title: 'Ключи приложений',
+    to: '/register?plan=basic',
+    icon: <VpnKey fontSize="small" />,
+    description: (
+      <>
+        <strong>Ключи для ingest и API</strong> — выдаются после настройки облака в кабинете.
       </>
     ),
   },
 ];
 
-const modulesRow1 = moduleLinks.slice(0, 3);
-const modulesRow2 = moduleLinks.slice(3, 5);
-const modulesRow3 = moduleLinks.slice(5, 7);
+const modulesRow1 = moduleLinks.slice(0, 2);
+const modulesRow2 = moduleLinks.slice(2, 4);
 
 const rfProductPillars = [
   {
@@ -399,8 +364,8 @@ export default function LandingPage() {
       <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 }, position: 'relative' }}>
         <Stack spacing={2} sx={{ textAlign: 'center', maxWidth: LANDING_COL_MAX, mx: 'auto', mb: 5, mt: { xs: 2, md: 3 }, width: '100%' }}>
           <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" alignItems="center" useFlexGap>
-            <Chip label="Waypoint Metric · веб-консоль" color="primary" variant="outlined" sx={{ fontWeight: 600 }} />
-            <Chip label="Ingest · BaaS · PostgreSQL" color="default" variant="outlined" sx={{ fontWeight: 500 }} />
+            <Chip label="Waypoint Metric · облачный кабинет" color="primary" variant="outlined" sx={{ fontWeight: 600 }} />
+            <Chip label="База · метрики · Desktop" color="default" variant="outlined" sx={{ fontWeight: 500 }} />
           </Stack>
           <Typography
             variant="h2"
@@ -412,15 +377,16 @@ export default function LandingPage() {
               fontSize: { xs: '1.7rem', sm: '2.15rem', md: '4rem' },
             }}
           >
-            Метрики, база и backend
+            Облако для приложений
             <br />
             <Box component="span" sx={{ color: 'primary.main' }}>
-              в одном рабочем пространстве
+              база, метрики и Desktop
             </Box>
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: LANDING_COL_MAX, mx: 'auto', lineHeight: 1.72, textAlign: 'center', px: { xs: 0, sm: 0 } }}>
-            <strong>Waypoint Metric</strong> — облачная консоль серии Waypoint: ingest, дашборды, PostgreSQL и REST BaaS
-            для ботов, сервисов и приложений. От прототипа до продакшена — без смены платформы.
+            <strong>Waypoint Metric</strong> — личный кабинет в облаке: PostgreSQL и файлы, сбор метрик, ключи для
+            приложений и привязка <strong>Waypoint Desktop</strong> на вашем компьютере. Регистрация → настройка облака →
+            работа в понятных разделах без лишней техники в интерфейсе.
           </Typography>
 
           <Paper
@@ -452,19 +418,19 @@ export default function LandingPage() {
                   Для разработчиков
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                  Платформа, API и Ingest Lab
+                  Для команд и интеграций
                 </Typography>
               </Box>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7, maxWidth: 640 }}>
-              Один workspace: метрики и логи, симуляция ingest, PostgreSQL и REST BaaS. Документация и обзор модулей — на
-              отдельной странице платформы.
+              После входа доступны база, метрики и ключи. Подробные схемы API и расширенные сценарии — в документации и на
+              странице платформы для разработчиков.
             </Typography>
             <Grid container spacing={1.5} alignItems="stretch">
               {[
-                { title: 'Ingest Lab', sub: 'Ключи, симуляция, сводки', to: '/register?plan=basic', icon: <Insights fontSize="small" /> },
-                { title: 'Документация', sub: 'API и онбординг', to: '/docs', icon: <MenuBook fontSize="small" /> },
-                { title: 'Обзор платформы', sub: 'Observe · Ship · Build', to: '/platform', icon: <Hub fontSize="small" /> },
+                { title: 'Метрики', sub: 'События и сводки', to: '/register?plan=basic', icon: <Insights fontSize="small" /> },
+                { title: 'Документация', sub: 'Подключение и API', to: '/docs', icon: <MenuBook fontSize="small" /> },
+                { title: 'Платформа', sub: 'Расширенные возможности', to: '/platform', icon: <Hub fontSize="small" /> },
               ].map((item) => (
                 <Grid item xs={12} sm={4} key={item.title} sx={{ display: 'flex' }}>
                   <Paper
@@ -523,8 +489,8 @@ export default function LandingPage() {
             {[
               { n: '1', label: 'Тариф', sub: 'Basic или Pro' },
               { n: '2', label: 'Аккаунт', sub: 'Регистрация или вход' },
-              { n: '3', label: 'Онбординг', sub: 'Облако или свой сервер' },
-              { n: '4', label: 'Кабинет', sub: 'Модули и метрики' },
+              { n: '3', label: 'Настройка', sub: 'Облако платформы или свой сервер' },
+              { n: '4', label: 'Кабинет', sub: 'База, метрики, Desktop, ключи' },
             ].map((s) => (
               <Paper
                 key={s.n}
@@ -575,11 +541,11 @@ export default function LandingPage() {
                     <Chip size="small" label="Старт" color="primary" />
                   </Stack>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.65 }}>
-                    Для проверки гипотез и личных проектов. Типовые лимиты консоли: 1 vCPU, до ~6 ГБ RAM, 10 ГБ SSD,
-                    базовые модули без расширенного realtime.
+                    Для личных приложений и первых интеграций. Облачная база, метрики, ключи и привязка Desktop — в
+                    пределах лимитов тарифа.
                   </Typography>
                   <Stack spacing={1} sx={{ mb: 2 }}>
-                    {['Ingest и дашборды', 'Проекты и ассеты', 'Ограниченная аренда облака'].map((x) => (
+                    {['Облачная база PostgreSQL', 'Метрики и ключи ingest', 'Привязка Waypoint Desktop'].map((x) => (
                       <Stack direction="row" spacing={1} alignItems="center" key={x}>
                         <CheckCircle color="primary" sx={{ fontSize: 18 }} />
                         <Typography variant="body2">{x}</Typography>
@@ -618,11 +584,11 @@ export default function LandingPage() {
                     <Chip size="small" label="Команды и нагрузка" variant="outlined" />
                   </Stack>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.65 }}>
-                    Расширенные ресурсы, realtime и диск. Настройка плана и лимитов — в кабинете после входа; доступ к
-                    части возможностей зависит от роли.
+                    Больше ресурсов облака и расширенные лимиты. Подключение своего сервера и приоритетная поддержка —
+                    по договорённости после входа.
                   </Typography>
                   <Stack spacing={1} sx={{ mb: 2 }}>
-                    {['Приоритетные лимиты Git/хранилища', 'Realtime и несколько аренд', 'Подходит для продакшена'].map(
+                    {['Увеличенные лимиты базы и метрик', 'Свой сервер в настройке облака', 'Для команд и продакшена'].map(
                       (x) => (
                         <Stack direction="row" spacing={1} alignItems="center" key={x}>
                           <CheckCircle color="action" sx={{ fontSize: 18 }} />
@@ -763,8 +729,7 @@ export default function LandingPage() {
                 Шаг 4 — кабинет
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.65 }}>
-                Открываются дашборд, метрики, проекты и модули ниже — в соответствии с тарифом и вашей ролью после
-                онбординга.
+                Доступны главная, база, метрики, привязка Desktop и ключи — в соответствии с тарифом и настройкой облака.
               </Typography>
             </Box>
           </Stack>
@@ -825,15 +790,15 @@ export default function LandingPage() {
             })}
           >
             <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.75, letterSpacing: '-0.02em', textAlign: 'left' }}>
-              Модули кабинета
+              Что в кабинете
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, textAlign: 'left', lineHeight: 1.65 }}>
-              После регистрации открываются разделы workspace — метрики, Git, БД, тестирование и API в едином зелёном интерфейсе.
+              После регистрации и настройки облака — четыре основных раздела в одном интерфейсе Waypoint Metric.
             </Typography>
 
           <Grid container spacing={2} sx={{ mb: 2 }} alignItems="stretch">
             {modulesRow1.map((m) => (
-              <Grid item xs={12} md={4} key={m.title} sx={{ display: 'flex' }}>
+              <Grid item xs={12} sm={6} key={m.title} sx={{ display: 'flex' }}>
                 <ModuleFeatureCard
                   title={m.title}
                   description={m.description}
@@ -846,20 +811,7 @@ export default function LandingPage() {
           </Grid>
           <Grid container spacing={2} sx={{ mb: 2 }} alignItems="stretch">
             {modulesRow2.map((m) => (
-              <Grid item xs={12} md={6} key={m.title} sx={{ display: 'flex' }}>
-                <ModuleFeatureCard
-                  title={m.title}
-                  description={m.description}
-                  icon={m.icon}
-                  to={m.to}
-                  minHeight={MODULE_CARD_MIN_PX}
-                />
-              </Grid>
-            ))}
-          </Grid>
-          <Grid container spacing={2} alignItems="stretch">
-            {modulesRow3.map((m) => (
-              <Grid item xs={12} md={6} key={m.title} sx={{ display: 'flex' }}>
+              <Grid item xs={12} sm={6} key={m.title} sx={{ display: 'flex' }}>
                 <ModuleFeatureCard
                   title={m.title}
                   description={m.description}
