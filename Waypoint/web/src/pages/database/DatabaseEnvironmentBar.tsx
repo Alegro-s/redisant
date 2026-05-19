@@ -39,14 +39,14 @@ export const DatabaseEnvironmentBar: React.FC = () => {
       <Stack spacing={1.5}>
         <Box>
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-            Подпроект (изолированная БД)
+            Подпроект
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.45 }}>
             У каждого подпроекта своя база и папка с файлами: таблицы, запросы, схема и хранилище не
             пересекаются. Свой сервер подключается
             в{' '}
             <a href="/workspace/setup" style={{ color: 'inherit' }}>
-              настройке workspace
+              настройке
             </a>{' '}
             — снимок схемы для ER подтягивается с агента на этом сервере.
           </Typography>

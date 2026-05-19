@@ -98,7 +98,7 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
       } else if (msg) {
         showError(msg);
       } else {
-        showError('Запрос к AI не удался. Проверьте DEEPSEEK_API_KEY на сервере.');
+        showError('Помощник временно недоступен. Попробуйте позже.');
       }
       setMessages((m) => m.slice(0, -1));
     } finally {
@@ -124,12 +124,9 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               {title}
             </Typography>
-            <Chip label={persona === 'developer' ? 'DeepSeek Coder' : 'DeepSeek Chat'} size="small" variant="outlined" />
             <Chip
               label={
-                quotaLimit > 0
-                  ? `Сообщений (UTC ${quotaDate}): ${quotaUsed}/${quotaLimit}`
-                  : 'Квота: загрузка…'
+                quotaLimit > 0 ? `Сообщений сегодня: ${quotaUsed} из ${quotaLimit}` : 'Лимит загружается…'
               }
               size="small"
               color={atLimit ? 'warning' : 'default'}
@@ -137,7 +134,7 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
             />
           </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-            {subtitle} Лимит считает сервер по плану биллинга (UTC).
+            {subtitle}
           </Typography>
         </CardContent>
       </Card>

@@ -71,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     if (path.startsWith('/dashboard/settings/devices')) return 'Waypoint Desktop';
     if (path === '/dashboard/developer') return 'Сервер · инфраструктура';
     if (path.startsWith('/dashboard/developer/ai')) return 'Помощник';
-    if (path === '/dashboard/overview') return 'Обзор';
+    if (path === '/dashboard/overview') return 'Сводка';
     if (path === '/dashboard/git') return 'Git';
     if (path === '/dashboard/graphics') return 'Графика';
     if (path === '/dashboard/api') return 'API';
@@ -89,11 +89,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     if (path === '/dashboard/settings') return 'Настройки';
     if (path.startsWith('/dashboard/waypoint')) return 'Обзор';
     if (path.startsWith('/dashboard/ingest-lab')) return 'Метрики';
-    if (path.startsWith('/dashboard/baas')) return 'BaaS';
+    if (path.startsWith('/dashboard/baas')) return 'База данных';
     if (path.startsWith('/dashboard/lynx-cloud')) return 'Lynx Cloud';
     if (path.startsWith('/dashboard/nexus-cloud')) return 'Lynx Cloud';
     if (path === '/dashboard/billing') return 'Баланс и платежи';
-    if (path === '/dashboard/connect') return 'Подключение и SDK';
+    if (path === '/dashboard/connect') return 'Подключение';
     if (path === '/dashboard/registration-log') return 'Журнал регистраций';
     return 'WaypointMetric';
   };
@@ -188,8 +188,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             '& .MuiToggleButton-root': { px: 1.25, py: 0.35, fontSize: '0.72rem', textTransform: 'none' },
           }}
         >
-          <ToggleButton value="business">Бизнес</ToggleButton>
-          <ToggleButton value="developer">Разработка</ToggleButton>
+          <ToggleButton value="business">Стандарт</ToggleButton>
+          <ToggleButton value="developer">Расширенный</ToggleButton>
         </ToggleButtonGroup>
 
         <Typography
@@ -325,11 +325,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               size="medium"
               sx={{ '& .MuiToggleButton-root': { py: 1, textTransform: 'none', fontWeight: 600 } }}
             >
-              <ToggleButton value="business">Основное</ToggleButton>
-              <ToggleButton value="developer">Сервер</ToggleButton>
+              <ToggleButton value="business">Стандарт</ToggleButton>
+              <ToggleButton value="developer">Расширенный</ToggleButton>
             </ToggleButtonGroup>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', lineHeight: 1.45 }}>
-              Основное — метрики и Desktop. Сервер — Lynx Cloud, BaaS, ingest для арендованной инфраструктуры.
+              Стандарт — база, метрики и Desktop. Расширенный — Lynx Cloud и журнал событий.
             </Typography>
           </Box>
           <Divider />

@@ -202,9 +202,7 @@ export function WaypointClubPage() {
             <span className="line2">для разработки, облака и ИИ</span>
           </h1>
           <p className="club-hero-lead">
-            Вся экосистема строится на <strong>серии Waypoint</strong> (Metric, Desktop, Lynx, кампусные решения) и{' '}
-            <strong>подсерии Roza</strong> (AI и OS). В «Решения» — переход на сайты продуктов; обзоры — в документации
-            Club.
+            Одна линейка продуктов для облака, работы на ПК, игр и ИИ. Выберите решение в меню — или читайте обзоры ниже.
           </p>
         </section>
 

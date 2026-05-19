@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Кабинет — Lynx Cloud',
-  description: 'Личный кабинет Lynx Cloud: проекты, сборки и ключи API.',
+  description: 'Личный кабинет Lynx Cloud: проекты, сборки и ключи доступа.',
 };
 
 export default function CabinetLayout({ children }: { children: React.ReactNode }) {

@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           );
         })}
         <Box sx={{ flexGrow: 1 }} />
-        <Tooltip title="Настройка workspace" placement="right">
+        <Tooltip title="Настройка облака" placement="right">
           <IconButton
             size="medium"
             onClick={() => handleNavigation('/workspace/setup')}
@@ -153,8 +153,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             size="small"
             sx={{ mt: 1.25, width: '100%', '& .MuiToggleButton-root': { flex: 1, py: 0.5, fontSize: '0.72rem' } }}
           >
-            <ToggleButton value="business">Основное</ToggleButton>
-            <ToggleButton value="developer">Сервер</ToggleButton>
+            <ToggleButton value="business">Стандарт</ToggleButton>
+            <ToggleButton value="developer">Расширенный</ToggleButton>
           </ToggleButtonGroup>
         </Box>
 
@@ -171,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <PremiumIconBadge icon={<Cloud fontSize="small" />} active={location.pathname === '/workspace/setup'} />
                 </ListItemIcon>
-                <ListItemText primary="Настройка workspace" primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 600 }} />
+                <ListItemText primary="Настройка облака" primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: 600 }} />
               </ListItemButton>
             </ListItem>
           )}
@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
                     sx={{ mb: 0.35 }}
                     secondaryAction={
                       isLocked ? (
-                        <Tooltip title="Подключите сервер в настройке workspace">
+                        <Tooltip title="Подключите облако в настройке">
                           <IconButton edge="end" size="small" onClick={() => handleNavigation('/workspace/setup')}>
                             <Launch fontSize="small" />
                           </IconButton>

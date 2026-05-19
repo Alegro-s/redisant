@@ -66,7 +66,7 @@ export const metricPrimarySections: MetricNavSection[] = [
 /** Серверная инфраструктура — в приложении это Docker/терминал локально. */
 export const metricInfraSections: MetricNavSection[] = [
   {
-    title: 'Инфраструктура',
+    title: 'Дополнительно',
     items: [
       {
         text: 'Lynx Cloud',

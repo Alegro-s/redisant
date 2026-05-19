@@ -28,13 +28,13 @@ const PLANS = [
     id: 'basic',
     title: 'Basic',
     price: 'Бесплатно',
-    bullets: ['Метрики и ingest с лимитами', 'Привязка Desktop', 'SQL только чтение на сервере'],
+    bullets: ['Метрики с лимитами', 'Привязка Desktop', 'Просмотр данных на сервере'],
   },
   {
     id: 'pro',
     title: 'Pro',
     price: 'По подписке',
-    bullets: ['Расширенные лимиты ingest', 'BaaS: свои таблицы и REST', 'Приоритетная поддержка'],
+    bullets: ['Больше метрик и хранилища', 'Свои таблицы и файлы', 'Приоритетная поддержка'],
   },
 ] as const;
 
@@ -97,7 +97,7 @@ export const Billing: React.FC = () => {
         Тариф и оплата
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
-        Выберите план для облака Metric. Desktop-приложение скачивается отдельно; тариф влияет на лимиты API и BaaS.
+        Выберите план для облака Waypoint Metric. Приложение на ПК скачивается отдельно.
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>

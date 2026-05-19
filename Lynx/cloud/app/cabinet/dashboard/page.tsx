@@ -30,15 +30,15 @@ export default function LynxCabinetDashboardPage() {
       <section className="cloud-cabinet-hero">
         <p className="cloud-kicker">Lynx Cloud</p>
         <h1>Кабинет{login ? `: ${login}` : ''}</h1>
-        <p className="cloud-intro-lead">Проекты, сборки и ключи API — в контуре Lynx. Тот же аккаунт, что в Lynx Launcher.</p>
+        <p className="cloud-intro-lead">Проекты, сборки и ключи доступа — в одном кабинете. Тот же аккаунт, что в Lynx Launcher.</p>
         <div className="cloud-intro-cards">
           <article>
             <h2>Проекты</h2>
             <p>Синхронизация с Lynx Launcher и облачные сборки.</p>
           </article>
           <article>
-            <h2>Ключи API</h2>
-            <p>Управление доступом для CI и автоматизации.</p>
+            <h2>Ключи доступа</h2>
+            <p>Для автоматической сборки и публикации игр.</p>
           </article>
           <article>
             <h2>Админ</h2>

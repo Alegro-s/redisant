@@ -57,7 +57,7 @@ export default function LynxCloudAdminPage() {
         <h1>Управление Cloud</h1>
         <p className="cloud-intro-lead">Сборки, лимиты и модерация — отдельный контур от пользовательского кабинета.</p>
         <ul className="cloud-admin-list">
-          <li>Статус API: подключите lynx-api на порту 8082</li>
+          <li>Статус сервиса: убедитесь, что облако Lynx запущено на сервере</li>
           <li>Очередь сборок: через Lynx Launcher → Cloud</li>
           <li>Пользователи: auth-api, realm nexus</li>
         </ul>

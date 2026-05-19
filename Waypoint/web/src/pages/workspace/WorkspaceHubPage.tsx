@@ -31,33 +31,40 @@ export const WorkspaceHubPage: React.FC = () => {
         </Typography>
       </Paper>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={2} alignItems="stretch">
         {zones.map((z) => (
-          <Grid item xs={12} sm={6} key={z.to}>
+          <Grid item xs={12} sm={6} key={z.to} sx={{ display: 'flex' }}>
             <Paper
               component={RouterLink}
               to={z.to}
               elevation={0}
               sx={{
-                height: '100%',
-                p: 2,
+                width: '100%',
+                minHeight: 148,
+                p: 2.25,
                 textDecoration: 'none',
                 color: 'inherit',
-                display: 'block',
+                display: 'flex',
+                flexDirection: 'column',
                 border: `1px solid ${isDark ? WM_CLOUD.border : theme.palette.divider}`,
                 borderRadius: 2,
-                '&:hover': { borderColor: alpha(WM_CLOUD.accent, 0.5) },
+                transition: 'border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
+                '&:hover': {
+                  borderColor: alpha(WM_CLOUD.accent, 0.55),
+                  boxShadow: isDark ? '0 12px 32px rgba(0,0,0,0.35)' : '0 8px 24px rgba(52,182,122,0.12)',
+                  transform: 'translateY(-2px)',
+                },
               }}
             >
-              <Box sx={{ color: 'primary.main', mb: 1 }}>{z.icon}</Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.35 }}>
+              <Box sx={{ color: 'primary.main', mb: 1.25 }}>{z.icon}</Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
                 {z.title}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55, flex: 1 }}>
                 {z.description}
               </Typography>
               {z.badge ? (
-                <Chip label={z.badge} size="small" sx={{ mt: 1.25, maxWidth: '100%', height: 'auto', py: 0.5 }} />
+                <Chip label={z.badge} size="small" sx={{ mt: 1.5, alignSelf: 'flex-start', height: 'auto', py: 0.5 }} />
               ) : null}
             </Paper>
           </Grid>

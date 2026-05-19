@@ -29,7 +29,7 @@ export const IngestLabSummaryPage: React.FC = () => {
       setSummary(data);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string } } };
-      setError(err.response?.data?.error || 'Нет доступа к /me/metrics/summary');
+      setError(err.response?.data?.error || 'Сводка пока недоступна. Завершите настройку или создайте ключ.');
       setSummary(null);
     } finally {
       setLoading(false);
@@ -49,7 +49,9 @@ export const IngestLabSummaryPage: React.FC = () => {
       )}
       <Paper sx={{ p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="subtitle1">GET /me/metrics/summary (как на дашборде)</Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Сводка событий
+          </Typography>
           <Button variant="outlined" onClick={() => void loadSummary()} disabled={loading}>
             Обновить
           </Button>
@@ -65,8 +67,8 @@ export const IngestLabSummaryPage: React.FC = () => {
                 color={summary.alert_logs_last_24h > 0 ? 'warning' : 'default'}
               />
             </Stack>
-            <Typography variant="body2" color="text.secondary">
-              latest_by_name — последнее значение по каждому имени (до 12 рядов), те же данные строят столбчатую диаграмму на главной.
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55 }}>
+              Последние значения по каждому показателю — те же цифры, что на странице «Сводка».
             </Typography>
             <Table size="small">
               <TableHead>
