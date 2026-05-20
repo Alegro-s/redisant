@@ -70,7 +70,19 @@ if ! ss -tlnp 2>/dev/null | grep -q ':443 '; then
 fi
 
 echo ""
-echo "Готово. Проверка снаружи:"
+echo "==> Статика Club (главная)"
+if [[ -f /srv/waypointclub/web/index.html ]]; then
+  echo "  OK /srv/waypointclub/web/index.html"
+  grep -o '<title>[^<]*</title>' /srv/waypointclub/web/index.html 2>/dev/null | head -1 || true
+else
+  echo "  MISSING Club build — проверьте VITE_PUBLIC_SITE_MODE=club в server-02"
+fi
+
+echo ""
+echo "Готово. Проверка снаружи (Ctrl+F5 в браузере):"
+echo "  https://waypointclub.ru/"
+echo "  https://waypointclub.ru/tspu"
 echo "  https://waypointclub.ru/roza"
+echo "  https://metrika-waypoint.ru/"
 echo "  https://lynx-hub.ru/"
 echo "  https://lynx-cloud.ru/"

@@ -18,7 +18,7 @@ type CatalogItem = {
 const productCatalog: CatalogItem[] = [
   {
     name: 'Waypoint Metric',
-    desc: 'Облако: базы, метрики и хранилище',
+    desc: 'Облако: метрики, PostgreSQL, BaaS',
     doc: '/club/docs/metric',
     site: LINKS.metric,
     siteHash: '#features',
@@ -44,12 +44,6 @@ const productCatalog: CatalogItem[] = [
     site: LINKS.lynxCloud,
   },
   {
-    name: 'Roza',
-    desc: 'Roza AI и Roza OS — подсерия Waypoint',
-    doc: '/club/docs/roza-ai',
-    site: '/roza/',
-  },
-  {
     name: 'Roza AI',
     desc: 'Консультант Waypoint',
     doc: '/club/docs/roza-ai',
@@ -65,11 +59,11 @@ const productCatalog: CatalogItem[] = [
 ];
 
 const divisions = [
-  { n: '01', title: 'Облако', text: 'Waypoint Metric — базы, метрики и файлы для ваших приложений.' },
-  { n: '02', title: 'На компьютере', text: 'Waypoint Desktop — проекты и терминал у вас на ПК, рядом с облаком.' },
-  { n: '03', title: 'Игры', text: 'Lynx Hub — загрузчик и новости. Lynx Cloud — кабинет автора игр.' },
-  { n: '04', title: 'ИИ', text: 'Roza — помощник, документы и будущая Roza OS в линейке Waypoint.' },
-  { n: '05', title: 'Образование', text: 'ТГПУ Профиль — расписание и оценки в телефоне.' },
+  { n: '01', title: 'Инфраструктура', text: 'Waypoint Metric — облако, ingest, БД и BaaS для приложений.' },
+  { n: '02', title: 'Рабочее место', text: 'Waypoint Desktop — Docker и терминал локально, отдельно от облака.' },
+  { n: '03', title: 'Игры', text: 'Lynx Hub — клиент и релизы. Lynx Cloud — облако для проектов и сборок.' },
+  { n: '04', title: 'ИИ', text: 'Подсерия Roza: ассистент, документы и Roza OS в линейке Waypoint.' },
+  { n: '05', title: 'Образование', text: 'ТГПУ Профиль — мобильный кабинет студента.' },
 ];
 
 const products = [
@@ -77,7 +71,7 @@ const products = [
     span: 'club-span-8',
     tag: 'Облако',
     title: 'Waypoint Metric',
-    body: 'Базы, метрики и файлы в одном кабинете. Удобно для приложений и команд.',
+    body: 'Ingest, дашборды, PostgreSQL и REST BaaS. Свой workspace и база на серии Waypoint.',
     doc: '/club/docs/metric',
     site: productSiteUrl(LINKS.metric, '#pricing'),
   },
@@ -85,7 +79,7 @@ const products = [
     span: 'club-span-4',
     tag: 'ПК',
     title: 'Waypoint Desktop',
-    body: 'Программа на ПК: проекты, терминал и помощник Liza. Работает вместе с облаком.',
+    body: 'Локальный клиент: Docker, терминал, Liza. Не подменяет Metric.',
     doc: '/club/docs/desktop',
     site: LINKS.desktop,
   },
@@ -104,14 +98,6 @@ const products = [
     body: 'Витрина облака для авторов. Проекты и сборки — в кабинете после входа.',
     doc: '/club/docs/lynx',
     site: LINKS.lynxCloud,
-  },
-  {
-    span: 'club-span-8',
-    tag: 'ИИ',
-    title: 'Roza',
-    body: 'Витрина подсерии: Roza AI и Roza OS — документы, ПК, обучение.',
-    doc: '/club/docs/roza-ai',
-    site: '/roza/',
   },
   {
     span: 'club-span-4',
@@ -190,7 +176,7 @@ export function WaypointClubPage() {
       </nav>
 
       <main className="club-main">
-        <section className="club-hero club-reveal">
+        <section className="club-hero">
           <div className="club-hero-orbit" aria-hidden>
             <span />
             <span />
@@ -202,12 +188,14 @@ export function WaypointClubPage() {
             <span className="line2">для разработки, облака и ИИ</span>
           </h1>
           <p className="club-hero-lead">
-            Одна линейка продуктов для облака, работы на ПК, игр и ИИ. Выберите решение в меню — или читайте обзоры ниже.
+            Вся экосистема строится на <strong>серии Waypoint</strong> (Metric, Desktop, Lynx, кампусные решения) и{' '}
+            <strong>подсерии Roza</strong> (AI и OS). В «Решения» — переход на сайты продуктов; обзоры — в документации
+            Club.
           </p>
         </section>
 
-        <p className="club-section-label club-reveal club-reveal-d1">Карта экосистемы</p>
-        <div className="club-ecosystem-map club-reveal club-reveal-d2">
+        <p className="club-section-label">Карта экосистемы</p>
+        <div className="club-ecosystem-map">
           <div className="club-eco-node club-eco-metric">Metric · облако</div>
           <div className="club-eco-node club-eco-desktop">Desktop · ПК</div>
           <div className="club-eco-node club-eco-lynx">Lynx · игры</div>
@@ -215,10 +203,10 @@ export function WaypointClubPage() {
           <div className="club-eco-center">Waypoint Club</div>
         </div>
 
-        <p className="club-section-label club-reveal club-reveal-d3" id="news">
+        <p className="club-section-label" id="news">
           Новости
         </p>
-        <div className="club-news club-reveal club-reveal-d3">
+        <div className="club-news">
           <article>
             <time>2026-05-17</time>
             <strong>Waypoint Desktop beta</strong>
@@ -226,15 +214,15 @@ export function WaypointClubPage() {
           </article>
           <article>
             <time>2026-05</time>
-            <strong>Обновления экосистемы</strong>
-            <p>Metric, Desktop, Lynx и Roza — единая линейка Waypoint.</p>
+            <strong>Локальный Docker-стек</strong>
+            <p>Club, Metric, Desktop, Lynx и Roza на одной машине для разработки.</p>
           </article>
         </div>
 
-        <p className="club-section-label club-reveal" id="divisions">
+        <p className="club-section-label" id="divisions">
           Направления
         </p>
-        <div className="club-divisions club-reveal club-reveal-d1">
+        <div className="club-divisions">
           {divisions.map((d) => (
             <article key={d.n} className="club-division">
               <div className="club-division-num">{d.n}</div>
@@ -244,10 +232,10 @@ export function WaypointClubPage() {
           ))}
         </div>
 
-        <p className="club-section-label club-reveal club-reveal-d2" id="products">
+        <p className="club-section-label" id="products">
           Продукты
         </p>
-        <div className="club-bento club-reveal club-reveal-d2">
+        <div className="club-bento">
           {products.map((p) => {
             const cls = `club-bento-card ${p.span}${'soon' in p && p.soon ? ' tag-soon' : ''}`;
             const inner = (
