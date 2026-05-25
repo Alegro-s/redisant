@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru">
-      <body className="cloud-light">
+      <body className="lynx-cloud-site">
         <CloudSiteHeader />
         <div className="shell cloud-shell">{children}</div>
         <SiteFooter />

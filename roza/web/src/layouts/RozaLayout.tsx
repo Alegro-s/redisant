@@ -6,6 +6,8 @@ const NAV = [
   { to: '/', label: 'Обзор', end: true },
   { to: '/ai', label: 'Roza AI' },
   { to: '/os', label: 'Roza OS' },
+  { to: '/security', label: 'Security' },
+  { to: '/os/docs', label: 'Документация' },
 ];
 
 function AccountIcon() {
@@ -26,6 +28,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/': 'Roza AI — обзор',
   '/ai': 'Roza AI — чат',
   '/os': 'Roza OS',
+  '/security': 'Roza Security',
+  '/os/docs': 'Roza OS — документация',
   '/account': 'Roza AI — аккаунт',
   '/verify-email': 'Roza AI — подтверждение почты',
 };
@@ -45,9 +49,10 @@ export function RozaLayout() {
 
   return (
     <div className="roza-studio">
-      <header className="roza-top roza-top-compact">
-        <Link to="/" className="roza-brand roza-brand-text-only">
-          <span className="roza-brand-name">Roza</span>
+      <header className="roza-top">
+        <Link to="/" className="roza-brand roza-brand-metric">
+          <strong className="roza-brand-name">Roza</strong>
+          <span className="roza-brand-sub">серия Waypoint</span>
         </Link>
         <nav className="roza-nav" aria-label="Roza">
           {NAV.map((item) => (

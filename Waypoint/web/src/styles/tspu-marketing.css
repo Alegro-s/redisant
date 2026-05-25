@@ -1,9 +1,10 @@
 /* ТГПУ Профиль — витрина приложения */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+@import './waypoint-series.css';
 
 body.tspu-body {
-  background: #ffffff !important;
+  background: var(--tspu-bg) !important;
   margin: 0;
+  font-family: var(--ws-font-body);
 }
 
 .tspu-root {
@@ -16,7 +17,7 @@ body.tspu-body {
   --tspu-tile: #f7f4f2;
   --tspu-icon-bg: #f3ebe8;
   min-height: 100vh;
-  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--ws-font-body);
   color: var(--tspu-text);
   background: var(--tspu-bg);
   -webkit-font-smoothing: antialiased;
@@ -111,10 +112,10 @@ body.tspu-body {
 }
 
 .tspu-lead {
-  font-size: 18px;
-  line-height: 1.6;
+  font-size: clamp(18px, 2.2vw, 22px);
+  line-height: 1.65;
   color: var(--tspu-sub);
-  max-width: 440px;
+  max-width: 520px;
   margin: 0 0 32px;
 }
 
@@ -177,71 +178,51 @@ body.tspu-body {
 .tspu-sync-lead {
   margin: 0 0 32px;
   color: var(--tspu-sub);
-  font-size: 17px;
-  max-width: 600px;
-  line-height: 1.55;
+  font-size: clamp(17px, 2vw, 20px);
+  max-width: 720px;
+  line-height: 1.6;
 }
 
 .tspu-graph {
-  position: relative;
-  min-height: 340px;
-  padding: 24px 16px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 20px;
+  padding: 28px 24px 32px;
   border-radius: 28px;
   background: linear-gradient(180deg, var(--tspu-warm) 0%, #fff 100%);
   border: 1px solid var(--tspu-line);
+  position: relative;
 }
 
 .tspu-graph-lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.tspu-graph-path {
-  stroke-dasharray: 10 8;
-  animation: tspu-graph-flow 2.2s linear infinite;
-}
-
-.tspu-graph-path.delay {
-  animation-delay: 0.35s;
-}
-
-.tspu-graph-path.delay2 {
-  animation-delay: 0.7s;
-}
-
-@keyframes tspu-graph-flow {
-  to {
-    stroke-dashoffset: -36;
-  }
+  display: none;
 }
 
 .tspu-graph-node {
-  position: absolute;
-  width: min(200px, 28vw);
-  padding: 18px 16px;
+  position: static;
+  width: auto;
+  padding: 22px 20px;
   border-radius: 18px;
   background: #fff;
   border: 1px solid var(--tspu-line);
   box-shadow: 0 10px 32px rgba(196, 93, 69, 0.08);
   text-align: center;
-  z-index: 2;
+  transform: none;
 }
 
 .tspu-graph-node strong {
   display: block;
-  font-size: 15px;
+  font-size: clamp(17px, 2vw, 20px);
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .tspu-graph-node p {
   margin: 0;
-  font-size: 12px;
+  font-size: clamp(14px, 1.6vw, 16px);
   color: var(--tspu-sub);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .tspu-graph-tag {
@@ -260,47 +241,44 @@ body.tspu-body {
 }
 
 .tspu-graph-node.n-1c {
-  left: 4%;
-  top: 8%;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .tspu-graph-node.n-moodle {
-  right: 4%;
-  top: 8%;
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .tspu-graph-node.n-hub {
-  left: 50%;
-  top: 42%;
-  transform: translateX(-50%);
-  width: min(220px, 32vw);
+  grid-column: 1 / -1;
+  grid-row: 2;
   background: linear-gradient(165deg, #fff8f6, #fff);
   border-color: rgba(196, 93, 69, 0.4);
   box-shadow: 0 12px 40px rgba(196, 93, 69, 0.12);
 }
 
 .tspu-graph-node.n-student {
-  left: 50%;
-  bottom: 6%;
-  transform: translateX(-50%);
-  width: min(260px, 36vw);
+  grid-column: 1 / -1;
+  grid-row: 3;
   border-color: var(--tspu-accent);
 }
 
 @media (max-width: 700px) {
   .tspu-graph {
-    min-height: 520px;
-  }
-  .tspu-graph-node {
-    width: 42%;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, auto);
   }
   .tspu-graph-node.n-1c,
-  .tspu-graph-node.n-moodle {
-    top: 4%;
+  .tspu-graph-node.n-moodle,
+  .tspu-graph-node.n-hub,
+  .tspu-graph-node.n-student {
+    grid-column: 1;
   }
-  .tspu-graph-node.n-hub {
-    top: 38%;
-  }
+  .tspu-graph-node.n-1c { grid-row: 1; }
+  .tspu-graph-node.n-moodle { grid-row: 2; }
+  .tspu-graph-node.n-hub { grid-row: 3; }
+  .tspu-graph-node.n-student { grid-row: 4; }
 }
 
 /* Сервисы */
@@ -343,15 +321,15 @@ body.tspu-body {
 
 .tspu-tile h3 {
   margin: 0 0 8px;
-  font-size: 17px;
+  font-size: clamp(17px, 2vw, 19px);
   font-weight: 600;
 }
 
 .tspu-tile p {
   margin: 0;
-  font-size: 14px;
+  font-size: clamp(14px, 1.6vw, 16px);
   color: var(--tspu-sub);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .tspu-footer {

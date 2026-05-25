@@ -1,5 +1,5 @@
 /* Токены Lynx Launcher (nexus_theme.dart darkPurple) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
 
 *,
 *::before,
@@ -29,7 +29,8 @@ svg {
   --lynx-accent-border: rgba(192, 132, 252, 0.28);
   --lynx-green: #22c55e;
   --lynx-radius: 14px;
-  --lynx-font: 'Inter', system-ui, sans-serif;
+  --lynx-font: 'IBM Plex Sans', system-ui, sans-serif;
+  --lynx-font-display: Syne, sans-serif;
   --lynx-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
@@ -56,8 +57,23 @@ svg {
   min-height: 100vh;
   overflow-x: hidden;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.12), transparent),
-    radial-gradient(ellipse 40% 30% at 100% 50%, rgba(124, 58, 237, 0.08), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.14), transparent),
+    radial-gradient(ellipse 40% 30% at 100% 50%, rgba(124, 58, 237, 0.1), transparent);
+}
+
+.lynx-app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(192, 132, 252, 0.02) 2px,
+    rgba(192, 132, 252, 0.02) 3px
+  );
+  z-index: 0;
 }
 
 .lynx-app-header {
@@ -104,9 +120,9 @@ svg {
 }
 
 .lynx-app-brand-text {
-  font-family: var(--lynx-mono);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-family: var(--lynx-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 

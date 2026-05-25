@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RozaMark } from '../../components/roza/RozaMark';
+
+const ROZAOS_ISO_URL = import.meta.env.VITE_ROZAOS_ISO_URL ?? '';
+const ROZAOS_VERSION = import.meta.env.VITE_ROZAOS_VERSION ?? '0.6.0';
 
 const chapters = [
   {
@@ -27,6 +31,19 @@ const chapters = [
 ];
 
 export function RozaOsPage() {
+  const [isoUrl, setIsoUrl] = useState(ROZAOS_ISO_URL);
+
+  useEffect(() => {
+    if (ROZAOS_ISO_URL) return;
+    fetch('https://waypointclub.ru/rozaos-releases.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const u = j?.channels?.stable?.download_url;
+        if (u) setIsoUrl(u);
+      })
+      .catch(() => undefined);
+  }, []);
+
   return (
     <main className="roza-main roza-os-present">
       <section className="roza-os-cinema">
@@ -68,11 +85,17 @@ export function RozaOsPage() {
       <section className="roza-os-release-stage">
         <div className="roza-os-release-card">
           <RozaMark variant="os" size={36} />
-          <h2>Roza OS 1.0 Alpha</h2>
-          <p>x86_64 · ~2.1 GB · единственная версия на этапе пилота</p>
-          <button type="button" disabled>
-            Скачать ISO — скоро
-          </button>
+          <h2>rozaOS Kiry {ROZAOS_VERSION}</h2>
+          <p>x86_64 · ~2.5 GB · офлайн-установка с USB · Liza AI</p>
+          {isoUrl ? (
+            <a className="roza-os-download-btn" href={isoUrl} download>
+              Скачать ISO
+            </a>
+          ) : (
+            <button type="button" disabled>
+              Скачать ISO — после публикации
+            </button>
+          )}
         </div>
       </section>
 

@@ -15,8 +15,14 @@ function mapAuthErrorMessage(raw: string): string {
   if (raw === 'Email or nickname already taken') {
     return 'Этот email или ник уже занят. Если вы уже регистрировались — войдите.';
   }
+  if (raw.includes('email уже зарегистрирован') || raw.includes('никнейм уже занят')) {
+    return raw;
+  }
   if (raw.startsWith('Invalid login or password')) {
     return 'Неверный email или пароль.';
+  }
+  if (raw.includes('Пароль')) {
+    return raw;
   }
   return raw;
 }
@@ -81,7 +87,9 @@ export async function rozaRegister(payload: RegisterPayload): Promise<{ status?:
     }),
   });
   const data = (await res.json().catch(() => ({}))) as { status?: string; email?: string; token?: string; error?: string };
-  if (!res.ok) throw new Error(data.error ?? 'Не удалось зарегистрироваться');
+  if (!res.ok) {
+    throw new Error(data.error ? mapAuthErrorMessage(data.error) : `Ошибка ${res.status}`);
+  }
   return data;
 }
 

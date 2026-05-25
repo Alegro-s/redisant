@@ -657,33 +657,65 @@ async fn register(
         Ok(r) => r,
         Err(resp) => return resp,
     };
-    let existing = sqlx::query_as::<_, (Uuid,)>(
-        "SELECT id FROM users WHERE lower(trim(email)) = $1 OR nickname = $2",
+
+    let nickname = req.nickname.trim();
+    if nickname.len() < 2 || nickname.len() > 32 {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: "Никнейм: от 2 до 32 символов.".into(),
+        });
+    }
+
+    let email_row = sqlx::query_as::<_, (Uuid, bool)>(
+        "SELECT id, email_verified FROM users WHERE lower(trim(email)) = $1",
     )
     .bind(&email)
-    .bind(&req.nickname)
     .fetch_optional(&state.pool)
     .await;
 
-    match existing {
-        Ok(Some(_)) => {
-            let realm = client_realm_from_header(&http_req).unwrap_or("metric");
-            let msg = match realm {
-                "roza" => "Этот email или ник уже занят в Roza AI. Войдите, если аккаунт уже создан.",
-                "nexus" => "Этот email или ник уже занят в Lynx. Войдите в лаунчер или восстановите доступ.",
-                _ => "Этот email или ник уже занят. Попробуйте войти.",
-            };
+    match email_row {
+        Ok(Some((uid, true))) => {
             return HttpResponse::BadRequest().json(ErrorResponse {
-                error: msg.into(),
+                error: "Этот email уже зарегистрирован. Войдите в личный кабинет.".into(),
             });
         }
+        Ok(Some((uid, false))) => {
+            if let Err(e) = sqlx::query("DELETE FROM users WHERE id = $1 AND email_verified = false")
+                .bind(uid)
+                .execute(&state.pool)
+                .await
+            {
+                error!("delete unverified user: {}", e);
+            }
+        }
         Err(e) => {
-            error!("Database error checking existing user: {}", e);
+            error!("Database error checking email: {}", e);
             return HttpResponse::InternalServerError().json(ErrorResponse {
                 error: "Database error".into(),
             });
         }
         Ok(None) => {}
+    }
+
+    let nick_taken = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE lower(trim(nickname)) = lower(trim($1)))",
+    )
+    .bind(nickname)
+    .fetch_one(&state.pool)
+    .await;
+
+    match nick_taken {
+        Ok(true) => {
+            return HttpResponse::BadRequest().json(ErrorResponse {
+                error: "Этот никнейм уже занят. Выберите другой.".into(),
+            });
+        }
+        Err(e) => {
+            error!("Database error checking nickname: {}", e);
+            return HttpResponse::InternalServerError().json(ErrorResponse {
+                error: "Database error".into(),
+            });
+        }
+        Ok(false) => {}
     }
 
     let reg_code = email_verification::new_registration_code();
@@ -735,7 +767,7 @@ async fn register(
     .bind(&email)
     .bind(phone)
     .bind(&req.full_name)
-    .bind(&req.nickname)
+    .bind(nickname)
     .bind(hashed)
     .bind(&req.settings)
     .fetch_one(&mut *tx)
@@ -744,6 +776,11 @@ async fn register(
         Err(e) => {
             error!("Failed to insert user: {}", e);
             let _ = tx.rollback().await;
+            if format!("{e}").contains("users_nickname") || format!("{e}").contains("nickname") {
+                return HttpResponse::BadRequest().json(ErrorResponse {
+                    error: "Этот никнейм уже занят. Выберите другой.".into(),
+                });
+            }
             return HttpResponse::InternalServerError().json(ErrorResponse {
                 error: "Failed to create user".into(),
             });
@@ -755,7 +792,7 @@ async fn register(
     )
     .bind(user_id)
     .bind(&email)
-    .bind(&req.nickname)
+    .bind(nickname)
     .execute(&mut *tx)
     .await
     {
@@ -811,7 +848,7 @@ async fn register(
     }
 
     email_verification::spawn_send_registration_code(
-        req.nickname.clone(),
+        nickname.to_string(),
         email.clone(),
         reg_code,
     );

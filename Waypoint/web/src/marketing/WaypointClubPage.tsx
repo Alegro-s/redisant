@@ -7,7 +7,6 @@ type CatalogItem = {
   name: string;
   desc: string;
   doc: string;
-  /** Документация на сайте продукта (вне Club) */
   productDocs?: string;
   site?: string;
   siteHash?: string;
@@ -16,115 +15,32 @@ type CatalogItem = {
 };
 
 const productCatalog: CatalogItem[] = [
-  {
-    name: 'Waypoint Metric',
-    desc: 'Облако: метрики, PostgreSQL, BaaS',
-    doc: '/club/docs/metric',
-    site: LINKS.metric,
-    siteHash: '#features',
-  },
-  {
-    name: 'Waypoint Desktop',
-    desc: 'Локальное приложение на ПК',
-    doc: '/club/docs/desktop',
-    productDocs: desktopDocsUrl(),
-    site: LINKS.desktop,
-    siteHash: '',
-  },
-  {
-    name: 'Lynx Hub',
-    desc: 'Скачивание Launcher и документация',
-    doc: '/club/docs/lynx',
-    site: LINKS.lynxHub,
-  },
-  {
-    name: 'Lynx Cloud',
-    desc: 'Облако для авторов игр',
-    doc: '/club/docs/lynx',
-    site: LINKS.lynxCloud,
-  },
-  {
-    name: 'Roza AI',
-    desc: 'Консультант Waypoint',
-    doc: '/club/docs/roza-ai',
-    site: '/roza/ai',
-  },
-  {
-    name: 'Roza OS',
-    desc: 'Дистрибутив с ассистентом',
-    doc: '/club/docs/roza-os',
-    site: '/roza/os',
-  },
+  { name: 'Waypoint Metric', desc: 'Облако: метрики, PostgreSQL, BaaS', doc: '/club/docs/metric', site: LINKS.metric, siteHash: '#modules' },
+  { name: 'Waypoint Desktop', desc: 'Локальное приложение на ПК', doc: '/club/docs/desktop', productDocs: desktopDocsUrl(), site: LINKS.desktop },
+  { name: 'Lynx Hub', desc: 'Launcher и документация движка', doc: '/club/docs/lynx', site: LINKS.lynxHub },
+  { name: 'Lynx Cloud', desc: 'Облако для авторов игр', doc: '/club/docs/lynx', site: LINKS.lynxCloud },
+  { name: 'Roza AI', desc: 'Чат и консультант', doc: '/club/docs/roza-ai', site: '/roza/ai' },
+  { name: 'Roza OS', desc: 'Дистрибутив с Liza', doc: '/club/docs/roza-os', site: '/roza/os' },
+  { name: 'Roza Security', desc: 'Защита Windows и Roza OS', doc: '/club/docs/roza-os', site: '/roza/security' },
   { name: 'ТГПУ Профиль', desc: 'Кампусное приложение', doc: '/club/docs/tspu', internal: true, href: '/tspu' },
 ];
 
-const divisions = [
-  { n: '01', title: 'Инфраструктура', text: 'Waypoint Metric — облако, ingest, БД и BaaS для приложений.' },
-  { n: '02', title: 'Рабочее место', text: 'Waypoint Desktop — Docker и терминал локально, отдельно от облака.' },
-  { n: '03', title: 'Игры', text: 'Lynx Hub — клиент и релизы. Lynx Cloud — облако для проектов и сборок.' },
-  { n: '04', title: 'ИИ', text: 'Подсерия Roza: ассистент, документы и Roza OS в линейке Waypoint.' },
-  { n: '05', title: 'Образование', text: 'ТГПУ Профиль — мобильный кабинет студента.' },
+const flow = [
+  { n: '01', label: 'Metric', sub: 'Облако, ingest, PostgreSQL' },
+  { n: '02', label: 'Desktop', sub: 'Docker и терминал на ПК' },
+  { n: '03', label: 'Lynx', sub: 'Движок и облако авторов' },
+  { n: '04', label: 'Roza', sub: 'ИИ, ОС и Security' },
 ];
 
 const products = [
-  {
-    span: 'club-span-8',
-    tag: 'Облако',
-    title: 'Waypoint Metric',
-    body: 'Ingest, дашборды, PostgreSQL и REST BaaS. Свой workspace и база на серии Waypoint.',
-    doc: '/club/docs/metric',
-    site: productSiteUrl(LINKS.metric, '#pricing'),
-  },
-  {
-    span: 'club-span-4',
-    tag: 'ПК',
-    title: 'Waypoint Desktop',
-    body: 'Локальный клиент: Docker, терминал, Liza. Не подменяет Metric.',
-    doc: '/club/docs/desktop',
-    site: LINKS.desktop,
-  },
-  {
-    span: 'club-span-4',
-    tag: 'Hub',
-    title: 'Lynx Hub',
-    body: 'Скачивание Launcher, новости и документация движка.',
-    doc: '/club/docs/lynx',
-    site: LINKS.lynxHub,
-  },
-  {
-    span: 'club-span-4',
-    tag: 'Облако',
-    title: 'Lynx Cloud',
-    body: 'Витрина облака для авторов. Проекты и сборки — в кабинете после входа.',
-    doc: '/club/docs/lynx',
-    site: LINKS.lynxCloud,
-  },
-  {
-    span: 'club-span-4',
-    tag: 'ИИ',
-    title: 'Roza AI',
-    body: 'Консультант Waypoint: документы, ПК, обучение. Чат и приложение.',
-    doc: '/club/docs/roza-ai',
-    site: '/roza/ai',
-  },
-  {
-    span: 'club-span-4',
-    tag: 'ОС',
-    title: 'Roza OS',
-    body: 'Дистрибутив с ассистентом в системе.',
-    doc: '/club/docs/roza-os',
-    site: '/roza/os',
-    soon: true,
-  },
-  {
-    span: 'club-span-6',
-    tag: 'Кампус',
-    title: 'ТГПУ Профиль',
-    body: 'Расписание, оценки, Moodle для ТГПУ.',
-    doc: '/club/docs/tspu',
-    internal: true as const,
-    href: '/tspu',
-  },
+  { tag: 'Облако', title: 'Waypoint Metric', body: 'Ingest, дашборды, PostgreSQL и REST BaaS.', doc: '/club/docs/metric', site: productSiteUrl(LINKS.metric, '#modules') },
+  { tag: 'ПК', title: 'Waypoint Desktop', body: 'Docker, терминал и Liza локально.', doc: '/club/docs/desktop', site: LINKS.desktop },
+  { tag: 'Hub', title: 'Lynx Hub', body: 'Скачивание Launcher и документация.', doc: '/club/docs/lynx', site: LINKS.lynxHub },
+  { tag: 'Облако', title: 'Lynx Cloud', body: 'Проекты и сборки в кабинете.', doc: '/club/docs/lynx', site: LINKS.lynxCloud },
+  { tag: 'ИИ', title: 'Roza AI', body: 'Чат: документы, ПК, обучение.', doc: '/club/docs/roza-ai', site: '/roza/ai' },
+  { tag: 'ОС', title: 'Roza OS', body: 'Дистрибутив с ассистентом.', doc: '/club/docs/roza-os', site: '/roza/os' },
+  { tag: 'Защита', title: 'Roza Security', body: 'Агент Windows и Roza OS.', doc: '/club/docs/roza-os', site: '/roza/security' },
+  { tag: 'Кампус', title: 'ТГПУ Профиль', body: 'Расписание и Moodle.', doc: '/club/docs/tspu', internal: true as const, href: '/tspu' },
 ];
 
 function catalogHref(item: CatalogItem): string {
@@ -138,11 +54,11 @@ export function WaypointClubPage() {
   useDocumentTitle('Waypoint Club — экосистема Waypoint');
   return (
     <div className="club-root">
-      <nav className="club-nav">
+      <header className="club-nav">
         <Link to="/" className="club-logo">
           Waypoint <em>Club</em>
         </Link>
-        <div className="club-nav-links">
+        <nav className="club-nav-links" aria-label="Навигация">
           <div className="club-dropdown-wrap">
             <span className="club-dropdown-trigger">Решения</span>
             <div className="club-dropdown" role="menu">
@@ -168,87 +84,60 @@ export function WaypointClubPage() {
               )}
             </div>
           </div>
-          <a href={clubPath('/club/series')}>Серия Waypoint</a>
+          <a href="#flow">Серия</a>
           <a href="#products">Продукты</a>
-          <a href="#news">Новости</a>
           <a href="#docs">Документация</a>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
       <main className="club-main">
-        <section className="club-hero">
-          <div className="club-hero-orbit" aria-hidden>
-            <span />
-            <span />
-            <span />
-          </div>
-          <p className="club-hero-tag">Серия Waypoint · подсерия Roza</p>
+        <section className="club-hero club-reveal">
+          <p className="club-hero-tag">Waypoint Club</p>
           <h1>
-            Продукты одной линейки
-            <span className="line2">для разработки, облака и ИИ</span>
+            Экосистема Waypoint
+            <span className="line2">для облака, игр и ИИ</span>
           </h1>
           <p className="club-hero-lead">
-            Вся экосистема строится на <strong>серии Waypoint</strong> (Metric, Desktop, Lynx, кампусные решения) и{' '}
-            <strong>подсерии Roza</strong> (AI и OS). В «Решения» — переход на сайты продуктов; обзоры — в документации
-            Club.
+            Каталог продуктов серии: Metric, Desktop, Lynx, Roza и кампусные сервисы. Сайты и кабинеты — из меню
+            «Решения».
           </p>
+          <div className="club-hero-actions">
+            <a href="#products" className="club-btn club-btn-primary">
+              Продукты
+            </a>
+            <a href="#docs" className="club-btn club-btn-ghost">
+              Документация
+            </a>
+          </div>
+          <div className="club-hero-beam" aria-hidden />
         </section>
 
-        <p className="club-section-label">Карта экосистемы</p>
-        <div className="club-ecosystem-map">
-          <div className="club-eco-node club-eco-metric">Metric · облако</div>
-          <div className="club-eco-node club-eco-desktop">Desktop · ПК</div>
-          <div className="club-eco-node club-eco-lynx">Lynx · игры</div>
-          <div className="club-eco-node club-eco-roza">Roza · ИИ</div>
-          <div className="club-eco-center">Waypoint Club</div>
-        </div>
-
-        <p className="club-section-label" id="news">
-          Новости
+        <p className="club-section-title club-reveal" id="flow">
+          Серия Waypoint
         </p>
-        <div className="club-news">
-          <article>
-            <time>2026-05-17</time>
-            <strong>Waypoint Desktop beta</strong>
-            <p>Документация и привязка к облаку Metric на сайте Desktop.</p>
-          </article>
-          <article>
-            <time>2026-05</time>
-            <strong>Локальный Docker-стек</strong>
-            <p>Club, Metric, Desktop, Lynx и Roza на одной машине для разработки.</p>
-          </article>
-        </div>
-
-        <p className="club-section-label" id="divisions">
-          Направления
-        </p>
-        <div className="club-divisions">
-          {divisions.map((d) => (
-            <article key={d.n} className="club-division">
-              <div className="club-division-num">{d.n}</div>
-              <h3>{d.title}</h3>
-              <p>{d.text}</p>
+        <div className="club-flow club-reveal">
+          {flow.map((s) => (
+            <article key={s.n} className="club-flow-card">
+              <span className="club-flow-num">{s.n}</span>
+              <strong>{s.label}</strong>
+              <span>{s.sub}</span>
             </article>
           ))}
         </div>
 
-        <p className="club-section-label" id="products">
+        <p className="club-section-title club-reveal" id="products">
           Продукты
         </p>
-        <div className="club-bento">
+        <div className="club-products-grid club-reveal">
           {products.map((p) => {
-            const cls = `club-bento-card ${p.span}${'soon' in p && p.soon ? ' tag-soon' : ''}`;
+            const cls = 'club-product-card';
             const inner = (
               <>
                 <span className="tag">{p.tag}</span>
                 <h3>{p.title}</h3>
                 <p>{p.body}</p>
-                <span className="club-bento-doc-hint">
-                  {'site' in p && p.site
-                    ? 'Открыть сайт →'
-                    : 'internal' in p && p.internal
-                      ? 'Открыть →'
-                      : 'Документация на Club →'}
+                <span className="club-product-link">
+                  {'site' in p && p.site ? 'Открыть →' : 'internal' in p && p.internal ? 'Открыть →' : 'Обзор →'}
                 </span>
               </>
             );
@@ -262,13 +151,7 @@ export function WaypointClubPage() {
             if ('site' in p && p.site) {
               const ext = isExternalUrl(p.site);
               return (
-                <a
-                  key={p.title}
-                  href={p.site}
-                  className={cls}
-                  target={ext ? '_blank' : undefined}
-                  rel={ext ? 'noreferrer' : undefined}
-                >
+                <a key={p.title} href={p.site} className={cls} target={ext ? '_blank' : undefined} rel={ext ? 'noreferrer' : undefined}>
                   {inner}
                 </a>
               );
@@ -281,31 +164,35 @@ export function WaypointClubPage() {
           })}
         </div>
 
-        <p className="club-section-label" id="docs">
-          Документация на Club
+        <p className="club-section-title club-reveal" id="docs">
+          Документация
         </p>
-        <p className="club-docs-lead">Обзор каждого продукта здесь. Сайты и кабинеты — по ссылкам в меню «Решения».</p>
-        <div className="club-docs">
+        <p className="club-docs-lead club-reveal">Обзоры на Club — в том же формате, что и документация Desktop.</p>
+        <div className="club-docs-grid club-reveal">
           {productCatalog.map((item) =>
             item.internal && item.href ? (
-              <Link key={item.name} to={item.href} className="club-doc-link">
-                <strong>{item.name}</strong>
-                {item.desc}
+              <Link key={item.name} to={item.doc} className="club-doc-tile">
+                <h3>{item.name}</h3>
+                <p>{item.desc}</p>
               </Link>
-            ) : item.productDocs ? (
-              <a key={item.name} href={item.productDocs} className="club-doc-link" target="_blank" rel="noreferrer">
-                <strong>{item.name}</strong>
-                {item.desc}
-                <span className="club-doc-external"> · на Metric</span>
-              </a>
             ) : (
-              <Link key={item.name} to={item.doc} className="club-doc-link">
-                <strong>{item.name}</strong>
-                {item.desc}
+              <Link key={item.name} to={item.doc} className="club-doc-tile">
+                <h3>{item.name}</h3>
+                <p>{item.desc}</p>
               </Link>
             ),
           )}
         </div>
+
+        <section className="club-cta-band club-reveal">
+          <div>
+            <h2>Начните с Metric или Desktop</h2>
+            <p>Облако и локальное рабочее место — точки входа в серию Waypoint.</p>
+          </div>
+          <a className="club-btn club-btn-primary" href={LINKS.metric}>
+            Waypoint Metric →
+          </a>
+        </section>
       </main>
 
       <footer className="club-footer">© Waypoint Club</footer>

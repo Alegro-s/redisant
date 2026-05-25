@@ -1,0 +1,14 @@
+{
+  "product": "rozaOS Kiry",
+  "channels": {
+    "stable": {
+      "version": "0.6.0",
+      "arch": "x86_64",
+      "size_hint": "~1.66 GB",
+      "iso_filename": "rozaos-0.6.0-x86_64.iso",
+      "download_url": "",
+      "sha256": "D53F19BD5DE5DF93DE74EB8C2A287F1501172BC6162D10F165CC6534C2801FF7",
+      "release_notes": "Hyprland, OEM wizard, RozaSecurity, Windows-compat, Liza bridge."
+    }
+  }
+}

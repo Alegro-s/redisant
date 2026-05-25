@@ -81,12 +81,13 @@ export function RozaAccountPage() {
 
   return (
     <main className="roza-main roza-account-page roza-hub-google">
+      <div className="roza-account-layout">
       <section className="roza-account-hero">
         <RozaMark variant="ai" size={52} />
         <p className="roza-hub-waypoint">Waypoint · Roza</p>
         <h1>Личный кабинет Roza AI</h1>
         <p className="roza-account-lead">
-          Один аккаунт для сайта и приложения Windows. Отдельно от Waypoint Metric и Lynx Cloud.
+          Один аккаунт для сайта и приложения Windows.
         </p>
       </section>
 
@@ -154,7 +155,9 @@ export function RozaAccountPage() {
             />
           </label>
           {mode === 'register' ? (
-            <p className="roza-account-note">≥10 символов, латиница, цифра и спецсимвол.</p>
+            <p className="roza-account-note">
+              Пароль: от 10 символов, заглавная и строчная латиница, цифра и спецсимвол (!@#$…).
+            </p>
           ) : null}
           {error ? <p className="roza-account-error">{error}</p> : null}
           <button type="submit" className="roza-account-btn roza-account-btn-primary" disabled={busy}>
@@ -174,6 +177,7 @@ export function RozaAccountPage() {
           <p>Подписка и оплата появятся позже. Сейчас действует бесплатный дневной лимит токенов.</p>
         </article>
       </section>
+      </div>
 
       <p className="roza-ai-footer-links">
         <Link to="/ai">Roza AI</Link>

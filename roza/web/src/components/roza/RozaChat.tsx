@@ -54,6 +54,9 @@ export function RozaChat({
         return rozaDemoReply(q);
       }
       const msg = err instanceof Error ? err.message : '';
+      if (msg && /torch|transformers|hf_local|модель на сервере/i.test(msg)) {
+        return 'Чат временно недоступен на сайте. Откройте приложение Roza для Windows или попробуйте позже.';
+      }
       if (msg && !/failed to fetch|network/i.test(msg)) {
         return msg.length > 200 ? 'Не удалось получить ответ. Попробуйте позже.' : msg;
       }

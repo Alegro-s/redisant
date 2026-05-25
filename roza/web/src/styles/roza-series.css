@@ -1,0 +1,19 @@
+/* Roza — светлая линейка, общий шрифт IBM Plex; wordmark — Google Sans Flex */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --rs-font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --rs-font-roza: 'Google Sans Flex', 'IBM Plex Sans', system-ui, sans-serif;
+  --rs-bg: #ffffff;
+  --rs-bg-soft: #f8f9fa;
+  --rs-surface: #ffffff;
+  --rs-border: #dadce0;
+  --rs-text: #202124;
+  --rs-muted: #5f6368;
+  --rs-blue: #1a73e8;
+  --rs-purple: #9334e6;
+  --rs-teal: #12b5cb;
+  --rs-rose: #d96570;
+  --rs-green: #1e8e3e;
+  --rs-radius: 12px;
+}

@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   readonly VITE_ROZA_URL?: string;
   readonly VITE_ROZA_ACCOUNT_URL?: string;
+  readonly VITE_ROZAOS_ISO_URL?: string;
+  readonly VITE_ROZAOS_VERSION?: string;
 }
 
 interface ImportMeta {

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RozaMark } from '../components/roza/RozaMark';
+import { ROZAOS_ISO_URL, ROZAOS_VERSION } from '../config/links';
 
 const chapters = [
   {
@@ -14,23 +16,45 @@ const chapters = [
     id: 'ai',
     title: 'ИИ внутри системы',
     lead: 'Ассистент понимает контекст рабочего стола.',
-    body: 'Roza AI встроен в оболочку: подсказки в терминале, разбор логов, помощь с пакетами и настройкой IDE — без переключения в браузер.',
+    body: 'Liza встроена в оболочку: подсказки в терминале, разбор логов, помощь с пакетами — через локальный bridge на 127.0.0.1.',
     tone: 'b',
     ai: true,
-    chips: ['Контекст сессии', 'Терминал · IDE', 'Локально', 'Приватность'],
+    chips: ['Контекст сессии', 'Терминал · IDE', 'Лiza локально', 'Приватность'],
   },
   {
     id: 'inside',
     title: 'Что внутри',
     lead: 'Всё необходимое в одном образе.',
-    body: 'Модульное ядро, терминал, IDE, менеджер пакетов и сетевой стек. Без лишних пакетов на старте.',
+    body: 'Мастер первого запуска, офлайн-установка с USB, XFCE, опциональное шифрование диска и уведомления об обновлениях.',
     tone: 'c',
     ai: false,
-    chips: ['Ядро stable', 'Пакеты', 'Сеть', 'Обновления'],
+    chips: ['OEM wizard', 'Офлайн ISO', 'LUKS2', 'Обновления'],
   },
 ];
 
+type ReleaseMeta = {
+  download_url?: string;
+  sha256?: string;
+  size_hint?: string;
+  version?: string;
+};
+
 export function RozaOsPage() {
+  const [release, setRelease] = useState<ReleaseMeta | null>(null);
+  const isoUrl = (ROZAOS_ISO_URL || release?.download_url || '').trim();
+  const version = release?.version || ROZAOS_VERSION;
+
+  useEffect(() => {
+    if (ROZAOS_ISO_URL) return;
+    fetch('/rozaos-releases.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const ch = j?.channels?.stable;
+        if (ch) setRelease(ch);
+      })
+      .catch(() => undefined);
+  }, []);
+
   return (
     <main className="roza-main roza-os-present">
       <section className="roza-os-cinema">
@@ -38,7 +62,9 @@ export function RozaOsPage() {
         <div className="roza-os-cinema-inner">
           <p className="roza-hub-waypoint">Waypoint · Roza</p>
           <RozaMark variant="os" size={52} />
-          <h1>Roza OS</h1>
+          <h1 className="roza-os-wordmark">
+            Roza <span className="roza-os-wordmark-os">OS</span>
+          </h1>
           <p className="roza-os-cinema-tag">Дистрибутив с встроенным ИИ</p>
         </div>
       </section>
@@ -50,7 +76,7 @@ export function RozaOsPage() {
           id={ch.id}
         >
           <div className="roza-os-chapter-text">
-            {ch.ai ? <span className="roza-os-ai-badge">Roza AI</span> : null}
+            {ch.ai ? <span className="roza-os-ai-badge">Liza</span> : null}
             <h2>{ch.title}</h2>
             <p className="roza-os-chapter-lead">{ch.lead}</p>
             <p>{ch.body}</p>
@@ -86,15 +112,29 @@ export function RozaOsPage() {
       <section className="roza-os-release-stage">
         <div className="roza-os-release-card">
           <RozaMark variant="os" size={36} />
-          <h2>Roza OS 1.0 Alpha</h2>
-          <p>x86_64 · ~2.1 GB · единственная версия на этапе пилота</p>
-          <button type="button" disabled>
-            Скачать ISO — скоро
-          </button>
+          <h2>rozaOS Kiry {version}</h2>
+          <p>
+            x86_64 · {release?.size_hint ?? '~2.5 GB'} · Secure Boot: shim при сборке ISO
+          </p>
+          {isoUrl ? (
+            <a className="roza-os-download-btn" href={isoUrl} download>
+              Скачать ISO
+            </a>
+          ) : (
+            <button type="button" disabled title="Укажите VITE_ROZAOS_ISO_URL или загрузите ISO в S3">
+              Скачать ISO — после публикации
+            </button>
+          )}
+          {release?.sha256 ? (
+            <p className="roza-os-sha" style={{ fontSize: 12, marginTop: 8, wordBreak: 'break-all' }}>
+              SHA256: {release.sha256}
+            </p>
+          ) : null}
         </div>
       </section>
 
       <p className="roza-os-footer-links">
+        <Link to="/os/docs">Документация и версии</Link>
         <Link to="/ai">Roza AI</Link>
         <Link to="/">Обзор</Link>
       </p>

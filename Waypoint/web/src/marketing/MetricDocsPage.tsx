@@ -1,8 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
-import { Box, Typography } from '@mui/material';
-import { usePageMeta } from '../hooks/usePageMeta';
+import '../styles/metric-public.css';
 import { LINKS, desktopDocsUrl } from './links';
 import { METRIC_DOCS, METRIC_DOC_NAV, type MetricDocTopic } from './metricDocsContent';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 const VALID = new Set<string>(Object.keys(METRIC_DOCS));
 
@@ -13,69 +13,69 @@ export function MetricDocsPage() {
   const doc = METRIC_DOCS[active];
 
   usePageMeta({
-    title: `${doc.title} — документация`,
+    title: `${doc.title} — Waypoint Metric`,
     description: doc.subtitle,
-    themeColor: '#34B67A',
+    themeColor: '#070b12',
   });
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#0a0f0d', color: '#e8f5ef', px: { xs: 2, md: 4 }, py: 4 }}>
-      <Box sx={{ maxWidth: 960, mx: 'auto' }}>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
-          <Typography component={Link} to="/" sx={{ color: '#34B67A', textDecoration: 'none', fontWeight: 700 }}>
-            ← Waypoint Metric
-          </Typography>
-          <Typography component="a" href={desktopDocsUrl()} sx={{ color: '#7dd3a8', ml: 'auto' }}>
-            Документация Desktop →
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '200px 1fr' }, gap: 3 }}>
-          <nav>
-            {METRIC_DOC_NAV.map((item) => (
-              <Typography
-                key={item.topic}
-                component={Link}
-                to={item.topic === 'start' ? '/metric/docs' : `/metric/docs/${item.topic}`}
-                sx={{
-                  display: 'block',
-                  py: 0.75,
-                  px: 1,
-                  borderRadius: 1,
-                  color: item.topic === active ? '#34B67A' : '#8fa89a',
-                  fontWeight: item.topic === active ? 700 : 400,
-                  textDecoration: 'none',
-                }}
-              >
-                {item.label}
-              </Typography>
-            ))}
-          </nav>
-          <article>
-            <Typography variant="h4" gutterBottom>
-              {doc.title}
-            </Typography>
-            <Typography sx={{ color: '#8fa89a', mb: 3 }}>{doc.subtitle}</Typography>
+    <div className="metric-public metric-doc-layout">
+      <header className="metric-nav">
+        <Link to="/" className="metric-brand">
+          <strong>Waypoint Metric</strong>
+          <span>документация</span>
+        </Link>
+        <nav className="metric-nav-links">
+          <Link to="/register?plan=basic">Регистрация</Link>
+          <Link to="/">Главная</Link>
+          <a href={LINKS.club}>Club</a>
+        </nav>
+      </header>
+
+      <main className="metric-main metric-doc-main">
+        <Link to="/" className="metric-doc-back">
+          ← На главную Metric
+        </Link>
+
+        <div className="metric-doc-grid">
+          <aside className="metric-doc-aside">
+            <p className="metric-doc-aside-title">Разделы</p>
+            <nav className="metric-doc-nav">
+              {METRIC_DOC_NAV.map((item) => (
+                <Link
+                  key={item.topic}
+                  to={item.topic === 'start' ? '/metric/docs' : `/metric/docs/${item.topic}`}
+                  className={item.topic === active ? 'is-active' : undefined}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </aside>
+
+          <article className="metric-doc-article">
+            <h1>{doc.title}</h1>
+            <p className="metric-doc-sub">{doc.subtitle}</p>
             {doc.sections.map((s) => (
-              <Box key={s.h} sx={{ mb: 2.5 }}>
-                <Typography variant="h6" sx={{ color: '#34B67A' }}>
-                  {s.h}
-                </Typography>
-                <Typography sx={{ color: '#b8d4c8', lineHeight: 1.65 }}>{s.p}</Typography>
-              </Box>
+              <section key={s.h} className="metric-doc-section">
+                <h2>{s.h}</h2>
+                <p>{s.p}</p>
+              </section>
             ))}
             {active === 'desktop' && (
-              <Typography sx={{ mt: 2 }}>
-                <a href={desktopDocsUrl('cloud')} style={{ color: '#34B67A' }}>
-                  Подробнее на сайте Desktop
+              <p className="metric-doc-section">
+                <a href={desktopDocsUrl('cloud')} className="metric-inline-link">
+                  Подробнее на сайте Desktop →
                 </a>
-              </Typography>
+              </p>
             )}
           </article>
-        </Box>
-        <Typography sx={{ mt: 4, fontSize: '0.85rem', color: '#6a8a7a' }}>
-          © Waypoint Metric · <a href={LINKS.club}>Club</a>
-        </Typography>
-      </Box>
-    </Box>
+        </div>
+      </main>
+
+      <footer className="metric-footer">
+        © Waypoint Metric · <Link to="/">Главная</Link> · <a href={LINKS.club}>Club</a>
+      </footer>
+    </div>
   );
 }

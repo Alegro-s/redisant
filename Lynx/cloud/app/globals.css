@@ -1,6 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
 
-:root {
+:root,
+body.lynx-cloud-site {
   --lynx-bg: #0d1117;
   --lynx-surface: #161b22;
   --lynx-card: #21262d;
@@ -13,8 +14,32 @@
   --lynx-accent-border: rgba(192, 132, 252, 0.28);
   --lynx-green: #22c55e;
   --lynx-radius: 14px;
-  --font: 'Inter', system-ui, sans-serif;
+  --font: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-display: Syne, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+body.lynx-cloud-site {
+  background: var(--lynx-bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.18), transparent),
+    radial-gradient(ellipse 40% 30% at 100% 50%, rgba(124, 58, 237, 0.12), transparent);
+}
+
+@media (prefers-color-scheme: light) {
+  body.lynx-cloud-site.lynx-cloud-light-opt {
+    --lynx-bg: #fbfbfd;
+    --lynx-surface: #ffffff;
+    --lynx-card: #ffffff;
+    --lynx-border: #d2d2d7;
+    --lynx-text: #1d1d1f;
+    --lynx-muted: #6e6e73;
+    --lynx-body: #424245;
+    --lynx-accent: #0071e3;
+    --lynx-accent-soft: #0077ed;
+    --lynx-accent-border: rgba(0, 113, 227, 0.2);
+    --lynx-green: #248a3d;
+  }
 }
 
 * {
@@ -31,9 +56,6 @@ body {
   font-family: var(--font);
   color: var(--lynx-body);
   background: var(--lynx-bg);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.12), transparent),
-    radial-gradient(ellipse 40% 30% at 100% 50%, rgba(124, 58, 237, 0.08), transparent);
   line-height: 1.65;
 }
 
@@ -76,9 +98,9 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  font-family: var(--mono);
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
   letter-spacing: -0.02em;
   color: var(--lynx-text);
   text-decoration: none;
@@ -421,8 +443,8 @@ code {
 }
 
 .cloud-brand {
-  font-family: var(--mono);
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--lynx-text);
   text-decoration: none;
@@ -667,7 +689,7 @@ button.cloud-login-btn {
 .cloud-intro-lead {
   font-size: 1.1rem;
   line-height: 1.65;
-  color: #6e6e73;
+  color: var(--lynx-muted);
   margin: 0 0 1.5rem;
 }
 
@@ -755,12 +777,18 @@ button.cloud-login-btn {
   }
 }
 
-.cloud-apple-hero h1 {
+body.lynx-cloud-site .cloud-apple {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 5rem;
+}
+
+body.lynx-cloud-site .cloud-apple-hero h1 {
   font-size: clamp(2.25rem, 5vw, 3.25rem);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.08;
-  color: #1d1d1f;
+  color: var(--lynx-text);
   margin: 0 0 1.25rem;
 }
 
@@ -840,24 +868,24 @@ button.cloud-login-btn {
   }
 }
 
-.cloud-apple-values article {
+body.lynx-cloud-site .cloud-apple-values article {
   padding: 1.75rem;
-  border-radius: 18px;
-  background: #fff;
-  border: 1px solid #d2d2d7;
+  border-radius: 10px;
+  background: var(--lynx-card);
+  border: 1px solid var(--lynx-border);
 }
 
-.cloud-apple-values h2 {
+body.lynx-cloud-site .cloud-apple-values h2 {
   margin: 0 0 0.5rem;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1d1d1f;
+  color: var(--lynx-text);
 }
 
-.cloud-apple-values p {
+body.lynx-cloud-site .cloud-apple-values p {
   margin: 0;
   font-size: 0.95rem;
-  color: #6e6e73;
+  color: var(--lynx-muted);
   line-height: 1.55;
 }
 
@@ -929,22 +957,23 @@ button.cloud-login-btn {
   background: linear-gradient(180deg, #a7f3d0, #d1fae5);
 }
 
-.cloud-apple-cta {
+body.lynx-cloud-site .cloud-apple-cta {
   text-align: center;
   padding: 3.5rem 2rem;
-  border-radius: 24px;
-  background: #f5f5f7;
+  border-radius: 12px;
+  background: var(--lynx-surface);
+  border: 1px solid var(--lynx-border);
   margin-bottom: 2rem;
 }
 
-.cloud-apple-cta h2 {
+body.lynx-cloud-site .cloud-apple-cta h2 {
   margin: 0 0 0.5rem;
   font-size: 1.75rem;
-  color: #1d1d1f;
+  color: var(--lynx-text);
 }
 
-.cloud-apple-cta p {
-  color: #6e6e73;
+body.lynx-cloud-site .cloud-apple-cta p {
+  color: var(--lynx-muted);
   margin: 0 0 1.5rem;
 }
 
@@ -1054,7 +1083,7 @@ button.cloud-login-btn {
   font-size: clamp(1.65rem, 4vw, 2.1rem);
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: #1d1d1f;
+  color: var(--lynx-text);
   margin: 0 0 0.75rem;
   line-height: 1.15;
 }

@@ -1,5 +1,5 @@
 /* Waypoint Metric — публичная витрина, отличима от Club */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import './waypoint-series.css';
 
 .metric-public {
   --mp-bg: #070b12;
@@ -13,15 +13,24 @@
   min-height: 100vh;
   background: var(--mp-bg);
   color: var(--mp-text);
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: var(--ws-font-body);
+  position: relative;
+  isolation: isolate;
 }
 
 .metric-public::before {
   content: '';
   position: fixed;
   inset: 0;
+  z-index: 0;
   background: radial-gradient(ellipse 70% 50% at 20% -10%, rgba(91, 141, 239, 0.15), transparent 55%);
   pointer-events: none;
+}
+
+.metric-main,
+.metric-nav {
+  position: relative;
+  z-index: 1;
 }
 
 .metric-nav {
@@ -44,7 +53,7 @@
 
 .metric-brand strong {
   display: block;
-  font-family: Syne, sans-serif;
+  font-family: var(--ws-font-display);
   font-size: 1.1rem;
   font-weight: 700;
 }
@@ -78,7 +87,7 @@
 }
 
 .metric-hero h1 {
-  font-family: Syne, sans-serif;
+  font-family: var(--ws-font-display);
   font-size: clamp(2rem, 5vw, 2.75rem);
   font-weight: 700;
   line-height: 1.15;
@@ -189,7 +198,7 @@
 }
 
 .metric-section-title {
-  font-family: Syne, sans-serif;
+  font-family: var(--ws-font-display);
   font-size: 1.25rem;
   margin: 0 0 1rem;
 }
@@ -369,7 +378,7 @@ a.metric-feature-link:hover {
 
 .metric-cta-band h2 {
   margin: 0 0 0.35rem;
-  font-family: Syne, sans-serif;
+  font-family: var(--ws-font-display);
   font-size: 1.25rem;
 }
 
@@ -458,7 +467,7 @@ a.metric-feature-link:hover {
 }
 
 .metric-doc-article h1 {
-  font-family: Syne, sans-serif;
+  font-family: var(--ws-font-display);
   font-size: 1.85rem;
   margin: 0 0 0.35rem;
 }

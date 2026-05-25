@@ -56,11 +56,24 @@
 }
 
 .lynx-launch-hero h1 {
-  font-family: var(--lynx-mono);
+  font-family: var(--lynx-font-display, Syne, sans-serif);
   font-size: clamp(1.85rem, 4.5vw, 2.65rem);
-  line-height: 1.15;
+  font-weight: 700;
+  line-height: 1.12;
   color: var(--lynx-text);
   margin: 0 0 1rem;
+  animation: lynx-hero-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes lynx-hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .lynx-launch-hero h1 em {

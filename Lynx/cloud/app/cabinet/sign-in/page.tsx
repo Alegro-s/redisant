@@ -15,7 +15,7 @@ export default function LynxCabinetSignInPage({
         <p className="cloud-kicker">Lynx Cloud</p>
         <h1>{isRegister ? 'Регистрация' : 'Вход'}</h1>
         <p className="cloud-intro-lead">
-          Личный кабинет Lynx Cloud — отдельно от Waypoint Metric и Roza AI.
+          Личный кабинет Lynx Cloud для проектов и сборок Lynx.
         </p>
         <LynxAuthForm initialRegister={isRegister} />
         <div className="cloud-intro-actions">

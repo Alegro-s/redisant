@@ -1,0 +1,138 @@
+/* Waypoint series — Desktop baseline + motion + system themes */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --ws-font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --ws-font-display: Syne, sans-serif;
+  --ws-radius-sm: 8px;
+  --ws-radius-md: 12px;
+  --ws-radius-lg: 16px;
+  --ws-radius-xl: 20px;
+
+  --ws-bg: #070b12;
+  --ws-bg-elevated: #0f1520;
+  --ws-surface: #141c2b;
+  --ws-card: #161f30;
+  --ws-border: rgba(91, 141, 239, 0.22);
+  --ws-text: #f1f5f9;
+  --ws-muted: #94a3b8;
+  --ws-accent: #5b8def;
+  --ws-accent-soft: #93b4f5;
+  --ws-accent-glow: rgba(91, 141, 239, 0.35);
+  --ws-mesh-1: rgba(91, 141, 239, 0.18);
+  --ws-mesh-2: rgba(56, 189, 248, 0.1);
+  --ws-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  --ws-transition: 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ws-bg: #f4f6fb;
+    --ws-bg-elevated: #ffffff;
+    --ws-surface: #ffffff;
+    --ws-card: #ffffff;
+    --ws-border: rgba(26, 39, 68, 0.12);
+    --ws-text: #0f172a;
+    --ws-muted: #64748b;
+    --ws-accent: #2563eb;
+    --ws-accent-soft: #3b82f6;
+    --ws-accent-glow: rgba(37, 99, 235, 0.2);
+    --ws-mesh-1: rgba(37, 99, 235, 0.12);
+    --ws-mesh-2: rgba(14, 165, 233, 0.08);
+    --ws-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+  }
+}
+
+@keyframes ws-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ws-mesh-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(2%, -1%) scale(1.03);
+  }
+  100% {
+    transform: translate(-1%, 2%) scale(1);
+  }
+}
+
+@keyframes ws-border-glow {
+  0%,
+  100% {
+    border-color: var(--ws-border);
+    box-shadow: 0 0 0 transparent;
+  }
+  50% {
+    border-color: rgba(91, 141, 239, 0.45);
+    box-shadow: 0 0 28px var(--ws-accent-glow);
+  }
+}
+
+.ws-page-mesh {
+  position: relative;
+  isolation: isolate;
+}
+
+.ws-page-mesh::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 45% at 15% -5%, var(--ws-mesh-1), transparent 55%),
+    radial-gradient(ellipse 45% 40% at 90% 10%, var(--ws-mesh-2), transparent 50%),
+    radial-gradient(ellipse 50% 35% at 50% 100%, rgba(99, 102, 241, 0.08), transparent 55%);
+  animation: ws-mesh-drift 18s ease-in-out infinite alternate;
+}
+
+.ws-brand-strong {
+  font-family: var(--ws-font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ws-text);
+}
+
+.ws-brand-strong em,
+.ws-brand-strong .accent {
+  font-style: normal;
+  color: var(--ws-accent-soft);
+}
+
+.ws-card-lift {
+  border-radius: var(--ws-radius-lg);
+  border: 1px solid var(--ws-border);
+  background: var(--ws-card);
+  transition:
+    transform var(--ws-transition),
+    border-color var(--ws-transition),
+    box-shadow var(--ws-transition);
+}
+
+.ws-card-lift:hover {
+  transform: translateY(-3px);
+  border-color: rgba(91, 141, 239, 0.4);
+  box-shadow: var(--ws-shadow);
+}
+
+.ws-reveal {
+  animation: ws-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ws-reveal-delay-1 {
+  animation-delay: 0.08s;
+}
+
+.ws-reveal-delay-2 {
+  animation-delay: 0.16s;
+}

@@ -1,44 +1,36 @@
-import { ROZA_ACCOUNT_URL, ROZA_COMPANION_WIN_URL } from '../../config/links';
+import { ROZA_ACCOUNT_URL } from '../../config/links';
+import { Link } from 'react-router-dom';
 
 const PILLARS = [
   {
     id: 'docs',
     title: 'Документы',
-    text: 'Сводки, структура и ответы по вашим файлам. В приложении — вложения с диска.',
+    text: 'Сводки, структура и ответы по вашим файлам.',
     icon: '📄',
   },
   {
     id: 'security',
-    title: 'Безопасность ПК',
-    text: 'Подсказки по подозрительной активности, процессам и настройкам системы.',
+    title: 'Безопасность',
+    text: 'Подсказки по ПК и отдельный продукт Roza Security для Windows и Roza OS.',
     icon: '🛡',
   },
   {
     id: 'learn',
     title: 'Обучение',
-    text: 'Сценарии, журнал прогресса и студия знаний в десктопном консультанте.',
+    text: 'Сценарии и журнал прогресса в личном кабинете.',
     icon: '✦',
   },
 ];
 
-const REQUIREMENTS = [
-  'Windows 10/11, 64-bit',
-  'Среда .NET 8 (Desktop Runtime)',
-  'Локальный сервер Roza (запускается с приложением)',
-  '4 ГБ RAM, ~200 МБ на диске',
-];
-
 export function RozaAiFeatures() {
-  const canDownload = Boolean(ROZA_COMPANION_WIN_URL);
-
   return (
     <section className="roza-ai-features" aria-labelledby="roza-features-title">
       <h2 id="roza-features-title" className="roza-ai-features-heading">
-        Приложение для Windows
+        Возможности Roza AI
       </h2>
       <p className="roza-ai-features-lead">
-        В браузере — быстрый чат. На ПК — полный консультант: документы, диагностика системы и обучение без отправки
-        файлов в облако без вашего согласия.
+        В браузере — чат и консультации. Защита рабочего места — в{' '}
+        <Link to="/security">Roza Security</Link>, среда с Liza — в <Link to="/os">Roza OS</Link>.
       </p>
 
       <div className="roza-ai-pillar-grid">
@@ -55,24 +47,13 @@ export function RozaAiFeatures() {
 
       <div className="roza-ai-requirements-card">
         <div className="roza-ai-requirements-copy">
-          <h3>Требования</h3>
-          <ul>
-            {REQUIREMENTS.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ul>
+          <h3>Личный кабинет</h3>
+          <p>Регистрация, настройки и история — в контуре Roza на Waypoint.</p>
         </div>
         <div className="roza-ai-requirements-actions">
-          {canDownload ? (
-            <a className="roza-download-btn" href={ROZA_COMPANION_WIN_URL} download>
-              Скачать Roza для Windows
-            </a>
-          ) : (
-            <p className="roza-download-unavail">Сборка появится после публикации.</p>
-          )}
-          <a className="roza-ai-panel-link" href={ROZA_ACCOUNT_URL}>
-            Личный кабинет Roza
-          </a>
+          <Link className="roza-ai-panel-link roza-ai-panel-link-primary" to={ROZA_ACCOUNT_URL}>
+            Открыть кабинет Roza
+          </Link>
         </div>
       </div>
     </section>

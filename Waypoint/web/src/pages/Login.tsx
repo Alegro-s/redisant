@@ -118,7 +118,7 @@ export default function Login() {
               базы, метрики и файлы — не панель движка Lynx
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-              Аккаунт Waypoint Metric — отдельная система. Можно зарегистрироваться здесь, войти через Яндекс (если настроено на
+              Вход в Waypoint Metric. Можно зарегистрироваться здесь, войти через Яндекс (если настроено на
               сервере) или использовать аккаунт Lynx Launcher.
             </Typography>
           </Box>

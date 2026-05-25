@@ -55,7 +55,8 @@ const moduleLinks = [
     icon: <TableChart fontSize="small" />,
     description: (
       <>
-        <strong>Таблицы, файлы и запросы</strong> в PostgreSQL — без отдельного сервера для старта.
+        <strong>PostgreSQL с удобством как у Supabase</strong> — таблицы, REST и ключи в кабинете, плюс ingest
+        метрик Waypoint в том же workspace.
       </>
     ),
   },

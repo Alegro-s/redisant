@@ -44,7 +44,7 @@ export function MarketingLayout({ children, brand, brandSub, variant = 'club', n
       <footer className="wm-footer">
         <p>
           {footerNote ??
-            '© Waypoint · экосистема инструментов для разработки, метрик и образования. Отдельные бренды: Lynx, Roza, ТГПУ.'}
+            '© Waypoint · экосистема инструментов для разработки, метрик и образования.'}
         </p>
       </footer>
     </div>

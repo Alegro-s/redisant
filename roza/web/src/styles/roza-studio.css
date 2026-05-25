@@ -1,5 +1,4 @@
-/* Roza — светлая линейка в духе Google AI / Material */
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&display=swap');
+@import './roza-series.css';
 
 *,
 *::before,
@@ -31,24 +30,13 @@
   --rs-purple: #9334e6;
   --rs-teal: #12b5cb;
   --rs-green: #1e8e3e;
-  --rs-radius: 16px;
+  --rs-radius: 12px;
   min-height: 100dvh;
-  font-family: 'Google Sans Flex', Roboto, system-ui, sans-serif;
+  font-family: var(--rs-font-body);
   background: var(--rs-bg);
   color: var(--rs-text);
   display: flex;
   flex-direction: column;
-}
-
-.roza-studio::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 70% 50% at 10% -20%, rgba(26, 115, 232, 0.06), transparent),
-    radial-gradient(ellipse 50% 40% at 90% 0%, rgba(147, 52, 230, 0.05), transparent);
-  pointer-events: none;
-  z-index: 0;
 }
 
 .roza-top {
@@ -58,23 +46,34 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.25rem;
   flex-wrap: nowrap;
-  padding: 10px 24px;
-  min-height: 52px;
+  padding: 1rem 2rem;
+  min-height: 56px;
   border-bottom: 1px solid var(--rs-border);
-  background: rgba(255, 255, 255, 0.94);
+  background: color-mix(in srgb, var(--rs-bg) 94%, transparent);
   backdrop-filter: blur(12px);
 }
 
-.roza-top-compact .roza-brand-name {
-  font-size: 1.05rem;
+.roza-brand-metric {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  line-height: 1.2;
 }
 
-.roza-top-compact .roza-nav a {
-  font-size: 13px;
-  padding: 6px 2px;
-  margin: 0 6px;
+.roza-brand-metric .roza-brand-name {
+  display: block;
+  font-family: var(--rs-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.roza-brand-sub {
+  font-size: 0.72rem;
+  color: var(--rs-muted);
+  font-weight: 400;
 }
 
 .roza-brand {
@@ -86,8 +85,9 @@
 }
 
 .roza-brand-name {
-  font-size: 1.2rem;
-  font-weight: 500;
+  font-family: var(--rs-font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -95,25 +95,36 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 0;
+  gap: 0.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.roza-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .roza-nav a {
-  font-size: 14px;
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--rs-muted);
   text-decoration: none;
-  padding: 8px 4px;
-  margin: 0 8px;
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  border-bottom: none;
+  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
   line-height: 1.25;
 }
 
-.roza-nav a:hover,
+.roza-nav a:hover {
+  color: var(--rs-text);
+}
+
 .roza-nav a.active {
   color: var(--rs-blue);
-  border-bottom-color: var(--rs-blue);
+  background: rgba(26, 115, 232, 0.1);
 }
 
 .roza-main {
@@ -728,11 +739,44 @@
 
 .roza-hub-wordmark {
   margin: 0 0 16px;
-  font-size: clamp(3rem, 12vw, 4.5rem);
+  font-family: var(--rs-font-roza);
+  font-size: clamp(2.75rem, 9vw, 4rem);
   font-weight: 400;
   letter-spacing: -0.04em;
   line-height: 1;
   color: var(--rs-text);
+}
+
+.roza-os-wordmark {
+  font-family: var(--rs-font-roza);
+  font-size: clamp(2.5rem, 7vw, 3.75rem);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  margin: 20px 0 8px;
+  line-height: 1.05;
+  color: var(--rs-text);
+}
+
+.roza-os-wordmark-os {
+  background: linear-gradient(105deg, var(--rs-teal), var(--rs-purple), var(--rs-rose));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.roza-security-wordmark {
+  font-family: var(--rs-font-roza);
+  font-size: clamp(2rem, 5vw, 2.85rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  margin: 0.5rem 0 1rem;
+}
+
+.roza-security-wordmark span {
+  background: linear-gradient(105deg, #7c3aed, var(--rs-purple), var(--rs-rose));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .roza-hub-tagline {
@@ -792,8 +836,14 @@
 
 .roza-hub-product-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .roza-hub-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -806,9 +856,9 @@
   display: flex;
   flex-direction: column;
   padding: 0;
-  border-radius: 24px;
+  border-radius: 12px;
   border: 1px solid var(--rs-border);
-  background: #fff;
+  background: var(--rs-surface);
   text-decoration: none;
   color: inherit;
   overflow: hidden;
@@ -851,8 +901,9 @@
 
 .roza-hub-product-copy h3 {
   margin: 0 0 8px;
-  font-size: 1.35rem;
-  font-weight: 500;
+  font-family: var(--rs-font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -1451,11 +1502,8 @@
   animation: roza-fade-up 0.8s ease both;
 }
 
-.roza-os-cinema-inner h1 {
-  font-size: clamp(2.25rem, 6vw, 3.25rem);
-  font-weight: 500;
+.roza-os-cinema-inner h1.roza-os-wordmark {
   margin: 20px 0 8px;
-  letter-spacing: -0.03em;
 }
 
 .roza-os-cinema-tag {
@@ -1774,6 +1822,19 @@
   text-decoration: none;
 }
 
+.roza-ai-panel-link-primary {
+  display: inline-flex;
+  padding: 0.65rem 1.25rem;
+  border-radius: 12px;
+  background: var(--rs-blue);
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.roza-ai-panel-link-primary:hover {
+  filter: brightness(1.06);
+}
+
 .roza-ai-panel-link:hover {
   text-decoration: underline;
 }
@@ -1881,10 +1942,46 @@
 
 /* Кабинет Roza */
 .roza-account-page {
-  max-width: 640px;
+  max-width: 960px;
   margin: 0 auto;
   padding-top: 24px;
   padding-bottom: 80px;
+}
+
+.roza-account-layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(320px, 400px);
+  gap: 32px 48px;
+  align-items: start;
+  margin-bottom: 40px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--rs-border);
+}
+
+@media (max-width: 860px) {
+  .roza-account-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roza-account-layout .roza-account-hero {
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.roza-account-layout .roza-account-hero .roza-mark-ai {
+  margin: 0 0 16px;
+}
+
+.roza-account-layout .roza-account-lead {
+  margin: 0;
+  max-width: none;
+  text-align: left;
+}
+
+.roza-account-layout .roza-account-card {
+  margin: 0;
+  max-width: none;
 }
 
 .roza-account-hero {
@@ -2055,20 +2152,307 @@
   margin-bottom: 16px;
 }
 
+.roza-os-docs {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+.roza-os-docs-hero {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--rs-border);
+}
+
+.roza-os-docs-lead {
+  margin: 0 auto;
+  max-width: 560px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--rs-muted);
+}
+
+.roza-os-docs-release {
+  margin-bottom: 40px;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--rs-border);
+  background: var(--rs-surface);
+}
+
+.roza-os-docs-dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px 16px;
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+
+.roza-os-docs-dl dt {
+  color: var(--rs-muted);
+  font-weight: 500;
+}
+
+.roza-os-docs-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.roza-os-docs-dl-btn {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 20px;
+  background: var(--rs-blue);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.roza-os-docs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 720px) {
+  .roza-os-docs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roza-os-docs-card {
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+}
+
+.roza-os-docs-card h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.roza-os-docs-card ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--rs-muted);
+}
+
+.roza-os-docs-changelog h2 {
+  margin: 0 0 20px;
+  font-size: 20px;
+}
+
+.roza-os-docs-timeline {
+  display: grid;
+  gap: 16px;
+}
+
+.roza-os-docs-timeline article {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--rs-border);
+  background: #fff;
+}
+
+.roza-os-docs-ver {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--rs-blue);
+}
+
+.roza-os-docs-muted {
+  font-size: 14px;
+  color: var(--rs-muted);
+}
+
+/* Roza Security */
+.roza-security-page {
+  max-width: 960px;
+  padding-top: 2rem;
+  padding-bottom: 5rem;
+}
+
+.roza-security-hero {
+  padding: 2rem 0 2.5rem;
+  border-bottom: 1px solid var(--rs-border);
+  margin-bottom: 2.5rem;
+}
+
+.roza-security-hero h1 {
+  margin: 0.5rem 0 1rem;
+  font-family: var(--rs-font-display);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.roza-security-accent {
+  color: #7c3aed;
+}
+
+.roza-security-lead {
+  max-width: 36rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--rs-muted);
+}
+
+.roza-security-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.roza-security-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.65rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--rs-border);
+  transition: filter 0.2s, border-color 0.2s;
+}
+
+.roza-security-btn-primary {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #fff;
+}
+
+.roza-security-btn-primary:hover {
+  filter: brightness(1.06);
+}
+
+.roza-security-btn-ghost {
+  color: var(--rs-text);
+  background: #fff;
+}
+
+.roza-security-btn-ghost:hover {
+  border-color: var(--rs-blue);
+  color: var(--rs-blue);
+}
+
+.roza-security-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--rs-muted);
+}
+
+.roza-hub-section-title-left {
+  text-align: left;
+}
+
+.roza-security-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.roza-security-card {
+  padding: 1.5rem 1.75rem;
+  border-radius: var(--rs-radius);
+  border: 1px solid var(--rs-border);
+  background: #fff;
+}
+
+.roza-security-card h3 {
+  margin: 0 0 0.5rem;
+  font-family: var(--rs-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.roza-security-card p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--rs-muted);
+}
+
+.roza-security-os-band {
+  margin-top: 2.5rem;
+  padding: 1.75rem 2rem;
+  border-radius: var(--rs-radius);
+  border: 1px solid #e8def8;
+  background: linear-gradient(135deg, #f3e8fd 0%, #fafafa 60%);
+}
+
+.roza-security-os-band h2 {
+  margin: 0 0 0.75rem;
+  font-family: var(--rs-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.roza-security-os-band p {
+  margin: 0 0 1rem;
+  line-height: 1.6;
+  color: var(--rs-muted);
+}
+
+.roza-security-os-band code {
+  font-size: 0.88em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.roza-security-inline {
+  font-weight: 600;
+  color: #7c3aed;
+  text-decoration: none;
+}
+
+.roza-hub-product-visual-sec {
+  background: linear-gradient(160deg, #ede9fe 0%, #f3e8fd 50%, #fff 100%);
+}
+
+.roza-hub-sec-glyph {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.roza-hub-product-cta-sec {
+  background: #7c3aed;
+}
+
+.roza-hub-product-sec:hover {
+  border-color: #d8b4fe;
+}
+
+@media (max-width: 768px) {
+  .roza-security-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ——— Мобильная адаптация ——— */
 @media (max-width: 720px) {
   .roza-top {
-    padding: 12px 16px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    padding: 0.85rem 1rem;
+    gap: 0.75rem;
   }
 
   .roza-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 12px;
-    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
   }
 
   .roza-nav-cabinet {

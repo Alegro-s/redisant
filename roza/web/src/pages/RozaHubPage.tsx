@@ -55,6 +55,19 @@ export function RozaHubPage() {
               <span className="roza-hub-product-cta">Узнать о Roza OS</span>
             </div>
           </Link>
+
+          <Link to="/security" className="roza-hub-product roza-hub-product-sec">
+            <div className="roza-hub-product-visual roza-hub-product-visual-sec">
+              <span className="roza-hub-sec-glyph" aria-hidden>
+                🛡
+              </span>
+            </div>
+            <div className="roza-hub-product-copy">
+              <h3>Roza Security</h3>
+              <p>Защита Windows и мониторинг в Roza OS.</p>
+              <span className="roza-hub-product-cta roza-hub-product-cta-sec">Скачать .msi</span>
+            </div>
+          </Link>
         </div>
       </section>
     </main>
