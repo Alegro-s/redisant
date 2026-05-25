@@ -55,7 +55,7 @@ git_update() {
   else
     git -C "$PO_ROOT" fetch origin
     git -C "$PO_ROOT" checkout -f "$GITHUB_BRANCH"
-    if ! git -C "$PO_ROOT" pull --ff-only "origin/$GITHUB_BRANCH"; then
+    if ! git -C "$PO_ROOT" merge --ff-only "origin/$GITHUB_BRANCH" 2>/dev/null; then
       log "Сброс локальных правок → origin/$GITHUB_BRANCH"
       git -C "$PO_ROOT" reset --hard "origin/$GITHUB_BRANCH"
       git -C "$PO_ROOT" clean -fd
@@ -77,15 +77,40 @@ apply_static_dir() {
   log "OK $name → $dst"
 }
 
+deploy_from_s3_public_sync() {
+  log "Статика: aws s3 sync (публичный бакет, без ключей)"
+  need_cmd aws
+  export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-ru-1}"
+  rm -rf "$BUNDLE_TMP"
+  mkdir -p "$BUNDLE_TMP"
+  aws s3 sync "s3://bc39a46d-ee3d-4707-9e3f-9529afb602da/deploy/sites/latest/" "$BUNDLE_TMP" \
+    --endpoint-url https://s3.twcstorage.ru --no-sign-request
+}
+
 deploy_from_s3_zip() {
   log "Статика: ZIP с S3 (без aws)"
   need_cmd curl
-  need_cmd unzip
   rm -rf "$BUNDLE_TMP"
   mkdir -p "$BUNDLE_TMP"
   local zip="/tmp/waypoint-sites-bundle.zip"
   curl -fSL "$S3_ZIP_URL" -o "$zip"
-  unzip -q -o "$zip" -d "$BUNDLE_TMP"
+  if command -v bsdtar >/dev/null 2>&1; then
+    bsdtar -xf "$zip" -C "$BUNDLE_TMP"
+  elif command -v unzip >/dev/null 2>&1; then
+    # unzip может вернуть 1 из‑за backslash в Windows-ZIP — не прерываем деплой
+    set +e
+    unzip -o "$zip" -d "$BUNDLE_TMP" 2>/dev/null
+    local uz=$?
+    set -e
+    if [[ $uz -ne 0 ]] || [[ ! -d "$BUNDLE_TMP/waypoint-club" ]]; then
+      log "ZIP с Windows-путями — fallback на S3 sync"
+      deploy_from_s3_public_sync
+    fi
+  else
+    apt-get install -y -qq bsdtar 2>/dev/null || apt-get install -y -qq unzip
+    need_cmd bsdtar 2>/dev/null || need_cmd unzip
+    bsdtar -xf "$zip" -C "$BUNDLE_TMP" 2>/dev/null || unzip -o "$zip" -d "$BUNDLE_TMP" 2>/dev/null || deploy_from_s3_public_sync
+  fi
   ls -la "$BUNDLE_TMP"
   apply_static_dir waypoint-club /srv/waypointclub/web
   apply_static_dir waypoint-metric /srv/waypointmetric/dist

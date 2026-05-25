@@ -44,7 +44,13 @@ aws s3 sync $BundleDir $s3dest --endpoint-url $Endpoint --delete
 
 $zipPath = Join-Path (Split-Path $BundleDir -Parent) "sites-bundle.zip"
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
-Compress-Archive -Path (Join-Path $BundleDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
+# tar -a = zip с прямыми слэшами (Linux unzip не ломается на backslash)
+Push-Location $BundleDir
+& tar.exe -a -cf $zipPath waypoint-club waypoint-metric lynx-hub roza manifest.json
+Pop-Location
+if (-not (Test-Path $zipPath)) {
+  throw "Failed to create $zipPath (need tar.exe on Windows 10+)"
+}
 $zipKey = "deploy/sites/sites-bundle.zip"
 Write-Host "[s3] upload zip -> s3://${Bucket}/${zipKey}"
 aws s3 cp $zipPath "s3://${Bucket}/${zipKey}" --endpoint-url $Endpoint
