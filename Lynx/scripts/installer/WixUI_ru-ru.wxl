@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="ru-ru" Codepage="1251" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <String Id="WixUIBack">Назад</String>
+  <String Id="WixUICancel">Отмена</String>
+  <String Id="WixUIInstall">Установить</String>
+  <String Id="WixUINext">Далее</String>
+  <String Id="WixUIFinish">Готово</String>
+  <String Id="WelcomeDlgTitle">Добро пожаловать</String>
+  <String Id="WelcomeDlgDescription">Мастер установки Lynx Launcher проведёт вас через все шаги.</String>
+  <String Id="LicenseAgreementDlgTitle">Лицензионное соглашение</String>
+  <String Id="LicenseAgreementDlgDescription">Прочитайте лицензионное соглашение. Для продолжения необходимо принять его условия.</String>
+  <String Id="LicenseAcceptedCheckbox">Я принимаю условия лицензионного соглашения</String>
+  <String Id="InstallDirDlgTitle">Папка установки</String>
+  <String Id="InstallDirDlgDescription">Укажите папку, в которую будет установлен Lynx Launcher.</String>
+  <String Id="InstallDirDlgFolderLabel">Папка установки:</String>
+  <String Id="InstallDirDlgChange">Изменить…</String>
+  <String Id="VerifyReadyDlgTitle">Готово к установке</String>
+  <String Id="VerifyReadyDlgDescription">Нажмите «Установить», чтобы начать установку Lynx Launcher.</String>
+  <String Id="ProgressDlgTitleInstalling">Установка</String>
+  <String Id="ProgressDlgTitleChanging">Изменение</String>
+  <String Id="ProgressDlgTitleRepairing">Восстановление</String>
+  <String Id="ProgressDlgTitleRemoving">Удаление</String>
+  <String Id="ExitDialogTitle">Установка завершена</String>
+  <String Id="ExitDialogDescription">Lynx Launcher успешно установлен.</String>
+</WixLocalization>

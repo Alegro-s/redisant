@@ -5,16 +5,27 @@ import 'package:path/path.dart' as p;
 
 import '../engine/models/engine_models.dart';
 import '../engine/runtime/nexus_play_snapshot.dart';
+import '../engine/runtime/engine_version_gate.dart';
+import '../engine/runtime/scene_autoload_merge.dart';
 import '../engine/runtime/scene_to_engine_json.dart';
+import '../engine/runtime/scene_ui_codec.dart';
+import '../plugins/lynx_3d/lynx_3d_codec.dart';
+import '../plugins/lynx_plugin_manifest.dart';
 
 class PlayLoadResult {
   final String? error;
   final String? rustSceneJson;
   final Map<String, dynamic> playBootstrap;
+  final String sceneId;
+  final String? cartLuaScript;
+  final bool useCartRuntime;
   const PlayLoadResult({
     this.error,
     this.rustSceneJson,
     this.playBootstrap = const {},
+    this.sceneId = 'main',
+    this.cartLuaScript,
+    this.useCartRuntime = false,
   });
 }
 
@@ -57,6 +68,7 @@ List<Map<String, dynamic>> _tilesetsJson(GameProject? gp) {
 Future<PlayLoadResult> loadPlayPayload(
   String? projectPath, {
   bool freshPlay = false,
+  String? sceneIdOverride,
 }) async {
   if (projectPath == null || projectPath.isEmpty) {
     return const PlayLoadResult(error: 'Не указан путь к проекту');
@@ -73,12 +85,26 @@ Future<PlayLoadResult> loadPlayPayload(
       gp = GameProject.fromJson(jsonDecode(await pj.readAsString()) as Map<String, dynamic>);
     } catch (_) {}
   }
-  final sceneId = gp?.startupSceneId ?? 'main';
+  final versionCheck = await checkProjectRuntimeVersions(
+    minNexusEngineVersion: gp?.minNexusEngineVersion,
+    minLynxCoreVersion: gp?.minLynxCoreVersion,
+  );
+  if (!versionCheck.ok) {
+    return PlayLoadResult(error: versionCheck.message, sceneId: sceneIdOverride ?? 'main');
+  }
+
+  final sceneId = sceneIdOverride ?? gp?.startupSceneId ?? 'main';
   final sceneFile = File(p.join(root, 'scenes', '$sceneId.json'));
   if (!await sceneFile.exists()) {
-    return PlayLoadResult(error: 'Нет сцены scenes/$sceneId.json');
+    return PlayLoadResult(error: 'Нет сцены scenes/$sceneId.json', sceneId: sceneId);
   }
-  final scene = Scene.fromJson(jsonDecode(await sceneFile.readAsString()) as Map<String, dynamic>);
+  var scene = Scene.fromJson(jsonDecode(await sceneFile.readAsString()) as Map<String, dynamic>);
+  scene = await mergeAutoloadIntoScene(
+    projectRoot: root,
+    mainScene: scene,
+    mainSceneId: sceneId,
+    autoloadSceneIds: gp?.autoloadSceneIds ?? const [],
+  );
 
   if (!freshPlay) {
     final fromSnap = await NexusPlaySnapshot.loadEngineJsonOrNull(root);
@@ -92,7 +118,27 @@ Future<PlayLoadResult> loadPlayPayload(
           if (runtime != null) ...runtime,
         };
         boot['tilesets'] = _tilesetsJson(gp);
-        return PlayLoadResult(rustSceneJson: rust, playBootstrap: boot);
+        boot['uiWidgets'] = buildUiWidgetsFromScene(
+          scene,
+          designWidth: (gp?.designWidth ?? 1280).toDouble(),
+          designHeight: (gp?.designHeight ?? 720).toDouble(),
+        );
+        final l3d = lynx3dPlayBootstrapFromScene(
+          scene,
+          windows3dRuntime: gp?.windows3dRuntime,
+          projectMode: gp?.projectMode ?? LynxProjectMode.d2,
+          plugin3dEnabled: gp?.lynxPlugins.is3dEnabled ?? false,
+        );
+        if (l3d != null) {
+          boot['lynx3d'] = l3d;
+        } else {
+          boot.remove('lynx3d');
+        }
+        return PlayLoadResult(
+          rustSceneJson: rust,
+          playBootstrap: boot,
+          sceneId: sceneId,
+        );
       } catch (_) {
         
       }
@@ -132,6 +178,7 @@ Future<PlayLoadResult> loadPlayPayload(
     projectRoot: root,
     assets: assets,
     project: gp,
+    playSceneId: sceneId,
   );
   final map = jsonDecode(json) as Map<String, dynamic>;
   final rust = _stripRustScene(map);
@@ -140,5 +187,21 @@ Future<PlayLoadResult> loadPlayPayload(
     if (map['runtime'] is Map) ...(map['runtime'] as Map).cast<String, dynamic>(),
   };
   boot['tilesets'] = _tilesetsJson(gp);
-  return PlayLoadResult(rustSceneJson: rust, playBootstrap: boot);
+  boot['uiWidgets'] = buildUiWidgetsFromScene(
+    scene,
+    designWidth: (gp?.designWidth ?? 1280).toDouble(),
+    designHeight: (gp?.designHeight ?? 720).toDouble(),
+  );
+  final l3d = lynx3dPlayBootstrapFromScene(
+    scene,
+    windows3dRuntime: gp?.windows3dRuntime,
+    projectMode: gp?.projectMode ?? LynxProjectMode.d2,
+    plugin3dEnabled: gp?.lynxPlugins.is3dEnabled ?? false,
+  );
+  if (l3d != null) {
+    boot['lynx3d'] = l3d;
+  } else {
+    boot.remove('lynx3d');
+  }
+  return PlayLoadResult(rustSceneJson: rust, playBootstrap: boot, sceneId: sceneId);
 }

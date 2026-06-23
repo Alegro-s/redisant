@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/constants.dart';
 
 class EntrySplashScreen extends StatefulWidget {
-  const EntrySplashScreen({super.key, required this.child});
+  const EntrySplashScreen({super.key, required this.child, this.enabled = true});
 
   final Widget child;
+  final bool enabled;
 
   @override
   State<EntrySplashScreen> createState() => _EntrySplashScreenState();
@@ -13,41 +14,32 @@ class EntrySplashScreen extends StatefulWidget {
 
 class _EntrySplashScreenState extends State<EntrySplashScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<double> _splashOpacity;
-  late final Animation<double> _splashScale;
-  late final Animation<double> _contentOpacity;
+  late final Animation<double> _lift;
+  late final Animation<double> _logoScale;
   bool _done = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1300),
-    );
+    if (!widget.enabled) {
+      _done = true;
+      return;
+    }
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1650));
     _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed && mounted) {
-        setState(() => _done = true);
-      }
+      if (status == AnimationStatus.completed && mounted) setState(() => _done = true);
     });
-    _splashOpacity = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 1.0, curve: Curves.easeInOutCubic),
-    ).drive(Tween<double>(begin: 1.0, end: 0.0));
-    _splashScale = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 1.0, curve: Curves.easeInOutCubic),
-    ).drive(Tween<double>(begin: 1.0, end: 0.92));
-    _contentOpacity = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.12, 1.0, curve: Curves.easeInOutCubic),
-    ).drive(Tween<double>(begin: 0.0, end: 1.0));
+    _lift = CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
+    _logoScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.16), weight: 35),
+      TweenSequenceItem(tween: Tween(begin: 1.16, end: 0.42), weight: 65),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic));
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         await precacheImage(const AssetImage('assets/images/app_icon.png'), context);
       } catch (_) {}
-      await Future<void>.delayed(const Duration(milliseconds: 720));
+      await Future<void>.delayed(const Duration(milliseconds: 520));
       if (!mounted) return;
       await _controller.forward();
     });
@@ -55,43 +47,46 @@ class _EntrySplashScreenState extends State<EntrySplashScreen> with SingleTicker
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (widget.enabled) _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.enabled || _done) return widget.child;
+
+    final liftPx = MediaQuery.sizeOf(context).height * 0.34;
     return Scaffold(
       backgroundColor: AppConstants.surfaceWhite,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          FadeTransition(
-            opacity: _contentOpacity,
-            child: widget.child,
-          ),
-          if (!_done)
-            FadeTransition(
-              opacity: _splashOpacity,
-              child: Container(
-                color: AppConstants.surfaceWhite,
-                child: Center(
-                  child: ScaleTransition(
-                    scale: _splashScale,
+          widget.child,
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              return Transform.translate(
+                offset: Offset(0, -liftPx * _lift.value),
+                child: Container(
+                  color: AppConstants.surfaceWhite,
+                  alignment: Alignment.center,
+                  child: Transform.scale(
+                    scale: _logoScale.value,
                     child: Image.asset(
                       'assets/images/app_icon.png',
                       width: 200,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Icon(
+                      errorBuilder: (_, _, _) => Icon(
                         Icons.school_rounded,
                         size: 120,
-                        color: AppConstants.blockBlack.withValues(alpha: 0.85),
+                        color: AppConstants.blockBlack.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
     );

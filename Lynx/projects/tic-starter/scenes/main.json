@@ -1,0 +1,31 @@
+{
+  "formatVersion": 3,
+  "id": "main",
+  "name": "TIC Main",
+  "backgroundColorArgb": 4278190080,
+  "camera": { "x": 120, "y": 68, "zoom": 1 },
+  "objects": [
+    {
+      "id": "tic_game",
+      "name": "TicGame",
+      "x": 120,
+      "y": 68,
+      "width": 8,
+      "height": 8,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "z": 0,
+      "active": true,
+      "visible": false,
+      "locked": true,
+      "layerId": "default",
+      "assetId": "",
+      "scriptId": "assets_scripts_game.lua",
+      "properties": { "logicGridGame": true, "ticMode": true }
+    }
+  ],
+  "tilemaps": [],
+  "rooms": [],
+  "layers": [{ "id": "default", "name": "Default", "visible": true, "locked": false }]
+}

@@ -7,8 +7,12 @@ import 'package:path/path.dart' as p;
 
 import '../../game/png_size_reader.dart';
 import '../models/engine_models.dart';
+import '../../plugins/lynx_plugin_host.dart';
 import 'collider_from_sprite_meta.dart';
 import 'engine_color_codec.dart';
+import 'input_map_codec.dart';
+import 'tic_grid_codec.dart';
+import '../../plugins/lynx_plugin_manifest.dart';
 
 const String kDefaultPlayerLua = r'''-- Платформер: WASD / Space — прыжок; nexus_log("msg") — лог в панели F1; play_sound("assets/sounds/hit.wav") — звук из проекта
 local speed = 260
@@ -103,6 +107,7 @@ Future<String> buildEngineRuntimeSceneJson({
   required String projectRoot,
   required List<ProjectAsset> assets,
   required GameProject? project,
+  String? playSceneId,
 }) async {
   final designW = project?.designWidth ?? 1280;
   final designH = project?.designHeight ?? 720;
@@ -111,7 +116,9 @@ Future<String> buildEngineRuntimeSceneJson({
   final rustIdBySceneObjectId = <String, int>{};
   var _allocRustId = 0;
   for (final o in scene.objects) {
-    if (!o.active || !o.visible) continue;
+    if (!o.active) continue;
+    final hasScript = o.scriptId != null && o.scriptId!.isNotEmpty;
+    if (!o.visible && !hasScript) continue;
     rustIdBySceneObjectId[o.id] = _allocRustId++;
   }
   var nextId = _allocRustId;
@@ -146,7 +153,9 @@ Future<String> buildEngineRuntimeSceneJson({
   }
 
   for (final o in scene.objects) {
-    if (!o.active || !o.visible) continue;
+    if (!o.active) continue;
+    final hasScript = o.scriptId != null && o.scriptId!.isNotEmpty;
+    if (!o.visible && !hasScript) continue;
     final rustId = rustIdBySceneObjectId[o.id]!;
 
     final spriteMeta = await _spriteMetaForObject(
@@ -166,6 +175,12 @@ Future<String> buildEngineRuntimeSceneJson({
     String? code;
     if (o.scriptId != null) {
       code = await loadScriptSource(o.scriptId);
+    }
+    if (code == null) {
+      final inline = o.properties['script'];
+      if (inline is Map && inline['code'] is String) {
+        code = inline['code'] as String;
+      }
     }
     if (code == null && !staticBody && o.assetId == 'test') {
       code = kDefaultPlayerLua;
@@ -250,9 +265,17 @@ Future<String> buildEngineRuntimeSceneJson({
       },
       'physics': physics,
       'script': code != null ? {'code': code} : null,
-      'visible': true,
+      'visible': o.visible,
       'on_ground': false,
     };
+    if (animJson != null) {
+      ent['animator'] = const {
+        'clip_id': 'default',
+        'time': 0.0,
+        'speed': 1.0,
+        'looping': true,
+      };
+    }
     final rpm = o.properties['rustPlatformerMotor'];
     if (rpm is Map) ent['platformer_motor'] = Map<String, dynamic>.from(rpm);
     final rpa = o.properties['rustPatrolAi'];
@@ -291,7 +314,12 @@ Future<String> buildEngineRuntimeSceneJson({
     return name.contains('ground') || name.contains('floor') || y > designH * 0.55;
   });
 
-  if (!hasFloor) {
+  final skipAutoGround = project?.gameTemplate == 'tetris' ||
+      project?.gameTemplate == 'tic' ||
+      project?.projectMode == LynxProjectMode.tic ||
+      scene.objects.any((o) => (o.scriptId ?? '').contains('tetris'));
+
+  if (!hasFloor && !skipAutoGround) {
     entities.add({
       'id': nextId,
       'name': 'Ground',
@@ -315,10 +343,19 @@ Future<String> buildEngineRuntimeSceneJson({
     nextId++;
   }
 
+  final engineInputMap = normalizeInputMapForEngine(project?.inputMap);
+  var camX = scene.camera.x;
+  var camY = scene.camera.y;
+  if (camX == 0 && camY == 0 && scene.camera.followInstanceId == null) {
+    camX = designW / 2;
+    camY = designH / 2;
+  }
   final map = {
     'entities': entities,
     'next_id': nextId,
-    'camera_center': {'x': scene.camera.x, 'y': scene.camera.y},
+    'scene_id': playSceneId ?? scene.id,
+    if (engineInputMap.isNotEmpty) 'input_map': engineInputMap,
+    'camera_center': {'x': camX, 'y': camY},
     'cameras': [
       {
         'name': 'Main',
@@ -343,12 +380,28 @@ Future<String> buildEngineRuntimeSceneJson({
       'designWidth': designW,
       'designHeight': designH,
       'camera': {
-        'x': scene.camera.x,
-        'y': scene.camera.y,
+        'x': camX,
+        'y': camY,
         'zoom': scene.camera.zoom,
       },
       if (project?.inputMap.isNotEmpty ?? false) 'inputMap': project!.inputMap,
     },
   };
+
+  final pluginMerge = LynxPluginHost.instance.mergeSceneExport(scene.toJson());
+  if (pluginMerge.extensions.isNotEmpty) {
+    map['extensions'] = pluginMerge.extensions;
+  }
+  if (pluginMerge.enabledPluginIds.isNotEmpty) {
+    map['enabled_plugins'] = pluginMerge.enabledPluginIds;
+  }
+
+  if (projectUsesTicApi(
+    gameTemplate: project?.gameTemplate,
+    projectMode: project?.projectMode.jsonValue,
+  )) {
+    map['logic_grids'] = await loadTicLogicGridsForExport(projectRoot);
+  }
+
   return jsonEncode(map);
 }

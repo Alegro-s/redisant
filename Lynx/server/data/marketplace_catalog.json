@@ -1,0 +1,40 @@
+{
+  "apiVersion": 1,
+  "updatedAt": "2026-06-02T12:00:00Z",
+  "items": [
+    {
+      "id": "lynx.3d",
+      "kind": "plugin",
+      "title": "Lynx 3D",
+      "author": "Lynx Team",
+      "category": "plugins",
+      "version": "0.2.0",
+      "engineMinVersion": "1.2.0",
+      "builtin": true,
+      "pluginId": "lynx.3d",
+      "price": 0,
+      "rating": 4.8,
+      "description": "3D-сцены и GLB. Полный рендер — Lynx Core (собственное ядро).",
+      "tags": ["3d", "plugin"]
+    },
+    {
+      "id": "template-3d-room",
+      "kind": "template",
+      "title": "3D Room Demo",
+      "category": "3d",
+      "templateId": "platformer-3d-room",
+      "price": 0,
+      "description": "Комната + crate.glb"
+    },
+    {
+      "id": "lynx-core-stable",
+      "kind": "engine_core",
+      "title": "Lynx Core Stable",
+      "category": "tools",
+      "version": "1.2.0",
+      "engineMinVersion": "1.2.0",
+      "price": 0,
+      "description": "Собственное ядро симуляции (см. LYNX_CORE_ARCHITECTURE.md)"
+    }
+  ]
+}

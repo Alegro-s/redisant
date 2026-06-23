@@ -1,4 +1,6 @@
 import '../../data/services/api_service.dart';
+import '../demo_auth.dart';
+import '../integration_runtime.dart';
 import 'secure_storage.dart';
 
 class AuthService {
@@ -9,6 +11,21 @@ class AuthService {
     String password, {
     bool rememberCredentials = true,
   }) async {
+    if (IntegrationRuntime.useSupabaseDirect) {
+      final result = DemoAuth.tryLogin(login, password);
+      if (result == null) {
+        return {'success': false, 'error': 'Неверный логин или пароль'};
+      }
+      final token = result['token'] as String;
+      if (rememberCredentials) {
+        await SecureStorage.saveLoginData(login, password);
+      } else {
+        await SecureStorage.clearSavedCredentials();
+      }
+      await SecureStorage.saveAuthToken(token);
+      return result;
+    }
+
     final response = await _apiService.login(login: login, password: password);
     if (response['success'] == true) {
       final token = response['token'] as String;
@@ -25,6 +42,7 @@ class AuthService {
 
   static Future<bool> validateToken(String token) async {
     if (token.isEmpty) return false;
+    if (IntegrationRuntime.useSupabaseDirect) return true;
     try {
       final studentData = await _apiService.fetchStudentData(token);
       return studentData.isNotEmpty;
@@ -35,6 +53,7 @@ class AuthService {
 
   static Future<void> logout() async {
     await SecureStorage.clearAuthData();
+    await SecureStorage.clearSavedCredentials();
   }
 
   static Future<bool> isAuthenticated() async {

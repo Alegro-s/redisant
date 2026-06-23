@@ -1,0 +1,9 @@
+{
+  "color": [
+    { "name": "start_window_background", "value": "#0B0F14" },
+    { "name": "chair_background", "value": "#0B0F14" },
+    { "name": "chair_accent", "value": "#00D9A5" },
+    { "name": "chair_text", "value": "#E8EDF2" },
+    { "name": "chair_muted", "value": "#8B98A8" }
+  ]
+}

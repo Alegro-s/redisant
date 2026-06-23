@@ -1,0 +1,39 @@
+name: Lynx Editor Smoke
+
+on:
+  push:
+    paths:
+      - 'Lynx/**'
+      - '.github/workflows/lynx-editor-smoke.yml'
+  pull_request:
+    paths:
+      - 'Lynx/**'
+      - '.github/workflows/lynx-editor-smoke.yml'
+
+jobs:
+  flutter-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Lynx/client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: pub get
+        run: flutter pub get
+
+      - name: analyze (engine release paths)
+        run: |
+          dart analyze \
+            lib/features/engine/runtime/project_zip_export_io.dart \
+            lib/features/home/lynx_hub_quick_actions.dart \
+            lib/features/engine/screens/sprite_editor.dart
+
+      - name: wave editor release tests
+        run: |
+          flutter test test/wave_editor_release_test.dart test/wave5_editor_test.dart --reporter compact

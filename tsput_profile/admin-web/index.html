@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ТОЛСТОВСКИЙ PROFILE — админ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#fff; --text:#121212; --muted:#6b6b66; --line:#e8e8e6; --accent:#121212; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:'Exo 2',system-ui,sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:20px 24px; border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+    h1 { margin:0; font-size:22px; font-weight:800; letter-spacing:-0.4px; }
+    .sub { color:var(--muted); font-size:13px; }
+    main { max-width:1100px; margin:0 auto; padding:20px 16px 48px; }
+    .panel { border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px; }
+    label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+    input, select, textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:12px; font:inherit; }
+    .row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-bottom:10px; }
+    button { font:inherit; border:none; border-radius:12px; padding:10px 16px; cursor:pointer; font-weight:700; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-ghost { background:#fff; border:1px solid var(--line); }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { border-bottom:1px solid var(--line); padding:8px; text-align:left; vertical-align:top; }
+    th { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+    .status { font-size:13px; color:var(--muted); margin-top:8px; }
+    .ok { color:#166534; } .err { color:#b91c1c; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>ТОЛСТОВСКИЙ PROFILE · админ</h1>
+      <div class="sub">Расписание и данные демо → Supabase → приложение</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <input id="apiBase" style="width:220px" placeholder="API http://127.0.0.1:8080" />
+      <input id="adminToken" style="width:180px" placeholder="Admin token" value="tsput-admin-dev" />
+      <button class="btn-ghost" onclick="loadSchedule()">Обновить</button>
+      <button class="btn-primary" onclick="saveSchedule()">Сохранить в облако</button>
+    </div>
+  </header>
+  <main>
+    <section class="panel">
+      <div class="toolbar">
+        <button class="btn-ghost" onclick="addRow()">+ Занятие</button>
+        <button class="btn-ghost" onclick="removeSelected()">Удалить выбранные</button>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th></th><th>ID</th><th>Предмет</th><th>Преподаватель</th><th>Ауд.</th>
+              <th>Начало (ISO)</th><th>Конец (ISO)</th><th>Тип</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+      <div id="status" class="status"></div>
+    </section>
+    <section class="panel">
+      <h3 style="margin:0 0 8px;font-size:16px">Версия приложения</h3>
+      <div class="row">
+        <div><label>Версия</label><input id="relVersion" value="1.1.2" /></div>
+        <div><label>Build</label><input id="relBuild" value="3" /></div>
+      </div>
+      <label>Заметки</label>
+      <textarea id="relNotes" rows="2">Демо через Supabase</textarea>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn-primary" onclick="saveRelease()">Сохранить версию</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    const SUPABASE_URL = 'https://znltxknyweldbtqkrfih.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_M97MwcXitQ9Y6J-lH7QjEg_rmUVUy-P';
+    const sbHeaders = () => ({
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation'
+    });
+    document.getElementById('apiBase').value = localStorage.getItem('tspu_api') || 'http://127.0.0.1:8080';
+    document.getElementById('adminToken').value = localStorage.getItem('tspu_admin') || 'tsput-admin-dev';
+
+    let rows = [];
+
+    function setStatus(msg, ok=true) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + (ok ? 'ok' : 'err');
+    }
+
+    function render() {
+      const body = document.getElementById('scheduleBody');
+      body.innerHTML = rows.map((r,i)=>`
+        <tr>
+          <td><input type="checkbox" data-i="${i}"/></td>
+          <td><input value="${r.id||''}" onchange="rows[${i}].id=this.value"/></td>
+          <td><input value="${r.subject||''}" onchange="rows[${i}].subject=this.value"/></td>
+          <td><input value="${r.teacher||''}" onchange="rows[${i}].teacher=this.value"/></td>
+          <td><input value="${r.classroom||''}" onchange="rows[${i}].classroom=this.value"/></td>
+          <td><input value="${r.startTime||''}" onchange="rows[${i}].startTime=this.value"/></td>
+          <td><input value="${r.endTime||''}" onchange="rows[${i}].endTime=this.value"/></td>
+          <td><input value="${r.type||'лекция'}" onchange="rows[${i}].type=this.value"/></td>
+        </tr>`).join('');
+    }
+
+    async function loadSchedule() {
+      const api = document.getElementById('apiBase').value.trim();
+      const token = document.getElementById('adminToken').value.trim();
+      localStorage.setItem('tspu_api', api);
+      localStorage.setItem('tspu_admin', token);
+      try {
+        const r = await fetch(api + '/api/admin/schedule', { headers: { 'X-Admin-Token': token }});
+        if (!r.ok) throw new Error('API ' + r.status);
+        rows = await r.json();
+        render();
+        setStatus('Загружено занятий: ' + rows.length);
+      } catch (e) { setStatus('Ошибка загрузки: ' + e.message, false); }
+    }
+
+    async function saveSchedule() {
+      const api = document.getElementById('apiBase').value.trim();
+      const token = document.getElementById('adminToken').value.trim();
+      try {
+        const r = await fetch(api + '/api/admin/schedule', {
+          method: 'PUT',
+          headers: { 'Content-Type':'application/json', 'X-Admin-Token': token },
+          body: JSON.stringify(rows)
+        });
+        if (!r.ok) throw new Error('API ' + r.status);
+        rows = await r.json();
+        render();
+        setStatus('Сохранено в Supabase через API');
+      } catch (e) { setStatus('Ошибка сохранения: ' + e.message, false); }
+    }
+
+    function addRow() {
+      const now = new Date();
+      const end = new Date(now.getTime() + 95*60000);
+      rows.push({
+        id: 'NEW-' + (rows.length+1),
+        subject: 'Новая дисциплина',
+        teacher: '',
+        classroom: '',
+        startTime: now.toISOString(),
+        endTime: end.toISOString(),
+        type: 'лекция'
+      });
+      render();
+    }
+
+    function removeSelected() {
+      const checks = [...document.querySelectorAll('#scheduleBody input[type=checkbox]')];
+      const remove = new Set(checks.filter(c=>c.checked).map(c=>+c.dataset.i));
+      rows = rows.filter((_,i)=>!remove.has(i));
+      render();
+    }
+
+    async function saveRelease() {
+      const payload = [{
+        id: 1,
+        version: document.getElementById('relVersion').value.trim(),
+        build_number: document.getElementById('relBuild').value.trim(),
+        notes: document.getElementById('relNotes').value.trim(),
+        updated_at: new Date().toISOString()
+      }];
+      try {
+        await fetch(SUPABASE_URL + '/rest/v1/tspu_app_release', {
+          method: 'POST',
+          headers: { ...sbHeaders(), Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify(payload)
+        });
+        setStatus('Версия обновлена в Supabase');
+      } catch (e) { setStatus('Версия: ' + e.message, false); }
+    }
+
+    loadSchedule();
+  </script>
+</body>
+</html>

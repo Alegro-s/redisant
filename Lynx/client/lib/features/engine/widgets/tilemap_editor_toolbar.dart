@@ -36,6 +36,12 @@ class TilemapEditorToolbar extends StatelessWidget {
                     selected: sceneProvider.tileEditMode,
                     onSelected: (v) => sceneProvider.setTileEditMode(v),
                   ),
+                  const SizedBox(width: 6),
+                  FilterChip(
+                    label: const Text('Collision'),
+                    selected: sceneProvider.showTileCollisionPreview,
+                    onSelected: sceneProvider.setShowTileCollisionPreview,
+                  ),
                   const SizedBox(width: 8),
                   Text('Слой:', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                   const SizedBox(width: 4),

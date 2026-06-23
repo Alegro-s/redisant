@@ -1,3 +1,4 @@
+import 'package:client/features/engine/runtime/tic_audio_engine.dart';
 import 'package:client/features/engine/runtime/web_scene_engine.dart';
 
 import 'engine_types_web.dart';
@@ -45,7 +46,10 @@ class EngineBridge {
     _scenes[id]?.setKey(key, pressed);
   }
 
-  static void sceneSetGamepad(SceneHandle id, double lx, double ly, int buttonMask) {}
+  static void sceneSetGamepad(SceneHandle id, double lx, double ly, int buttonMask) {
+    if (sceneIsNull(id)) return;
+    _scenes[id]?.setGamepadMask(buttonMask);
+  }
 
   static int sceneAddEntity(SceneHandle id, String name, double x, double y, double r, double g, double b, double a) {
     return 0;
@@ -58,4 +62,43 @@ class EngineBridge {
   static List<String> sceneDrainSounds(SceneHandle id) => const [];
 
   static List<String> sceneDrainDebugLog(SceneHandle id) => const [];
+
+  static void sceneSetPaused(SceneHandle id, bool paused) {
+    if (sceneIsNull(id)) return;
+    _scenes[id]?.paused = paused;
+  }
+
+  static void sceneSetTimeScale(SceneHandle id, double scale) {
+    if (sceneIsNull(id)) return;
+    _scenes[id]?.timeScale = scale;
+  }
+
+  static String? sceneTakePendingLoad(SceneHandle id) {
+    if (sceneIsNull(id)) return null;
+    return _scenes[id]?.takePendingLoad();
+  }
+
+  static void sceneSetNamedKey(SceneHandle id, String name, bool pressed) {
+    if (sceneIsNull(id)) return;
+    _scenes[id]?.setNamedKey(name, pressed);
+  }
+
+  static void sceneInitCartLua(SceneHandle id, String code) {
+    if (sceneIsNull(id)) return;
+    _scenes[id]?.initCartLua(code);
+  }
+
+  static void sceneSetTicAudio(SceneHandle id, TicAudioEngine? engine) {
+    if (sceneIsNull(id)) return;
+    final scene = _scenes[id];
+    if (scene != null) {
+      scene.ticAudio = engine;
+    }
+  }
+
+  static List<Map<String, dynamic>> sceneDrainBtDebug(SceneHandle id) => const [];
+
+  static void sceneSetBtBreakpoint(SceneHandle id, String subpath) {}
+
+  static void sceneBtDebugStep(SceneHandle id) {}
 }

@@ -5,6 +5,7 @@ import '../auth/secure_storage.dart';
 class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = false;
+  bool _initializing = true;
   String? _error;
   bool _biometricAvailable = false;
   bool _biometricEnabled = false;
@@ -12,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
+  bool get initializing => _initializing;
   String? get error => _error;
   bool get biometricAvailable => _biometricAvailable;
   bool get biometricEnabled => _biometricEnabled;
@@ -109,6 +111,8 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     await checkAuthStatus();
+    _initializing = false;
+    notifyListeners();
   }
 
 }

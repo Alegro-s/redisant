@@ -1,0 +1,286 @@
+{
+  "formatVersion": 3,
+  "id": "main",
+  "name": "3D Room Wave14",
+  "objects": [
+    {
+      "id": "crate_3d",
+      "name": "Crate",
+      "x": 480,
+      "y": 400,
+      "width": 32,
+      "height": 32,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "z": 0,
+      "active": true,
+      "visible": true,
+      "locked": false,
+      "layerId": "default",
+      "assetId": "assets_sprites_hero.png",
+      "scriptId": null,
+      "properties": {
+        "lynx.3d": {
+          "mesh": "assets/models/crate.glb",
+          "transform": {
+            "position": [
+              0,
+              3,
+              0
+            ],
+            "rotationEuler": [
+              0,
+              25,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "halfExtents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "color": "#FFFFFF",
+          "material": {
+            "metallic": 0.15,
+            "roughness": 0.65,
+            "albedoTexture": "assets/textures/crate_albedo.png",
+            "normalTexture": "assets/textures/crate_normal.png"
+          },
+          "physics": {
+            "bodyType": "dynamic",
+            "restitution": 0.15,
+            "friction": 0.55
+          }
+        }
+      }
+    },
+    {
+      "id": "hero_3d",
+      "name": "Hero",
+      "x": 520,
+      "y": 400,
+      "width": 32,
+      "height": 32,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "z": 0,
+      "active": true,
+      "visible": true,
+      "locked": false,
+      "layerId": "default",
+      "assetId": "assets_sprites_hero.png",
+      "scriptId": null,
+      "properties": {
+        "lynx.3d": {
+          "mesh": "assets/models/hero_skinned.glb",
+          "transform": {
+            "position": [
+              2.5,
+              0,
+              -2.5
+            ],
+            "rotationEuler": [
+              0,
+              -30,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "halfExtents": [
+            0.3,
+            0.6,
+            0.15
+          ],
+          "color": "#90CAF9",
+          "animationClip": "walk",
+          "animationTime": 0,
+          "physics": {
+            "bodyType": "static"
+          }
+        }
+      }
+    }
+  ],
+  "layers": [
+    {
+      "id": "default",
+      "name": "Default",
+      "visible": true,
+      "locked": false,
+      "z": 0
+    }
+  ],
+  "tilemaps": [],
+  "createdAt": "2026-06-02T12:00:00.000Z",
+  "modifiedAt": "2026-06-05T12:00:00.000Z",
+  "revision": 2,
+  "extensions": {
+    "lynx.3d": {
+      "active": true,
+      "world": {
+        "ambientColor": "#2A3040",
+        "gravity": [
+          0,
+          -9.81,
+          0
+        ],
+        "culling": {
+          "frustum": true,
+          "hiZ": true,
+          "hiZSize": 64
+        },
+        "render": {
+          "iblStrength": 0.45,
+          "postEnabled": true,
+          "exposure": 1.05,
+          "bloom": 0.18
+        },
+        "lighting": {
+          "directionalColor": "#FFEECC",
+          "directionalIntensity": 1.0
+        }
+      },
+      "camera": {
+        "type": "perspective",
+        "fovY": 55,
+        "near": 0.1,
+        "far": 500,
+        "orbitDistance": 14
+      },
+      "room": {
+        "width": 8,
+        "height": 4,
+        "depth": 8,
+        "center": [
+          0,
+          2,
+          0
+        ]
+      },
+      "terrain": {
+        "heightmap": "assets/terrain/hm.png",
+        "size": [
+          12,
+          1.5,
+          12
+        ],
+        "center": [
+          0,
+          0.5,
+          0
+        ],
+        "segments": 32,
+        "maxLod": 2,
+        "lodSplitDistance": 8,
+        "clipmapLevels": 2,
+        "color": "#3D5C3D",
+        "material": {
+          "metallic": 0.0,
+          "roughness": 0.9
+        }
+      },
+      "physicsJoints": [
+        {
+          "type": "hinge",
+          "bodyA": "crate_3d",
+          "bodyB": "hero_3d",
+          "anchor": [
+            1.2,
+            1.0,
+            -2.5
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "minAngleDeg": -25,
+          "maxAngleDeg": 25
+        }
+      ],
+      "objects": [
+        {
+          "id": "crate_3d",
+          "mesh": "assets/models/crate.glb",
+          "transform": {
+            "position": [
+              0,
+              3,
+              0
+            ],
+            "rotationEuler": [
+              0,
+              25,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "halfExtents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "color": "#FFFFFF",
+          "material": {
+            "metallic": 0.15,
+            "roughness": 0.65,
+            "albedoTexture": "assets/textures/crate_albedo.png",
+            "normalTexture": "assets/textures/crate_normal.png"
+          },
+          "physics": {
+            "bodyType": "dynamic",
+            "restitution": 0.15,
+            "friction": 0.55
+          }
+        },
+        {
+          "id": "hero_3d",
+          "mesh": "assets/models/hero_skinned.glb",
+          "transform": {
+            "position": [
+              2.5,
+              0,
+              -2.5
+            ],
+            "rotationEuler": [
+              0,
+              -30,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "halfExtents": [
+            0.3,
+            0.6,
+            0.15
+          ],
+          "color": "#90CAF9",
+          "animationClip": "walk",
+          "animationTime": 0,
+          "physics": {
+            "bodyType": "static"
+          }
+        }
+      ]
+    }
+  }
+}

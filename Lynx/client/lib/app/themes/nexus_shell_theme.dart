@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'lynx_hub_palette.dart';
+
 @immutable
 class NexusShellTheme extends ThemeExtension<NexusShellTheme> {
   final Color activityBar;
@@ -25,15 +27,27 @@ class NexusShellTheme extends ThemeExtension<NexusShellTheme> {
   });
 
   static const NexusShellTheme dark = NexusShellTheme(
-    activityBar: Color(0xFF0D1117),
-    activityBarBorder: Color(0xFF30363D),
-    sidebar: Color(0xFF161B22),
-    sidebarHover: Color(0xFF21262D),
-    sidebarSelected: Color(0xFF342554),
-    sidebarBorder: Color(0xFF30363D),
-    contentChrome: Color(0xFF0D1117),
+    activityBar: Color(0xFF1E1E1E),
+    activityBarBorder: Color(0xFF3F3F46),
+    sidebar: Color(0xFF252526),
+    sidebarHover: Color(0xFF2D2D30),
+    sidebarSelected: Color(0xFF3F3F46),
+    sidebarBorder: Color(0xFF3F3F46),
+    contentChrome: Color(0xFF1E1E1E),
     messageBubbleMine: Color(0xFF7C3AED),
-    messageBubbleOther: Color(0xFF272236),
+    messageBubbleOther: Color(0xFF2D2D30),
+  );
+
+  static const NexusShellTheme hubPurple = NexusShellTheme(
+    activityBar: LynxHubPalette.bg,
+    activityBarBorder: LynxHubPalette.border,
+    sidebar: LynxHubPalette.surface,
+    sidebarHover: LynxHubPalette.card,
+    sidebarSelected: LynxHubPalette.card,
+    sidebarBorder: LynxHubPalette.border,
+    contentChrome: LynxHubPalette.bg,
+    messageBubbleMine: LynxHubPalette.accent,
+    messageBubbleOther: LynxHubPalette.card,
   );
 
   static const NexusShellTheme light = NexusShellTheme(

@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/student_provider.dart';
-import '../auth/login_screen.dart';
 
 Future<void> performAppLogout(BuildContext context) async {
   final auth = context.read<AuthProvider>();
@@ -14,16 +13,12 @@ Future<void> performAppLogout(BuildContext context) async {
   student.clearStudentData();
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove(AppConstants.loyaltyLinkedEmailPrefKey);
-  if (!context.mounted) return;
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute<void>(builder: (_) => LoginScreen()),
-    (route) => false,
-  );
 }
 
 void showLogoutConfirmDialog(BuildContext context) {
   showDialog<void>(
     context: context,
+    useRootNavigator: true,
     builder: (dialogContext) {
       return AlertDialog(
         title: const Text('Выход'),

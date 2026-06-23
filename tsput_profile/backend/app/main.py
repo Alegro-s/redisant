@@ -1,11 +1,22 @@
 from datetime import datetime, time, timedelta, UTC
-from fastapi import Body, FastAPI, Header, HTTPException
+from pathlib import Path
+from urllib.parse import quote
+
+from fastapi import Body, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from .config import settings
 from . import local_users_loader
+from . import lab_files
+from . import lab_local_store
+from . import schedule_store
+from . import supabase_store
 from .schemas import (
     ExamItem,
     GradeItem,
+    LabCommentCreate,
+    LabCommentItem,
     LabItem,
     LoginRequest,
     LoginResponse,
@@ -18,34 +29,56 @@ from .schemas import (
 
 app = FastAPI(title=settings.app_name)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def _require_auth(authorization: str | None) -> None:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized")
-
 
 def _bearer_token(authorization: str | None) -> str:
     _require_auth(authorization)
     assert authorization is not None
     return authorization.split(" ", 1)[1].strip()
 
+def _require_admin(x_admin_token: str | None) -> None:
+    token = (settings.api_admin_token or "").strip()
+    if not token or x_admin_token != token:
+        raise HTTPException(status_code=403, detail="Admin token required")
 
 _partner_services_by_token: dict[str, list[PartnerServiceItem]] = {}
 
-
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "env": settings.app_env, "mock_mode": settings.mock_mode}
+    return {
+        "ok": True,
+        "env": settings.app_env,
+        "mock_mode": settings.mock_mode,
+        "supabase": supabase_store._enabled(),
+    }
 
+@app.get("/api/app/release")
+def app_release() -> dict:
+    row = supabase_store.fetch_app_release()
+    if row:
+        return {
+            "version": row.get("version", "1.1.2"),
+            "buildNumber": row.get("build_number", "3"),
+            "notes": row.get("notes"),
+        }
+    return {"version": "1.1.2", "buildNumber": "3", "notes": "Локальная сборка"}
 
 @app.post("/api/sync")
 def sync() -> dict:
     return {"success": True}
 
-
 def _normalize_name(value: str) -> str:
     return " ".join(value.strip().split()).casefold()
-
 
 def _moodle_login_accepted(raw_login: str, password: str) -> bool:
     if not settings.moodle_password:
@@ -61,7 +94,6 @@ def _moodle_login_accepted(raw_login: str, password: str) -> bool:
     if settings.student_full_name and _normalize_name(ident) == _normalize_name(settings.student_full_name):
         return True
     return False
-
 
 @app.post("/api/auth/login", response_model=LoginResponse)
 def login(payload: LoginRequest) -> LoginResponse:
@@ -95,7 +127,6 @@ def login(payload: LoginRequest) -> LoginResponse:
             },
         )
     return LoginResponse(success=False, error="Неверный логин или пароль")
-
 
 @app.get("/api/student", response_model=StudentResponse)
 def student(authorization: str | None = Header(default=None)) -> StudentResponse:
@@ -132,7 +163,6 @@ def student(authorization: str | None = Header(default=None)) -> StudentResponse
         },
     )
 
-
 def _week_slot(weekday: int, hour: int, minute: int, **kwargs) -> ScheduleItem:
     """weekday 0=пн … 6=вс от текущей календарной недели (UTC)."""
     today = datetime.now(UTC).date()
@@ -145,10 +175,7 @@ def _week_slot(weekday: int, hour: int, minute: int, **kwargs) -> ScheduleItem:
         **kwargs,
     )
 
-
-@app.get("/api/schedule", response_model=list[ScheduleItem])
-def schedule(authorization: str | None = Header(default=None)) -> list[ScheduleItem]:
-    _require_auth(authorization)
+def _default_schedule() -> list[ScheduleItem]:
     return [
         _week_slot(
             0,
@@ -192,10 +219,45 @@ def schedule(authorization: str | None = Header(default=None)) -> list[ScheduleI
         ),
     ]
 
+@app.get("/api/schedule", response_model=list[ScheduleItem])
+def schedule(authorization: str | None = Header(default=None)) -> list[ScheduleItem]:
+    _require_auth(authorization)
+    cloud = supabase_store.fetch_schedule()
+    if cloud is not None:
+        return cloud
+    override = schedule_store.load_override()
+    if override is not None:
+        return override
+    return _default_schedule()
+
+@app.get("/api/admin/schedule", response_model=list[ScheduleItem])
+def admin_get_schedule(x_admin_token: str | None = Header(default=None)) -> list[ScheduleItem]:
+    _require_admin(x_admin_token)
+    cloud = supabase_store.fetch_schedule()
+    if cloud is not None:
+        return cloud
+    override = schedule_store.load_override()
+    if override is not None:
+        return override
+    return _default_schedule()
+
+@app.put("/api/admin/schedule", response_model=list[ScheduleItem])
+def admin_put_schedule(
+    items: list[ScheduleItem] = Body(...),
+    x_admin_token: str | None = Header(default=None),
+) -> list[ScheduleItem]:
+    _require_admin(x_admin_token)
+    if supabase_store.save_schedule(items):
+        return items
+    schedule_store.save_override(items)
+    return items
 
 @app.get("/api/grades", response_model=list[GradeItem])
 def grades(authorization: str | None = Header(default=None)) -> list[GradeItem]:
     _require_auth(authorization)
+    cloud = supabase_store.fetch_grades()
+    if cloud is not None:
+        return cloud
     return [
         GradeItem(
             id="G1",
@@ -258,10 +320,12 @@ def grades(authorization: str | None = Header(default=None)) -> list[GradeItem]:
         ),
     ]
 
-
 @app.get("/api/exams", response_model=list[ExamItem])
 def exams(authorization: str | None = Header(default=None)) -> list[ExamItem]:
     _require_auth(authorization)
+    cloud = supabase_store.fetch_exams()
+    if cloud is not None:
+        return cloud
     return [
         ExamItem(
             id="E1",
@@ -275,10 +339,12 @@ def exams(authorization: str | None = Header(default=None)) -> list[ExamItem]:
         )
     ]
 
-
 @app.get("/api/portfolio", response_model=list[PortfolioItem])
 def portfolio(authorization: str | None = Header(default=None)) -> list[PortfolioItem]:
     _require_auth(authorization)
+    cloud = supabase_store.fetch_portfolio()
+    if cloud is not None:
+        return cloud
     return [
         PortfolioItem(
             id="P1",
@@ -338,7 +404,6 @@ def portfolio(authorization: str | None = Header(default=None)) -> list[Portfoli
         ),
     ]
 
-
 @app.post("/api/partner-services/scan")
 def partner_scan(
     authorization: str | None = Header(default=None),
@@ -358,52 +423,80 @@ def partner_scan(
     _partner_services_by_token.setdefault(tok, []).append(item)
     return {"ok": True}
 
-
 @app.get("/api/partner-services", response_model=list[PartnerServiceItem])
 def partner_services_list(authorization: str | None = Header(default=None)) -> list[PartnerServiceItem]:
     tok = _bearer_token(authorization)
     return list(_partner_services_by_token.get(tok, []))
 
-
 @app.get("/api/moodle/labs", response_model=list[LabItem])
 def moodle_labs(authorization: str | None = Header(default=None)) -> list[LabItem]:
     _require_auth(authorization)
-    now = datetime.now(UTC)
-    return [
-        LabItem(
-            id="L1",
-            course="Программирование",
-            title="ЛР №3",
-            status="Принято",
-            teacherComment="Хорошая реализация, добавьте тесты.",
-            updatedAt=now - timedelta(hours=6),
-            deadline=now + timedelta(days=5),
-            workType="ЛР",
-            theme="Структуры данных",
-            score=5,
-        ),
-        LabItem(
-            id="L2",
-            course="Базы данных",
-            title="ЛР №2",
-            status="На проверке",
-            teacherComment=None,
-            updatedAt=now - timedelta(days=1),
-            deadline=now + timedelta(days=2),
-            workType="ЛР",
-            theme="Нормализация",
-            score=None,
-        ),
-        LabItem(
-            id="L3",
-            course="Веб-программирование",
-            title="КР — макет",
-            status="Требуются правки",
-            teacherComment="Проверьте адаптив и контраст.",
-            updatedAt=now - timedelta(hours=20),
-            deadline=now - timedelta(days=1),
-            workType="КР",
-            theme="Вёрстка landing",
-            score=2,
-        ),
-    ]
+    cloud = supabase_store.fetch_labs()
+    if cloud is not None:
+        return cloud
+    return lab_local_store.merge_local_state(lab_local_store._default_labs())
+
+
+def _labs_fallback_list() -> list[LabItem]:
+    cloud = supabase_store.fetch_labs()
+    if cloud is not None:
+        return cloud
+    return lab_local_store._default_labs()
+
+
+@app.get("/api/moodle/labs/{lab_id}/comments", response_model=list[LabCommentItem])
+def moodle_lab_comments(lab_id: str, authorization: str | None = Header(default=None)) -> list[LabCommentItem]:
+    _require_auth(authorization)
+    cloud = supabase_store.fetch_lab_comments(lab_id)
+    if cloud is not None:
+        return cloud
+    return lab_local_store.list_comments(lab_id)
+
+
+@app.post("/api/moodle/labs/{lab_id}/comments", response_model=LabCommentItem)
+def moodle_lab_add_comment(
+    lab_id: str,
+    payload: LabCommentCreate,
+    authorization: str | None = Header(default=None),
+) -> LabCommentItem:
+    _require_auth(authorization)
+    raise HTTPException(
+        status_code=403,
+        detail="Студент не может отправлять комментарии — доступны только отзывы преподавателя",
+    )
+
+
+@app.post("/api/moodle/labs/{lab_id}/submit", response_model=LabItem)
+async def moodle_lab_submit(
+    lab_id: str,
+    authorization: str | None = Header(default=None),
+    file: UploadFile = File(...),
+) -> LabItem:
+    _require_auth(authorization)
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Файл пустой")
+    filename = Path(file.filename or "submission.bin").name
+    saved = lab_files.save_submission_file(lab_id, filename, raw)
+    file_url = f"/api/moodle/labs/{lab_id}/submission/file?name={quote(saved.name)}"
+    updated = supabase_store.record_lab_submission(lab_id, filename, file_url)
+    if updated is not None:
+        return updated
+    lab_local_store.record_submission(lab_id, filename, file_url)
+    item = lab_local_store.get_lab(lab_id, _labs_fallback_list())
+    if item is None:
+        raise HTTPException(status_code=404, detail="Лабораторная не найдена")
+    return item
+
+
+@app.get("/api/moodle/labs/{lab_id}/submission/file")
+def moodle_lab_submission_file(
+    lab_id: str,
+    name: str,
+    authorization: str | None = Header(default=None),
+) -> FileResponse:
+    _require_auth(authorization)
+    path = lab_files.read_submission_file(lab_id, name)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(path, filename=path.name)

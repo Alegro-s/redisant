@@ -15,6 +15,9 @@ class _LauncherDevSettingsScreenState extends State<LauncherDevSettingsScreen> {
   late TextEditingController _exe;
   late TextEditingController _news;
   late TextEditingController _store;
+  late TextEditingController _liveOps;
+  late TextEditingController _leaderboard;
+  late TextEditingController _marketApi;
 
   @override
   void initState() {
@@ -23,6 +26,9 @@ class _LauncherDevSettingsScreenState extends State<LauncherDevSettingsScreen> {
     _exe = TextEditingController(text: s.nexusEditorExecutablePath);
     _news = TextEditingController(text: s.newsFeedUrl);
     _store = TextEditingController(text: s.storeCatalogUrl);
+    _liveOps = TextEditingController(text: s.liveOpsConfigUrl);
+    _leaderboard = TextEditingController(text: s.leaderboardApiUrl);
+    _marketApi = TextEditingController(text: s.marketplaceApiBase);
   }
 
   @override
@@ -30,6 +36,9 @@ class _LauncherDevSettingsScreenState extends State<LauncherDevSettingsScreen> {
     _exe.dispose();
     _news.dispose();
     _store.dispose();
+    _liveOps.dispose();
+    _leaderboard.dispose();
+    _marketApi.dispose();
     super.dispose();
   }
 
@@ -95,6 +104,64 @@ class _LauncherDevSettingsScreenState extends State<LauncherDevSettingsScreen> {
           FilledButton(
             onPressed: () => settings.setStoreCatalogUrl(_store.text),
             child: const Text('Сохранить URL магазина'),
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _liveOps,
+            decoration: const InputDecoration(
+              labelText: 'Live Ops remote config JSON URL',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: () => settings.setLiveOpsConfigUrl(_liveOps.text),
+            child: const Text('Сохранить Live Ops config'),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _leaderboard,
+            decoration: const InputDecoration(
+              labelText: 'Leaderboard API base URL',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: () => settings.setLeaderboardApiUrl(_leaderboard.text),
+            child: const Text('Сохранить Leaderboard API'),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _marketApi,
+            decoration: const InputDecoration(
+              labelText: 'Marketplace billing API base',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: () => settings.setMarketplaceApiBase(_marketApi.text),
+            child: const Text('Сохранить Marketplace API'),
+          ),
+          const Divider(height: 32),
+          ListTile(
+            leading: const Icon(Icons.cloud_sync_outlined),
+            title: const Text('Live Ops hub'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).pushNamed('/live-ops'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.storefront_outlined),
+            title: const Text('Creator dashboard'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).pushNamed('/marketplace-creator'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.menu_book_outlined),
+            title: const Text('Narrative VN preview'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).pushNamed('/narrative'),
           ),
         ],
       ),

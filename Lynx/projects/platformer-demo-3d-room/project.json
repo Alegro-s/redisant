@@ -1,0 +1,29 @@
+{
+  "settingsVersion": 1,
+  "projectId": "00000000-0000-4000-8000-000000000006",
+  "displayName": "3D Room Demo (Wave 14)",
+  "minLynxCoreVersion": "0.6.0-m6",
+  "windows3dRuntime": "core_forward_d3d12",
+  "gameTemplate": "empty",
+  "startupSceneId": "main",
+  "designWidth": 960,
+  "designHeight": 540,
+  "pixelPerfect": false,
+  "defaultGravityY": 980,
+  "pixelsPerUnit": 1,
+  "physicsLayers": ["default"],
+  "inputMap": {},
+  "tilesets": [],
+  "audioMasterVolume": 1.0,
+  "audioBusVolumes": {},
+  "projectMode": "3d",
+  "lynxPlugins": {
+    "apiVersion": 1,
+    "enabled": ["lynx.3d"],
+    "config": {
+      "lynx.3d": {
+        "defaultCamera": "perspective"
+      }
+    }
+  }
+}

@@ -4,14 +4,18 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:client/features/engine/runtime/tic_audio_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:dio/dio.dart';
 import 'package:client/features/auth/providers/auth_provider.dart';
 import 'package:client/features/engine/ffi/engine_bridge.dart';
+import 'package:client/features/engine/runtime/play_engine_init.dart';
 import 'package:client/features/engine/ffi/engine_types.dart';
 import 'package:client/features/engine/runtime/engine_frame_stats.dart';
 import 'package:client/features/engine/runtime/engine_binary_loader.dart';
 import 'package:client/features/engine/runtime/nexus_gamepad_feeder.dart';
 import 'package:client/features/engine/runtime/nexus_play_snapshot.dart';
+import 'package:client/features/engine/runtime/tic_audio_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -22,13 +26,34 @@ import 'package:provider/provider.dart';
 
 import 'game_play_loader.dart';
 import 'game_render_snapshot.dart';
+import 'play_camera_sync.dart';
 import 'game_touch_controls.dart';
+import 'logic_grid_play_helpers.dart';
+import 'game_3d_play_overlay.dart';
+import 'bt_debug_overlay.dart';
+import 'bt_debug_panel.dart';
+import 'game_ui_overlay.dart';
 import 'game_world_painter.dart';
+import '../engine/runtime/lynx_windows_3d_runtime.dart';
+import '../engine/runtime/unified_play_viewport.dart';
+import '../plugins/lynx_3d/lynx3d_core_viewport.dart';
+import '../plugins/lynx_3d/lynx_3d_codec.dart';
+import 'sprite_uv_resolve.dart';
 
 class GamePlayerScreen extends StatefulWidget {
   final String? projectPath;
   final bool freshPlay;
-  const GamePlayerScreen({super.key, this.projectPath, this.freshPlay = false});
+  /// Lynx Player (`main_player.dart`): движок из `bin/`, без Hub API.
+  final bool standalonePlayer;
+  /// E20b — cart play всегда pixel-perfect letterbox.
+  final bool forcePixelPerfect;
+  const GamePlayerScreen({
+    super.key,
+    this.projectPath,
+    this.freshPlay = false,
+    this.standalonePlayer = false,
+    this.forcePixelPerfect = false,
+  });
 
   @override
   State<GamePlayerScreen> createState() => _GamePlayerScreenState();
@@ -46,6 +71,10 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
   bool _engineReady = false;
   final FocusNode _focus = FocusNode();
 
+  List<Map<String, dynamic>> _uiWidgets = const [];
+  Lynx3dSceneExtension? _lynx3d;
+  bool _lynx3dPhysics = true;
+  bool _lynx3dCoreViewport = false;
   Map<String, dynamic> _playBootstrap = const {};
   List<Map<String, dynamic>> _tilesetCatalog = const [];
   double _cameraX = 640;
@@ -53,6 +82,7 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
   double _zoom = 1;
   double _designW = 1280;
   double _designH = 720;
+  bool _pixelPerfect = false;
 
   final Map<String, ui.Image> _textureCache = {};
   Duration? _prevTick;
@@ -63,13 +93,20 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
   bool _camTouchRight = false;
   bool _camTouchUp = false;
   bool _camTouchDown = false;
+  int _touchGpMask = 0;
+
+  bool get _isLogicGridGame => snapshotIsLogicGridGame(_renderSnapshot);
   bool _paused = false;
+  String _currentSceneId = 'main';
+  bool _sceneSwitching = false;
   bool _showDebug = false;
   bool _showFrameStats = false;
   final ValueNotifier<EngineFrameStats?> _frameStats = ValueNotifier(null);
   final List<String> _debugLines = [];
+  List<Map<String, dynamic>> _btDebugEntries = const [];
 
   final AudioPlayer _audio = AudioPlayer();
+  late final TicAudioEngine _ticAudio = TicAudioEngine(_audio);
 
   @override
   void initState() {
@@ -78,18 +115,40 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
   }
 
   Future<void> _bootstrap() async {
-    final load = await loadPlayPayload(widget.projectPath, freshPlay: widget.freshPlay);
+    await _loadPlayScene(sceneIdOverride: null);
+  }
+
+  Future<void> _loadPlayScene({String? sceneIdOverride}) async {
+    final load = await loadPlayPayload(
+      widget.projectPath,
+      freshPlay: widget.freshPlay,
+      sceneIdOverride: sceneIdOverride,
+    );
     if (!mounted) return;
     if (load.error != null) {
-      setState(() => _error = load.error);
+      setState(() {
+        _error = load.error;
+        _sceneSwitching = false;
+      });
       return;
     }
+    await _ticAudio.loadProject(widget.projectPath);
     final rust = load.rustSceneJson;
     if (rust == null) {
-      setState(() => _error = 'Нет данных сцены');
+      setState(() {
+        _error = 'Нет данных сцены';
+        _sceneSwitching = false;
+      });
       return;
     }
+    _currentSceneId = load.sceneId;
     _playBootstrap = load.playBootstrap;
+    _uiWidgets = List<Map<String, dynamic>>.from(
+      (_playBootstrap['uiWidgets'] as List?)
+              ?.map((e) => Map<String, dynamic>.from(e as Map))
+              .toList() ??
+          const [],
+    );
     _tilesetCatalog = List<Map<String, dynamic>>.from(
       (_playBootstrap['tilesets'] as List?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
@@ -98,10 +157,24 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
     );
     _designW = (_playBootstrap['designWidth'] as num?)?.toDouble() ?? 1280;
     _designH = (_playBootstrap['designHeight'] as num?)?.toDouble() ?? 720;
+    _pixelPerfect = widget.forcePixelPerfect ||
+        (_playBootstrap['pixelPerfect'] as bool? ?? false);
     final cam = _playBootstrap['camera'] as Map<String, dynamic>?;
     _cameraX = (cam?['x'] as num?)?.toDouble() ?? _designW / 2;
     _cameraY = (cam?['y'] as num?)?.toDouble() ?? _designH / 2;
     _zoom = (cam?['zoom'] as num?)?.toDouble() ?? 1;
+    final l3raw = _playBootstrap['lynx3d'];
+    _lynx3d = l3raw is Map<String, dynamic>
+        ? Lynx3dSceneExtension.fromMap(l3raw)
+        : null;
+    final l3map = _playBootstrap['lynx3d'] as Map?;
+    _lynx3dPhysics = l3map?['simulatePhysics'] as bool? ?? true;
+    _lynx3dCoreViewport = !kIsWeb &&
+        !Platform.isAndroid &&
+        !Platform.isIOS &&
+        Lynx3dCoreViewport.isPlatformSupported &&
+        LynxWindows3dRuntimeJson.fromJson(l3map?['windows3dRuntime'] as String?) ==
+            LynxWindows3dRuntime.coreForwardD3d12;
     _renderSnapshot = GameRenderSnapshot.empty(
       designWidth: _designW,
       designHeight: _designH,
@@ -110,33 +183,68 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
       zoom: _zoom,
     );
 
-    if (!kIsWeb) {
-      try {
-        final auth = Provider.of<AuthProvider>(context, listen: false);
-        final cached = await ensureEngineBinary(auth.http);
-        if (!mounted) return;
-        EngineBridge.init(preferredLibraryPath: cached);
-      } catch (e) {
-        if (!mounted) return;
-        setState(() => _error = 'Движок: $e');
-        return;
+    if (!_engineReady) {
+      if (!kIsWeb) {
+        try {
+          final lib = await resolvePlayEngineLibrary(
+            http: widget.standalonePlayer ? null : _tryAuthHttp(context),
+          );
+          if (!mounted) return;
+          if (lib == null || lib.isEmpty) {
+            setState(() {
+              _error = widget.standalonePlayer
+                  ? 'Не найден движок. Положите engine.dll в папку bin/ рядом с Player.'
+                  : 'Движок не установлен. Установите ядро в Hub или экспортируйте bin/.';
+              _sceneSwitching = false;
+            });
+            return;
+          }
+          EngineBridge.init(preferredLibraryPath: lib);
+        } catch (e) {
+          if (!mounted) return;
+          setState(() {
+            _error = 'Движок: $e';
+            _sceneSwitching = false;
+          });
+          return;
+        }
+      } else {
+        EngineBridge.init();
       }
-    } else {
-      EngineBridge.init();
+      _engineReady = true;
     }
 
-    _engineReady = true;
+    if (!sceneIsNull(_sceneHandle)) {
+      EngineBridge.sceneDestroy(_sceneHandle);
+      _sceneHandle = kSceneNull;
+    }
     final newH = EngineBridge.sceneFromJson(rust);
     if (sceneIsNull(newH)) {
-      setState(() => _error = 'Движок не смог разобрать сцену');
+      setState(() {
+        _error = 'Движок не смог разобрать сцену';
+        _sceneSwitching = false;
+      });
       return;
     }
     _sceneHandle = newH;
+    EngineBridge.sceneSetTicAudio(_sceneHandle, _ticAudio);
+    if (load.useCartRuntime && load.cartLuaScript != null && load.cartLuaScript!.isNotEmpty) {
+      EngineBridge.sceneInitCartLua(_sceneHandle, load.cartLuaScript!);
+      if (kIsWeb) {
+        EngineBridge.sceneSetTicAudio(_sceneHandle, _ticAudio);
+      }
+    }
+    EngineBridge.sceneSetPaused(_sceneHandle, _paused);
     NexusGamepadFeeder.attachForPlay();
     _refreshEntities();
     unawaited(_preloadTextures());
-    _ticker = createTicker(_update)..start();
-    if (mounted) setState(() {});
+    _ticker ??= createTicker(_update)..start();
+    if (mounted) {
+      setState(() {
+        _error = null;
+        _sceneSwitching = false;
+      });
+    }
   }
 
   Future<void> _preloadTextures() async {
@@ -146,7 +254,7 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
     for (final e in _renderSnapshot.entities) {
       final sp = e['sprite'] as Map<String, dynamic>?;
       final tp = sp?['texture_path'] as String?;
-      if (tp != null) paths.add(tp);
+      if (tp != null) paths.add(normalizeTextureCacheKey(tp));
     }
     final wantedTilesets = <String>{};
     for (final l in _renderSnapshot.tilemaps) {
@@ -157,7 +265,9 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
       final tid = t['id'] as String?;
       if (tid == null || !wantedTilesets.contains(tid)) continue;
       final rel = t['texturePath'] as String? ?? t['texture_path'] as String?;
-      if (rel != null && rel.isNotEmpty) paths.add(rel);
+      if (rel != null && rel.isNotEmpty) {
+        paths.add(normalizeTextureCacheKey(rel));
+      }
     }
     for (final rel in paths) {
       if (_textureCache.containsKey(rel)) continue;
@@ -184,18 +294,29 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
       _camTouchDown;
 
   void _syncCameraFromEngine(Map<String, dynamic> sceneData) {
+    if (sceneDataIsLogicGridGame(sceneData)) {
+      lockCameraForLogicGrid(
+        designWidth: _designW,
+        designHeight: _designH,
+        setCenter: (x, y) {
+          _cameraX = x;
+          _cameraY = y;
+        },
+        setZoom: (z) => _zoom = z,
+      );
+      return;
+    }
     if (_cameraManualInput()) return;
-    final cc = sceneData['camera_center'] as Map<String, dynamic>?;
-    if (cc != null) {
-      _cameraX = (cc['x'] as num).toDouble();
-      _cameraY = (cc['y'] as num).toDouble();
-    }
-    final cams = sceneData['cameras'] as List?;
-    if (cams != null && cams.isNotEmpty) {
-      final cam = cams.first as Map<String, dynamic>;
-      final z = cam['zoom'];
-      if (z is num) _zoom = z.toDouble();
-    }
+    applyEngineCameraCenter(
+      sceneData: sceneData,
+      designWidth: _designW,
+      designHeight: _designH,
+      setCenter: (x, y) {
+        _cameraX = x;
+        _cameraY = y;
+      },
+      setZoom: (z) => _zoom = z,
+    );
   }
 
   void _refreshEntities() {
@@ -225,17 +346,19 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
     _elapsedSec = elapsed.inMilliseconds / 1000.0;
 
     const pan = 520.0;
-    if (_held.contains(LogicalKeyboardKey.arrowLeft) || _camTouchLeft) {
-      _cameraX -= pan * dt;
-    }
-    if (_held.contains(LogicalKeyboardKey.arrowRight) || _camTouchRight) {
-      _cameraX += pan * dt;
-    }
-    if (_held.contains(LogicalKeyboardKey.arrowUp) || _camTouchUp) {
-      _cameraY -= pan * dt;
-    }
-    if (_held.contains(LogicalKeyboardKey.arrowDown) || _camTouchDown) {
-      _cameraY += pan * dt;
+    if (!_isLogicGridGame) {
+      if (_held.contains(LogicalKeyboardKey.arrowLeft) || _camTouchLeft) {
+        _cameraX -= pan * dt;
+      }
+      if (_held.contains(LogicalKeyboardKey.arrowRight) || _camTouchRight) {
+        _cameraX += pan * dt;
+      }
+      if (_held.contains(LogicalKeyboardKey.arrowUp) || _camTouchUp) {
+        _cameraY -= pan * dt;
+      }
+      if (_held.contains(LogicalKeyboardKey.arrowDown) || _camTouchDown) {
+        _cameraY += pan * dt;
+      }
     }
 
     var engineMs = 0.0;
@@ -249,15 +372,32 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
 
     if (!kIsWeb) {
       NexusGamepadFeeder.syncToScene(_sceneHandle);
-      for (final s in EngineBridge.sceneDrainSounds(_sceneHandle)) {
-        unawaited(_playProjectSound(s));
-      }
+    }
+    for (final s in EngineBridge.sceneDrainSounds(_sceneHandle)) {
+      unawaited(_dispatchEngineSound(s));
+    }
+    if (!kIsWeb) {
       final logs = EngineBridge.sceneDrainDebugLog(_sceneHandle);
       if (logs.isNotEmpty) {
         _debugLines.addAll(logs);
         while (_debugLines.length > 120) {
           _debugLines.removeAt(0);
         }
+      }
+      if (_showDebug) {
+        final bt = EngineBridge.sceneDrainBtDebug(_sceneHandle);
+        if (bt.length != _btDebugEntries.length ||
+            bt.toString() != _btDebugEntries.toString()) {
+          setState(() => _btDebugEntries = bt);
+        }
+      }
+    }
+
+    if (!_sceneSwitching && !sceneIsNull(_sceneHandle)) {
+      final pending = EngineBridge.sceneTakePendingLoad(_sceneHandle);
+      if (pending != null && pending.isNotEmpty && pending != _currentSceneId) {
+        unawaited(_switchScene(pending));
+        return;
       }
     }
 
@@ -267,6 +407,44 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
       entityCount: _renderSnapshot.entities.length,
       tilemapLayerCount: _renderSnapshot.tilemaps.length,
     );
+  }
+
+  void _handleUiAction(String action) {
+    if (action.startsWith('load_scene:')) {
+      final id = action.substring('load_scene:'.length).trim();
+      if (id.isNotEmpty) unawaited(_switchScene(id));
+    }
+  }
+
+  Dio? _tryAuthHttp(BuildContext context) {
+    try {
+      return Provider.of<AuthProvider>(context, listen: false).http;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _switchScene(String sceneId) async {
+    if (_sceneSwitching || sceneId == _currentSceneId) return;
+    _sceneSwitching = true;
+    _releaseAllTouchEngineKeys();
+    await _loadPlayScene(sceneIdOverride: sceneId);
+  }
+
+  void _setPaused(bool value) {
+    if (_paused == value) return;
+    _paused = value;
+    if (!sceneIsNull(_sceneHandle)) {
+      EngineBridge.sceneSetPaused(_sceneHandle, value);
+    }
+  }
+
+  Future<void> _dispatchEngineSound(String rel) async {
+    if (rel.trimLeft().startsWith('{')) {
+      await _ticAudio.handleSoundEvent(rel);
+      return;
+    }
+    await _playProjectSound(rel);
   }
 
   Future<void> _playProjectSound(String rel) async {
@@ -293,22 +471,56 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
     EngineBridge.sceneSetKey(_sceneHandle, ch, down);
   }
 
+  void _onTouchArrow(LogicalKeyboardKey key, bool down) {
+    if (_isLogicGridGame) {
+      final bit = playGamepadBitForArrow(key);
+      if (bit != 0) _touchGpBit(bit, down);
+      return;
+    }
+    setState(() {
+      switch (key) {
+        case LogicalKeyboardKey.arrowLeft:
+          _camTouchLeft = down;
+        case LogicalKeyboardKey.arrowRight:
+          _camTouchRight = down;
+        case LogicalKeyboardKey.arrowUp:
+          _camTouchUp = down;
+        case LogicalKeyboardKey.arrowDown:
+          _camTouchDown = down;
+        default:
+          break;
+      }
+    });
+  }
+
   void _releaseAllTouchEngineKeys() {
     for (final c in ['a', 'd', 'w', ' ']) {
       _engineCharKey(c, false);
     }
+    for (final k in [
+      LogicalKeyboardKey.arrowLeft,
+      LogicalKeyboardKey.arrowRight,
+      LogicalKeyboardKey.arrowUp,
+      LogicalKeyboardKey.arrowDown,
+      LogicalKeyboardKey.enter,
+    ]) {
+      dispatchPlayEngineKey(_sceneHandle, k, false);
+    }
+    _touchGpMask = 0;
+    setPlayGamepadButtons(_sceneHandle, 0);
+  }
+
+  void _touchGpBit(int bit, bool on) {
+    if (on) {
+      _touchGpMask |= bit;
+    } else {
+      _touchGpMask &= ~bit;
+    }
+    setPlayGamepadButtons(_sceneHandle, _touchGpMask);
   }
 
   void _dispatchEngineKey(LogicalKeyboardKey key, bool down) {
-    if (sceneIsNull(_sceneHandle)) return;
-    if (key == LogicalKeyboardKey.space) {
-      EngineBridge.sceneSetKey(_sceneHandle, ' ', down);
-      return;
-    }
-    final ch = key.keyLabel;
-    if (ch.length == 1) {
-      EngineBridge.sceneSetKey(_sceneHandle, ch.toLowerCase(), down);
-    }
+    dispatchPlayEngineKey(_sceneHandle, key, down);
   }
 
   @override
@@ -327,6 +539,10 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
   }
 
   void _exitPlay(BuildContext context) {
+    if (widget.standalonePlayer) {
+      SystemNavigator.pop();
+      return;
+    }
     if (context.canPop()) {
       context.pop();
     } else {
@@ -397,7 +613,7 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
             onPressed: () => setState(() => _showFrameStats = !_showFrameStats),
           ),
           IconButton(
-            tooltip: 'Отладка: лог Lua и зоны комнат',
+            tooltip: 'Отладка: Lua, BT, collision, комнаты',
             icon: Icon(_showDebug ? Icons.bug_report : Icons.bug_report_outlined),
             onPressed: () => setState(() => _showDebug = !_showDebug),
           ),
@@ -414,8 +630,13 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
           builder: (context, constraints) {
             final maxW = constraints.maxWidth;
             final maxH = constraints.maxHeight;
-            final fit =
-                math.min(maxW / _designW, maxH / _designH).clamp(0.08, 8.0).toDouble();
+            final fit = UnifiedPlayViewport.resolvePlayScale(
+              maxWidth: maxW,
+              maxHeight: maxH,
+              designWidth: _designW,
+              designHeight: _designH,
+              pixelPerfect: _pixelPerfect,
+            );
             final viewW = _designW * fit;
             final viewH = _designH * fit;
             final paintZoom = _zoom * fit;
@@ -437,7 +658,7 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                             if (event is KeyDownEvent) {
                               _held.add(event.logicalKey);
                               if (event.logicalKey == LogicalKeyboardKey.escape) {
-                                setState(() => _paused = !_paused);
+                                setState(() => _setPaused(!_paused));
                                 return KeyEventResult.handled;
                               }
                               _dispatchEngineKey(event.logicalKey, true);
@@ -449,7 +670,9 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                           },
                           child: GestureDetector(
                             onTap: () => _focus.requestFocus(),
-                            child: RepaintBoundary(
+                            child: Stack(
+                          children: [
+                            RepaintBoundary(
                               child: CustomPaint(
                                 painter: GameWorldPainter.fromSnapshot(
                                   snapshot: _renderSnapshot,
@@ -463,12 +686,53 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                                 child: const SizedBox.expand(),
                               ),
                             ),
+                            GameUiOverlay(
+                              widgets: _uiWidgets,
+                              viewWidth: viewW,
+                              viewHeight: viewH,
+                              cameraX: _cameraX,
+                              cameraY: _cameraY,
+                              paintZoom: paintZoom,
+                              onAction: _handleUiAction,
+                            ),
+                            if (_lynx3d != null)
+                              Positioned.fill(
+                                child: _lynx3dCoreViewport
+                                    ? Lynx3dCoreViewport(
+                                        extension: _lynx3d!,
+                                        projectPath: widget.projectPath,
+                                        simulatePhysics:
+                                            _lynx3dPhysics && !kIsWeb,
+                                      )
+                                    : Opacity(
+                                        opacity: kIsWeb ? 0.35 : 0.88,
+                                        child: Game3dPlayOverlay(
+                                          extension: _lynx3d!,
+                                          simulatePhysics:
+                                              _lynx3dPhysics && !kIsWeb,
+                                          projectPath: widget.projectPath,
+                                        ),
+                                      ),
+                              ),
+                          ],
+                        ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
+                if (_showDebug && !kIsWeb) ...[
+                  BtDebugOverlay(entries: _btDebugEntries),
+                  Positioned(
+                    right: 8,
+                    top: 56,
+                    child: BtDebugPanel(
+                      scene: _sceneHandle,
+                      onStep: () => setState(() => _paused = false),
+                    ),
+                  ),
+                ],
                 if (showTouchHud && maxW >= 400) ...[
                   Positioned(
                     left: 8,
@@ -483,8 +747,8 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                             GameHoldButton(
                               size: 46,
                               icon: Icons.keyboard_arrow_up_rounded,
-                              onHold: () => setState(() => _camTouchUp = true),
-                              onRelease: () => setState(() => _camTouchUp = false),
+                              onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowUp, true),
+                              onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowUp, false),
                             ),
                           ],
                         ),
@@ -494,15 +758,15 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                             GameHoldButton(
                               size: 46,
                               icon: Icons.keyboard_arrow_left_rounded,
-                              onHold: () => setState(() => _camTouchLeft = true),
-                              onRelease: () => setState(() => _camTouchLeft = false),
+                              onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowLeft, true),
+                              onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowLeft, false),
                             ),
                             const SizedBox(width: 46),
                             GameHoldButton(
                               size: 46,
                               icon: Icons.keyboard_arrow_right_rounded,
-                              onHold: () => setState(() => _camTouchRight = true),
-                              onRelease: () => setState(() => _camTouchRight = false),
+                              onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowRight, true),
+                              onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowRight, false),
                             ),
                           ],
                         ),
@@ -513,8 +777,8 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                             GameHoldButton(
                               size: 46,
                               icon: Icons.keyboard_arrow_down_rounded,
-                              onHold: () => setState(() => _camTouchDown = true),
-                              onRelease: () => setState(() => _camTouchDown = false),
+                              onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowDown, true),
+                              onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowDown, false),
                             ),
                           ],
                         ),
@@ -530,23 +794,44 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                         GameHoldButton(
                           size: 50,
                           icon: Icons.arrow_back_rounded,
-                          onHold: () => _engineCharKey('a', true),
-                          onRelease: () => _engineCharKey('a', false),
+                          onHold: () => _isLogicGridGame
+                              ? _onTouchArrow(LogicalKeyboardKey.arrowLeft, true)
+                              : _engineCharKey('a', true),
+                          onRelease: () => _isLogicGridGame
+                              ? _onTouchArrow(LogicalKeyboardKey.arrowLeft, false)
+                              : _engineCharKey('a', false),
                         ),
                         const SizedBox(width: 10),
                         GameHoldButton(
                           size: 50,
                           icon: Icons.arrow_forward_rounded,
-                          onHold: () => _engineCharKey('d', true),
-                          onRelease: () => _engineCharKey('d', false),
+                          onHold: () => _isLogicGridGame
+                              ? _onTouchArrow(LogicalKeyboardKey.arrowRight, true)
+                              : _engineCharKey('d', true),
+                          onRelease: () => _isLogicGridGame
+                              ? _onTouchArrow(LogicalKeyboardKey.arrowRight, false)
+                              : _engineCharKey('d', false),
                         ),
                         const SizedBox(width: 14),
                         GameHoldButton(
                           size: 56,
-                          icon: Icons.north_rounded,
-                          onHold: () => _engineCharKey(' ', true),
-                          onRelease: () => _engineCharKey(' ', false),
+                          icon: Icons.rotate_right_rounded,
+                          onHold: () => _isLogicGridGame
+                              ? _touchGpBit(kPlayGpA, true)
+                              : _engineCharKey(' ', true),
+                          onRelease: () => _isLogicGridGame
+                              ? _touchGpBit(kPlayGpA, false)
+                              : _engineCharKey(' ', false),
                         ),
+                        if (_isLogicGridGame) ...[
+                          const SizedBox(width: 10),
+                          GameHoldButton(
+                            size: 50,
+                            icon: Icons.vertical_align_bottom_rounded,
+                            onHold: () => _touchGpBit(kPlayGpB, true),
+                            onRelease: () => _touchGpBit(kPlayGpB, false),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -567,26 +852,26 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                               GameHoldButton(
                                 size: 42,
                                 icon: Icons.keyboard_arrow_left_rounded,
-                                onHold: () => setState(() => _camTouchLeft = true),
-                                onRelease: () => setState(() => _camTouchLeft = false),
+                                onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowLeft, true),
+                                onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowLeft, false),
                               ),
                               GameHoldButton(
                                 size: 42,
                                 icon: Icons.keyboard_arrow_up_rounded,
-                                onHold: () => setState(() => _camTouchUp = true),
-                                onRelease: () => setState(() => _camTouchUp = false),
+                                onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowUp, true),
+                                onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowUp, false),
                               ),
                               GameHoldButton(
                                 size: 42,
                                 icon: Icons.keyboard_arrow_down_rounded,
-                                onHold: () => setState(() => _camTouchDown = true),
-                                onRelease: () => setState(() => _camTouchDown = false),
+                                onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowDown, true),
+                                onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowDown, false),
                               ),
                               GameHoldButton(
                                 size: 42,
                                 icon: Icons.keyboard_arrow_right_rounded,
-                                onHold: () => setState(() => _camTouchRight = true),
-                                onRelease: () => setState(() => _camTouchRight = false),
+                                onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowRight, true),
+                                onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowRight, false),
                               ),
                             ],
                           ),
@@ -597,26 +882,59 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                               GameHoldButton(
                                 size: 48,
                                 icon: Icons.arrow_back_rounded,
-                                onHold: () => _engineCharKey('a', true),
-                                onRelease: () => _engineCharKey('a', false),
+                                onHold: () => _isLogicGridGame
+                                    ? _onTouchArrow(LogicalKeyboardKey.arrowLeft, true)
+                                    : _engineCharKey('a', true),
+                                onRelease: () => _isLogicGridGame
+                                    ? _onTouchArrow(LogicalKeyboardKey.arrowLeft, false)
+                                    : _engineCharKey('a', false),
                               ),
                               const SizedBox(width: 8),
                               GameHoldButton(
                                 size: 48,
                                 icon: Icons.arrow_forward_rounded,
-                                onHold: () => _engineCharKey('d', true),
-                                onRelease: () => _engineCharKey('d', false),
+                                onHold: () => _isLogicGridGame
+                                    ? _onTouchArrow(LogicalKeyboardKey.arrowRight, true)
+                                    : _engineCharKey('d', true),
+                                onRelease: () => _isLogicGridGame
+                                    ? _onTouchArrow(LogicalKeyboardKey.arrowRight, false)
+                                    : _engineCharKey('d', false),
                               ),
                               const SizedBox(width: 12),
                               GameHoldButton(
-                                size: 52,
-                                icon: Icons.north_rounded,
-                                onHold: () => _engineCharKey(' ', true),
-                                onRelease: () => _engineCharKey(' ', false),
+                                size: 48,
+                                icon: Icons.rotate_right_rounded,
+                                onHold: () => _isLogicGridGame
+                                    ? _touchGpBit(kPlayGpA, true)
+                                    : _engineCharKey(' ', true),
+                                onRelease: () => _isLogicGridGame
+                                    ? _touchGpBit(kPlayGpA, false)
+                                    : _engineCharKey(' ', false),
                               ),
+                              if (_isLogicGridGame) ...[
+                                const SizedBox(width: 8),
+                                GameHoldButton(
+                                  size: 48,
+                                  icon: Icons.vertical_align_bottom_rounded,
+                                  onHold: () => _touchGpBit(kPlayGpB, true),
+                                  onRelease: () => _touchGpBit(kPlayGpB, false),
+                                ),
+                              ],
                             ],
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                if (_isLogicGridGame &&
+                    logicGridPhase(_renderSnapshot) == 0 &&
+                    !_paused)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () => pulsePlayEngineKey(
+                        _sceneHandle,
+                        LogicalKeyboardKey.enter,
                       ),
                     ),
                   ),
@@ -624,7 +942,7 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                   Positioned.fill(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => setState(() => _paused = false),
+                      onTap: () => setState(() => _setPaused(false)),
                       child: Container(color: Colors.black45),
                     ),
                   ),
@@ -639,7 +957,7 @@ class _GamePlayerScreenState extends State<GamePlayerScreen>
                             const Text('Пауза', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 16),
                             FilledButton(
-                              onPressed: () => setState(() => _paused = false),
+                              onPressed: () => setState(() => _setPaused(false)),
                               child: const Text('Продолжить'),
                             ),
                             TextButton(

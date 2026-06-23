@@ -125,7 +125,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public const string BrandName = "Roza AI";
 
-    public const string BrandSubtitle = "Консультант";
+    public const string BrandSubtitle = "нативный AI";
 
     [ObservableProperty] private string _sessionContextLine = "";
 
@@ -532,7 +532,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (!string.IsNullOrWhiteSpace(ExternalOpenAiBaseUrl.Trim()) && !string.IsNullOrWhiteSpace(ExternalOpenAiApiKey.Trim()))
                 sb.AppendLine("Внешний API: base URL и ключ заданы (тестовый вызов не выполнялся, чтобы не расходовать токены).");
             else
-                sb.AppendLine("Внешний API: можно указать позже в чате или настройках (Gemini OpenAI endpoint + ключ).");
+                sb.AppendLine("Liza AI (облако): можно указать endpoint и ключ позже в настройках.");
 
             StartupProbeText = sb.ToString().Trim();
             StatusText = "Проверка готовности выполнена.";
@@ -786,7 +786,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 var raw = ExternalOpenAiBaseUrl.Trim();
                 if (string.IsNullOrEmpty(raw) || string.IsNullOrWhiteSpace(ExternalOpenAiApiKey))
                 {
-                    AppendChatLine(new ChatLineVm { Role = "Ошибка", Text = "Укажите base URL и API-ключ внешней модели (например Gemini OpenAI endpoint)." });
+                    AppendChatLine(new ChatLineVm { Role = "Ошибка", Text = "Укажите base URL и API-ключ для Liza AI (облако) в настройках." });
                     return;
                 }
 
@@ -1561,14 +1561,14 @@ public partial class MainWindowViewModel : ViewModelBase
         LearningTracks.Clear();
         LearningTracks.Add(
             new LearningTrackVm(
-                "Сервер Roza",
-                "Чат и агент в вашем окружении",
-                "История сообщений хранится на сервере по session_id — WebSocket и HTTP используют одни и те же сессии."));
+                "Roza AI (нативно)",
+                "Локальный сервер на ПК",
+                "Код, агент, workspace, страницы и приложения — через python -m roza web. История по session_id на сервере."));
         LearningTracks.Add(
             new LearningTrackVm(
-                "Внешний OpenAI-совместимый API",
-                "Gemini, OpenRouter, LM Studio…",
-                "Ключ и endpoint задаются в настройках; запросы идут напрямую к провайдеру, минуя сервер Roza."));
+                "Liza AI (облако)",
+                "Документы и анализ",
+                "Облачный режим: подписка Pro. Для рутины с файлами и отчётами — в браузере; в Companion — переключатель «Liza AI (облако)»."));
         LearningTracks.Add(
             new LearningTrackVm(
                 "Агент и workspace",
@@ -1591,11 +1591,11 @@ public partial class MainWindowViewModel : ViewModelBase
             : $"папка «{LastRepoFolderLabel}»";
         string model;
         if (ChatTargetIndex == 0)
-            model = AgentMode ? "Roza AI · агент" : "Roza AI";
+            model = AgentMode ? "Roza · агент" : "Roza · чат";
         else
         {
-            var ext = string.IsNullOrWhiteSpace(ExternalOpenAiModel) ? "внешний API" : ExternalOpenAiModel.Trim();
-            model = $"внешняя · {ext}";
+            var ext = string.IsNullOrWhiteSpace(ExternalOpenAiModel) ? "Liza AI" : ExternalOpenAiModel.Trim();
+            model = $"Liza · {ext}";
         }
 
         SessionContextLine = $"{sess} · {repo} · {model}";

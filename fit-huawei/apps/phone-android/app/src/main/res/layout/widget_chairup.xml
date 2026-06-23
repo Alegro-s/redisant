@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B0F14"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_score"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textColor="#00D9A5"
+        android:textSize="32sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_micro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0/4"
+        android:textColor="#E8EDF2"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/widget_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ChairUp"
+        android:textColor="#8B98A8"
+        android:textSize="11sp" />
+</LinearLayout>

@@ -20,8 +20,15 @@ export type HubContent = {
 const STORAGE_KEY = 'lynx-hub-content-override';
 
 export async function loadHubContent(): Promise<HubContent> {
-  const res = await fetch('/content/hub-content.json');
-  const base = (await res.json()) as HubContent;
+  const { fetchHubContentFromApi } = await import('./hubApi');
+  const fromApi = await fetchHubContentFromApi();
+  let base: HubContent;
+  if (fromApi && (fromApi.news?.length || fromApi.engineCores?.length)) {
+    base = fromApi;
+  } else {
+    const res = await fetch('/content/hub-content.json');
+    base = (await res.json()) as HubContent;
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return base;

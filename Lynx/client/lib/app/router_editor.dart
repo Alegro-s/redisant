@@ -116,7 +116,7 @@ GoRouter createEditorRouter(AuthProvider auth) {
               child: EngineMainPage(
                 projectId: extra?['projectId'] as String? ?? boot.projectId,
                 projectName: extra?['projectName'] as String? ?? boot.projectName,
-                projectPath: extra?['projectPath'] as String?,
+                projectPath: extra?['projectPath'] as String? ?? boot.projectPath,
                 cloudReadOnly: extra?['cloudReadOnly'] == true || boot.cloudReadOnly,
               ),
             ),

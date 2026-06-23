@@ -1,11 +1,20 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
 import '../../core/providers/schedule_provider.dart';
 import '../../core/providers/student_provider.dart';
 import '../../data/models/schedule.dart';
+import '../../data/models/student.dart';
+import '../../data/services/schedule_week_plan_pdf.dart';
+import '../widgets/app_motion.dart';
+import '../widgets/even_width_row.dart';
 import '../widgets/schedule_detail_sheet.dart';
 import '../widgets/sheet_handle.dart';
 import '../widgets/week_schedule_plan_table.dart';
@@ -108,6 +117,77 @@ class _ScheduleScreenState extends State<ScheduleScreen> with SingleTickerProvid
     }
   }
 
+  Future<void> _exportWeekPlanPdf() async {
+    final scheduleProv = context.read<ScheduleProvider>();
+    final studentProv = context.read<StudentProvider>();
+    final all = _applyType(scheduleProv.schedule);
+    if (all.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Нет данных расписания для экспорта')),
+      );
+      return;
+    }
+
+    final student = studentProv.student;
+    final mon = _weekMonday;
+    final headerTitle = student?.faculty ?? 'ТГПУ';
+    final groupLine = student?.group ?? '—';
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(color: AppConstants.blockBlack),
+            SizedBox(width: 20),
+            Expanded(child: Text('Формирование PDF…')),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final bytes = await ScheduleWeekPlanPdf.build(
+        weekMonday: mon,
+        schedule: all,
+        headerTitle: headerTitle,
+        groupLine: groupLine,
+        studentName: student?.fullName,
+        typeFilterLabel: ScheduleWeekPlanPdf.typeFilterLabel(_typeFilter),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      final stamp = DateFormat('yyyyMMdd').format(mon);
+      final fileName = 'Raspisanie_${groupLine.replaceAll(RegExp(r'[^\w\-]+'), '_')}_$stamp.pdf';
+
+      if (kIsWeb) {
+        await Printing.sharePdf(bytes: bytes, filename: fileName);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF готов к сохранению')),
+        );
+      } else {
+        Directory? dir = await getDownloadsDirectory();
+        dir ??= await getApplicationDocumentsDirectory();
+        final path = '${dir.path}/$fileName';
+        await File(path).writeAsBytes(bytes);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF сохранён: $path')),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка PDF: $e'), backgroundColor: Colors.redAccent),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,6 +195,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> with SingleTickerProvid
       appBar: AppBar(
         title: const Text('Расписание'),
         actions: [
+          IconButton(
+            tooltip: 'Экспорт PDF (план недели, таблица)',
+            icon: const Icon(PhosphorIconsRegular.filePdf),
+            onPressed: _exportWeekPlanPdf,
+          ),
           IconButton(
             tooltip: _weekPlanMode ? 'Список на день' : 'План недели (табель)',
             icon: Icon(_weekPlanMode ? PhosphorIconsRegular.listBullets : PhosphorIconsRegular.table),
@@ -139,247 +224,251 @@ class _ScheduleScreenState extends State<ScheduleScreen> with SingleTickerProvid
           final student = studentProv.student;
           final dayEvents = _eventsForDay(_selectedDay, all);
           final mon = _weekMonday;
+          final panelKey = '${_weekPlanMode}_${_typeFilter ?? 'all'}_${_dateOnly(_selectedDay).toIso8601String()}';
 
-          if (_weekPlanMode) {
-            final headerTitle = student != null ? _facultyShort(student.faculty) : 'ТГПУ';
-            final groupLine = student?.group ?? '—';
-            return RefreshIndicator(
-              color: AppConstants.blockBlack,
-              onRefresh: () => scheduleProv.loadSchedule(),
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                    sliver: SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (student != null)
-                            Text(
-                              '${student.group} · ${student.faculty}',
-                              style: TextStyle(fontSize: 13, height: 1.35, color: AppConstants.secondaryColor),
-                            )
-                          else
-                            Text('Загрузка профиля…', style: TextStyle(fontSize: 13, color: AppConstants.secondaryColor)),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              IconButton(
-                                onPressed: () => _shiftWeek(-1),
-                                icon: const Icon(PhosphorIconsRegular.caretLeft),
-                              ),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: _pickDate,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 6),
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          _sentenceCaseRu(DateFormat('LLLL yyyy', 'ru_RU').format(mon)),
-                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                                        ),
-                                        Text(
-                                          '${DateFormat('dd.MM', 'ru_RU').format(mon)} — ${DateFormat('dd.MM', 'ru_RU').format(mon.add(const Duration(days: 6)))}',
-                                          style: TextStyle(fontSize: 12, color: AppConstants.secondaryColor),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () => _shiftWeek(1),
-                                icon: const Icon(PhosphorIconsRegular.caretRight),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SliverFillRemaining(
-                    hasScrollBody: true,
-                    child: Column(
-                      children: [
-                        Material(
-                          color: AppConstants.surfaceWhite,
-                          child: TabBar(
-                            controller: _weekTabController,
-                            isScrollable: true,
-                            labelColor: AppConstants.blockBlack,
-                            indicatorColor: AppConstants.blockBlack,
-                            tabs: [
-                              for (int i = 0; i < 7; i++)
-                                Tab(
-                                  child: _WeekTabLabel(day: mon.add(Duration(days: i))),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: TabBarView(
-                            controller: _weekTabController,
-                            children: [
-                              for (int i = 0; i < 7; i++)
-                                WeekSchedulePlanDayTable(
-                                  day: mon.add(Duration(days: i)),
-                                  items: _eventsForDay(mon.add(Duration(days: i)), all),
-                                  headerTitle: headerTitle,
-                                  groupLine: groupLine,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            color: AppConstants.blockBlack,
-            onRefresh: () => scheduleProv.loadSchedule(),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              children: [
-                if (student != null)
-                  Text(
-                    '${student.group} · ${student.faculty}',
-                    style: TextStyle(fontSize: 13, height: 1.35, color: AppConstants.secondaryColor),
-                  )
-                else
-                  Text('Загрузка профиля…', style: TextStyle(fontSize: 13, color: AppConstants.secondaryColor)),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => _shiftWeek(-1),
-                      icon: const Icon(PhosphorIconsRegular.caretLeft),
-                    ),
-                    Expanded(
-                      child: InkWell(
-                        onTap: _pickDate,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Column(
-                            children: [
-                              Text(
-                                _sentenceCaseRu(DateFormat('LLLL yyyy', 'ru_RU').format(mon)),
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                              ),
-                              Text(
-                                '${DateFormat('dd.MM', 'ru_RU').format(mon)} — ${DateFormat('dd.MM', 'ru_RU').format(mon.add(const Duration(days: 6)))}',
-                                style: TextStyle(fontSize: 12, color: AppConstants.secondaryColor),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => _shiftWeek(1),
-                      icon: const Icon(PhosphorIconsRegular.caretRight),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 76,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 7,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
-                    itemBuilder: (context, i) {
-                      final d = mon.add(Duration(days: i));
-                      final sel = _dateOnly(d) == _dateOnly(_selectedDay);
-                      final today = _dateOnly(d) == _dateOnly(DateTime.now());
-                      var shortWd = DateFormat('EEE', 'ru_RU').format(d);
-                      if (shortWd.endsWith('.')) {
-                        shortWd = shortWd.substring(0, shortWd.length - 1);
-                      }
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedDay = d);
-                          if (_weekTabController.index != i) {
-                            _weekTabController.animateTo(i);
-                          }
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 52,
-                          decoration: BoxDecoration(
-                            color: sel ? AppConstants.blockBlack : AppConstants.surfaceMuted,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: today ? AppConstants.blockBlack : AppConstants.borderSubtle,
-                              width: today ? 2 : 1,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                shortWd,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: sel ? AppConstants.surfaceWhite : AppConstants.secondaryColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${d.day}',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: sel ? AppConstants.surfaceWhite : AppConstants.blockBlack,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  _sentenceCaseRu(DateFormat('EEEE, d MMMM', 'ru_RU').format(_selectedDay)),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppConstants.blockBlack),
-                ),
-                const SizedBox(height: 12),
-                if (dayEvents.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 36),
-                    child: Center(
-                      child: Text(
-                        'Нет занятий в этот день',
-                        style: TextStyle(color: AppConstants.secondaryColor, fontSize: 15),
-                      ),
-                    ),
-                  )
-                else
-                  ...dayEvents.map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _ScheduleEventCard(
-                        e: e,
-                        onTap: () => showScheduleDetailSheet(context, e),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+          return AppPanelSwitcher(
+            itemKey: panelKey,
+            child: _weekPlanMode
+                ? _buildWeekPlanBody(scheduleProv, student, all, mon, headerTitle: student != null ? _facultyShort(student.faculty) : 'ТГПУ', groupLine: student?.group ?? '—')
+                : _buildDayListBody(scheduleProv, student, dayEvents, mon),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildWeekPlanBody(
+    ScheduleProvider scheduleProv,
+    Student? student,
+    List<Schedule> all,
+    DateTime mon, {
+    required String headerTitle,
+    required String groupLine,
+  }) {
+    return RefreshIndicator(
+      color: AppConstants.blockBlack,
+      onRefresh: () => scheduleProv.loadSchedule(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (student != null)
+                    Text(
+                      '${student.group} · ${student.faculty}',
+                      style: TextStyle(fontSize: 13, height: 1.35, color: AppConstants.secondaryColor),
+                    )
+                  else
+                    Text('Загрузка профиля…', style: TextStyle(fontSize: 13, color: AppConstants.secondaryColor)),
+                  const SizedBox(height: 12),
+                  _buildWeekNavRow(mon),
+                ],
+              ),
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: Column(
+              children: [
+                Material(
+                  color: AppConstants.surfaceWhite,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: EvenWidthRow(
+                      height: 48,
+                      gap: 4,
+                      children: [
+                        for (int i = 0; i < 7; i++)
+                          InkWell(
+                            onTap: () => _weekTabController.animateTo(i),
+                            child: _WeekTabLabel(day: mon.add(Duration(days: i))),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _weekTabController,
+                    children: [
+                      for (int i = 0; i < 7; i++)
+                        WeekSchedulePlanDayTable(
+                          day: mon.add(Duration(days: i)),
+                          items: _eventsForDay(mon.add(Duration(days: i)), all),
+                          headerTitle: headerTitle,
+                          groupLine: groupLine,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayListBody(
+    ScheduleProvider scheduleProv,
+    Student? student,
+    List<Schedule> dayEvents,
+    DateTime mon,
+  ) {
+    return RefreshIndicator(
+      color: AppConstants.blockBlack,
+      onRefresh: () => scheduleProv.loadSchedule(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          if (student != null)
+            Text(
+              '${student.group} · ${student.faculty}',
+              style: TextStyle(fontSize: 13, height: 1.35, color: AppConstants.secondaryColor),
+            )
+          else
+            Text('Загрузка профиля…', style: TextStyle(fontSize: 13, color: AppConstants.secondaryColor)),
+          const SizedBox(height: 12),
+          _buildWeekNavRow(mon),
+          const SizedBox(height: 8),
+          _buildDayChips(mon),
+          const SizedBox(height: 20),
+          Text(
+            _sentenceCaseRu(DateFormat('EEEE, d MMMM', 'ru_RU').format(_selectedDay)),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppConstants.blockBlack),
+          ),
+          const SizedBox(height: 12),
+          if (dayEvents.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 36),
+              child: Center(
+                child: Text(
+                  'Нет занятий в этот день',
+                  style: TextStyle(color: AppConstants.secondaryColor, fontSize: 15),
+                ),
+              ),
+            )
+          else
+            AppRevealList(
+              listKey: '${_dateOnly(_selectedDay).toIso8601String()}_${_typeFilter ?? 'all'}',
+              children: dayEvents
+                  .map(
+                    (e) => _ScheduleEventCard(
+                      e: e,
+                      onTap: () => showScheduleDetailSheet(context, e),
+                    ),
+                  )
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekNavRow(DateTime mon) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => _shiftWeek(-1),
+          icon: const Icon(PhosphorIconsRegular.caretLeft),
+        ),
+        Expanded(
+          child: InkWell(
+            onTap: _pickDate,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                children: [
+                  Text(
+                    _sentenceCaseRu(DateFormat('LLLL yyyy', 'ru_RU').format(mon)),
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  ),
+                  Text(
+                    '${DateFormat('dd.MM', 'ru_RU').format(mon)} — ${DateFormat('dd.MM', 'ru_RU').format(mon.add(const Duration(days: 6)))}',
+                    style: TextStyle(fontSize: 12, color: AppConstants.secondaryColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => _shiftWeek(1),
+          icon: const Icon(PhosphorIconsRegular.caretRight),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDayChips(DateTime mon) {
+    return EvenWidthRow(
+      gap: 8,
+      height: 76,
+      children: [
+        for (int i = 0; i < 7; i++)
+          Builder(
+            builder: (context) {
+              final d = mon.add(Duration(days: i));
+              final sel = _dateOnly(d) == _dateOnly(_selectedDay);
+              final today = _dateOnly(d) == _dateOnly(DateTime.now());
+              var shortWd = DateFormat('EEE', 'ru_RU').format(d);
+              if (shortWd.endsWith('.')) {
+                shortWd = shortWd.substring(0, shortWd.length - 1);
+              }
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _selectedDay = d);
+                  if (_weekTabController.index != i) {
+                    _weekTabController.animateTo(i);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: AppMotion.chipDuration,
+                  curve: AppMotion.curve,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: sel ? AppConstants.blockBlack : AppConstants.surfaceMuted,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: today ? AppConstants.blockBlack : AppConstants.borderSubtle,
+                      width: today ? 2 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        shortWd,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: sel ? AppConstants.surfaceWhite : AppConstants.secondaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${d.day}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: sel ? AppConstants.surfaceWhite : AppConstants.blockBlack,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
     );
   }
 

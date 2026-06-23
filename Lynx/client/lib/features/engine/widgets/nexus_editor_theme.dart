@@ -1,57 +1,72 @@
 import 'package:flutter/material.dart';
 
+/// Unity-inspired editor chrome: тёмно-серая · серая · белая.
 class NexusEditorTheme {
   NexusEditorTheme._();
 
-  static const Color workspaceBg = Color(0xFF16101F);
-  static const Color panelBg = Color(0xFF1E1830);
-  static const Color panelBorder = Color(0xFF3D3458);
-  static const Color accent = Color(0xFF7C6CF0);
-  static const Color accentDim = Color(0xFF5B4FCF);
+  static const Color workspaceBg = Color(0xFF1E1E1E);
+  static const Color panelBg = Color(0xFF383838);
+  static const Color panelBorder = Color(0xFF4A4A4A);
+  static const Color accent = Color(0xFFE4E4E7);
+  static const Color accentDim = Color(0xFFA1A1AA);
+  static const Color toolbarBg = Color(0xFF2D2D30);
 
   static Widget scope(BuildContext context, {required Widget child}) {
     final base = Theme.of(context);
-    final cs = ColorScheme.fromSeed(
-      seedColor: accent,
-      brightness: Brightness.dark,
-      surface: workspaceBg,
-      surfaceContainerHighest: panelBg,
+    final cs = ColorScheme.dark(
       primary: accent,
+      onPrimary: const Color(0xFF18181B),
       secondary: accentDim,
-      onPrimary: Colors.white,
-      onSurface: const Color(0xFFE8E4F5),
+      surface: workspaceBg,
+      onSurface: const Color(0xFFF4F4F5),
+      surfaceContainerHighest: panelBg,
+      surfaceContainerHigh: const Color(0xFF2D2D30),
+      onSurfaceVariant: const Color(0xFFA1A1AA),
       outline: panelBorder,
+      error: const Color(0xFFF87171),
     );
     return Theme(
       data: base.copyWith(
         colorScheme: cs,
         scaffoldBackgroundColor: workspaceBg,
+        iconTheme: const IconThemeData(size: 20),
         appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFF221B33),
+          backgroundColor: toolbarBg,
           foregroundColor: cs.onSurface,
           elevation: 0,
           scrolledUnderElevation: 0,
+          toolbarHeight: 44,
+          titleSpacing: 12,
+          actionsPadding: const EdgeInsets.only(right: 8),
           titleTextStyle: base.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            letterSpacing: 0.1,
           ),
         ),
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: const Color(0xFF221B33),
-          indicatorColor: accent.withValues(alpha: 0.22),
+          backgroundColor: toolbarBg,
+          indicatorColor: accent.withValues(alpha: 0.18),
+          height: 56,
           labelTextStyle: WidgetStateProperty.all(
             const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ),
         tabBarTheme: TabBarThemeData(
           dividerColor: panelBorder.withValues(alpha: 0.5),
-          labelColor: accent,
+          labelColor: cs.onSurface,
           unselectedLabelColor: cs.onSurfaceVariant,
           indicatorColor: accent,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 14),
         ),
-        dividerTheme: DividerThemeData(color: panelBorder.withValues(alpha: 0.6)),
+        dividerTheme: DividerThemeData(color: panelBorder.withValues(alpha: 0.65)),
+        listTileTheme: const ListTileThemeData(
+          dense: true,
+          minVerticalPadding: 6,
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        ),
         snackBarTheme: SnackBarThemeData(
-          backgroundColor: const Color(0xFF2E2640),
+          backgroundColor: const Color(0xFF2D2D30),
           contentTextStyle: TextStyle(color: cs.onSurface),
         ),
       ),
@@ -59,7 +74,13 @@ class NexusEditorTheme {
     );
   }
 
-  static BoxDecoration panelDecoration(ColorScheme cs, {bool leftBorder = false, bool rightBorder = false, bool topBorder = false, bool bottomBorder = false}) {
+  static BoxDecoration panelDecoration(
+    ColorScheme cs, {
+    bool leftBorder = false,
+    bool rightBorder = false,
+    bool topBorder = false,
+    bool bottomBorder = false,
+  }) {
     return BoxDecoration(
       color: cs.surfaceContainerHighest,
       border: Border(

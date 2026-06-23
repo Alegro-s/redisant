@@ -1,0 +1,17 @@
+# Huawei / Android secrets
+**/agconnect-services.json
+**/local.properties
+!**/local.properties.example
+**/.idea/
+**/build/
+**/oh_modules/
+**/.hvigor/
+**/node_modules/
+*.hap
+*.app
+*.apk
+*.aab
+
+# Local
+.DS_Store
+*.iml

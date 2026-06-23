@@ -1,5 +1,4 @@
 import 'package:client/app/transitions/app_transitions.dart';
-import 'package:client/features/engine/providers/scene_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -8,15 +7,21 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/verify_email_screen.dart';
 import '../features/auth/screens/nexus_handoff_screen.dart';
+import '../features/home/lynx_launcher_pages.dart';
 import '../features/home/home_screen.dart';
 import '../features/profile/profile_screen.dart';
-import '../features/engine/screens/engine_main_page.dart';
-import '../features/game/game_player_screen.dart';
+import '../features/arcade/arcade_screen.dart';
+import '../features/game/cart_play_screen.dart';
 import '../features/projects/screens/project_detail_screen.dart';
 import '../features/projects/screens/projects_screen.dart';
 import '../features/engine/screens/engine_install_hub_screen.dart';
 import '../features/legal/legal_notice_screen.dart';
 import '../features/settings/launcher_dev_settings_screen.dart';
+import '../features/engine/providers/scene_provider.dart';
+import '../features/engine/screens/engine_main_page.dart';
+import '../features/live_ops/live_ops_hub_screen.dart';
+import '../features/ecosystem/marketplace_creator_dashboard_screen.dart';
+import '../features/narrative/narrative_preview_screen.dart';
 
 GoRouter createAppRouter(AuthProvider auth) {
   return GoRouter(
@@ -95,7 +100,35 @@ GoRouter createAppRouter(AuthProvider auth) {
         path: '/',
         pageBuilder: (context, state) => nexusFadeSlidePage(
           key: state.pageKey,
-          child: const HomeScreen(),
+          child: HomeScreen(initialModule: state.uri.queryParameters['module']),
+        ),
+      ),
+      GoRoute(
+        path: '/launcher-settings',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const LynxLauncherSettingsPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/launcher-customization',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const LynxLauncherCustomizationPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/launcher-modules',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const LynxLauncherModulesPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/launcher-account',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const LynxLauncherAccountPage(),
         ),
       ),
       GoRoute(
@@ -146,32 +179,94 @@ GoRouter createAppRouter(AuthProvider auth) {
         ),
       ),
       GoRoute(
-        path: '/engine',
+        path: '/arcade',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const ArcadeScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/live-ops',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const LiveOpsHubScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/marketplace-creator',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const MarketplaceCreatorDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/narrative',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const NarrativePreviewScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/live-ops',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const LiveOpsHubScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/marketplace-creator',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const MarketplaceCreatorDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/narrative',
+        pageBuilder: (context, state) => nexusFadeSlidePage(
+          key: state.pageKey,
+          child: const NarrativePreviewScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/play-cart',
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
+          final cartId = state.uri.queryParameters['cartId'];
+          return nexusFadeSlidePage(
+            key: state.pageKey,
+            child: CartPlayScreen(
+              cartPath: extra?['cartPath'] as String?,
+              cartId: cartId ?? extra?['cartId'] as String?,
+            ),
+          );
+        },
+      ),
+      // L16b / E25b: Web Engine — `?project=cloud:<id>` открывает облачный проект.
+      GoRoute(
+        path: '/engine-web',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final q = state.uri.queryParameters;
+          String? projectId = extra?['projectId'] as String?;
+          final project = q['project']?.trim();
+          if (project != null && project.startsWith('cloud:')) {
+            projectId = project.substring(6);
+          } else if (projectId == null || projectId.isEmpty) {
+            projectId = q['projectId'];
+          }
+          final readOnly = extra?['cloudReadOnly'] == true ||
+              q['readOnly'] == '1' ||
+              q['cloudReadOnly'] == 'true';
           return nexusFadeSlidePage(
             key: state.pageKey,
             child: ChangeNotifierProvider(
               create: (_) => SceneProvider(),
               child: EngineMainPage(
-                projectId: extra?['projectId'] as String?,
-                projectName: extra?['projectName'] as String?,
+                projectId: projectId,
+                projectName: extra?['projectName'] as String? ?? q['projectName'],
                 projectPath: extra?['projectPath'] as String?,
-                cloudReadOnly: extra?['cloudReadOnly'] == true,
+                cloudReadOnly: readOnly,
               ),
-            ),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/play',
-        pageBuilder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return nexusFadeSlidePage(
-            key: state.pageKey,
-            child: GamePlayerScreen(
-              projectPath: extra?['projectPath'] as String?,
-              freshPlay: extra?['freshPlay'] == true,
             ),
           );
         },

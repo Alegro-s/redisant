@@ -12,7 +12,7 @@
         x:Name="MainRoot"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/roza-icon.png"
-        Title="Roza AI"
+        Title="Roza AI · Companion"
         Width="1100" Height="720"
         MinWidth="840" MinHeight="560"
         Background="{DynamicResource RzBg}"
@@ -21,7 +21,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://RozaCompanion/Themes/GeminiLight.axaml" />
+                <ResourceInclude Source="avares://RozaCompanion/Themes/GeminiDark.axaml" />
             </ResourceDictionary.MergedDictionaries>
             <conv:IntEqualsConverter x:Key="ShellEq" />
         </ResourceDictionary>
@@ -50,7 +50,7 @@
             <Setter Property="Background" Value="{DynamicResource RzHover}" />
         </Style>
         <Style Selector="Button.MacPrimary">
-            <Setter Property="Background" Value="{DynamicResource AccentUi}" />
+            <Setter Property="Background" Value="{DynamicResource RozaAccentBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextOnAccent}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="{DynamicResource Hairline}" />
@@ -60,13 +60,13 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
         <Style Selector="Button.MacPrimary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AccentUiHover}" />
+            <Setter Property="Background" Value="{DynamicResource RozaAccentHoverBrush}" />
         </Style>
         <Style Selector="Button.MacSend">
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="40" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Background" Value="{DynamicResource AccentUi}" />
+            <Setter Property="Background" Value="{DynamicResource RozaAccentBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextOnAccent}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="{DynamicResource Hairline}" />
@@ -76,7 +76,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
         <Style Selector="Button.MacSend:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AccentUiHover}" />
+            <Setter Property="Background" Value="{DynamicResource RozaAccentHoverBrush}" />
         </Style>
         <Style Selector="ComboBox /template/ Popup#PART_Popup /template/ ListBox#PART_ListBox ListBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
@@ -187,6 +187,7 @@
         </Style>
         <Style Selector="Button.StarterChip:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource RzHover}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource RozaAccentBrush}" />
         </Style>
         <Style Selector="TextBox.StarterComposer">
             <Setter Property="FontSize" Value="15" />
@@ -214,12 +215,24 @@
             <!-- Sidebar: только оттенок фона, без вертикальной полосы -->
             <Border Grid.Column="0"
                     Background="{DynamicResource RzPanel}"
-                    BorderThickness="0"
+                    BorderThickness="3,0,0,0"
                     Padding="8,10,8,8">
+                <Border.BorderBrush>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                        <GradientStop Color="#D12D5A" Offset="0" />
+                        <GradientStop Color="#9334E6" Offset="0.5" />
+                        <GradientStop Color="#5B8DEF" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.BorderBrush>
                 <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" RowSpacing="0">
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
-                        <Border Width="32" Height="32" CornerRadius="10" Background="#1f0d14" BorderBrush="#f472b6" BorderThickness="2" ClipToBounds="True" BoxShadow="0 2 10 0 #40000000">
-                            <Image Source="/Assets/roza-icon.png" Stretch="UniformToFill" Margin="4" />
+                        <Border Width="32" Height="32"
+                                CornerRadius="10"
+                                Background="#2A1520"
+                                BorderBrush="{DynamicResource RozaAccentBrush}"
+                                BorderThickness="2"
+                                ClipToBounds="True">
+                            <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="5" />
                         </Border>
                         <StackPanel VerticalAlignment="Center" Spacing="0">
                             <TextBlock Text="{x:Static vm:MainWindowViewModel.BrandName}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource RzText}" />
@@ -342,8 +355,8 @@
                             <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                                 <Image Width="24" Height="24" Source="/Assets/roza-icon.png" Stretch="Uniform" ToolTip.Tip="Модель Roza AI" />
                                 <ComboBox MinWidth="220" SelectedIndex="{Binding ChatTargetIndex}">
-                                    <ComboBoxItem Content="Сервер Roza" />
-                                    <ComboBoxItem Content="Внешний OpenAI-совместимый API" />
+                                    <ComboBoxItem Content="Roza AI (локально)" />
+                                    <ComboBoxItem Content="Liza AI (облако)" />
                                 </ComboBox>
                             </StackPanel>
                         </StackPanel>
@@ -407,14 +420,14 @@
                                             MaxWidth="720"
                                             Spacing="20"
                                             Margin="20,12">
-                                    <TextBlock Text="Привет! Я Roza AI"
+                                    <TextBlock Text="Roza AI на вашем ПК"
                                                FontSize="22"
                                                FontWeight="Light"
                                                Foreground="{DynamicResource TextPrimary}"
                                                TextAlignment="Center"
                                                TextWrapping="Wrap"
                                                MaxWidth="640" />
-                                    <TextBlock Text="Помогу с документами, безопасностью ПК и обучением. На бесплатном тарифе — лимит токенов в день."
+                                    <TextBlock Text="Код, страницы, приложения и агент по файлам проекта. Liza AI в облаке — для документов и анализа (переключатель ниже, Pro)."
                                                TextWrapping="Wrap"
                                                TextAlignment="Center"
                                                FontSize="13"
@@ -437,8 +450,8 @@
                                                 Margin="0,4,0,0">
                                         <Image Width="32" Height="32" Source="/Assets/roza-icon.png" Stretch="Uniform" ToolTip.Tip="Модель Roza AI" />
                                         <ComboBox MinWidth="280" SelectedIndex="{Binding ChatTargetIndex}">
-                                            <ComboBoxItem Content="Roza AI (сервер)" />
-                                            <ComboBoxItem Content="Внешний API (подписка)" IsEnabled="{Binding ExternalApiUnlocked}" />
+                                            <ComboBoxItem Content="Roza AI (локально)" />
+                                            <ComboBoxItem Content="Liza AI (облако)" IsEnabled="{Binding ExternalApiUnlocked}" />
                                         </ComboBox>
                                     </StackPanel>
                                     <TextBlock Text="Идеи для старта — нажмите, текст появится в поле ввода снизу."
@@ -449,19 +462,19 @@
                                     <WrapPanel HorizontalAlignment="Center" MaxWidth="700">
                                         <Button Classes="StarterChip"
                                                 Margin="0,0,10,10"
-                                                Content="Разобрать документ"
+                                                Content="Разбор кода"
                                                 Command="{Binding ApplyStarterPromptCommand}"
-                                                CommandParameter="Помоги разобрать документ: выдели главное, риски и что сделать дальше." />
+                                                CommandParameter="Разбери структуру проекта и предложи улучшения архитектуры. Сначала list_dir и read_file по workspace." />
                                         <Button Classes="StarterChip"
                                                 Margin="0,0,10,10"
-                                                Content="Безопасность ПК"
+                                                Content="Страница / UI"
                                                 Command="{Binding ApplyStarterPromptCommand}"
-                                                CommandParameter="Проверь типичные риски безопасности на этом ПК и дай чек-лист действий." />
+                                                CommandParameter="Сверстай современную одностраничную вёрстку (HTML/CSS) по моему ТЗ — уточню в следующем сообщении." />
                                         <Button Classes="StarterChip"
                                                 Margin="0,0,10,10"
-                                                Content="Обучение"
+                                                Content="Приложение"
                                                 Command="{Binding ApplyStarterPromptCommand}"
-                                                CommandParameter="Составь короткий план обучения по теме, которую укажу в следующем сообщении." />
+                                                CommandParameter="Предложи структуру небольшого приложения (экраны, стек, шаги реализации) под мою задачу." />
                                         <Button Classes="StarterChip"
                                                 Margin="0,0,10,10"
                                                 Content="Репозиторий"
@@ -481,8 +494,8 @@
                                 <ComboBox Grid.Column="0"
                                           MinWidth="200"
                                           SelectedIndex="{Binding ChatTargetIndex}">
-                                    <ComboBoxItem Content="Roza AI" />
-                                    <ComboBoxItem Content="Внешний API" IsEnabled="{Binding ExternalApiUnlocked}" />
+                                    <ComboBoxItem Content="Roza AI (локально)" />
+                                    <ComboBoxItem Content="Liza AI (облако)" IsEnabled="{Binding ExternalApiUnlocked}" />
                                 </ComboBox>
                                 <Button Grid.Column="1"
                                         Classes="MacPrimary"
@@ -845,7 +858,7 @@
                                         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
                                             <StackPanel Spacing="4">
                                                 <TextBlock Text="Тема оформления" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                                                <TextBlock Text="Тёмная, светлая или как в системе — монохром Stanza." FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="360" />
+                                                <TextBlock Text="Тёмная, светлая или как в системе — палитра Roza." FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="360" />
                                             </StackPanel>
                                             <ComboBox Grid.Column="1"
                                                       MinWidth="200"
@@ -877,8 +890,8 @@
                                     <StackPanel IsVisible="{Binding SettingsCategoryIndex, Converter={StaticResource ShellEq}, ConverterParameter=2}" Spacing="12">
                                         <Border Background="{DynamicResource RzMainSurface}" CornerRadius="10" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="12,10">
                                             <StackPanel Spacing="8">
-                                                <TextBlock Text="Внешний LLM (OpenAI-совместимый)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                                                <TextBlock Text="Для Gemini: endpoint …/v1beta/openai и модель, например gemini-2.0-flash." FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                                                <TextBlock Text="Liza AI (облако)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                                <TextBlock Text="Облачный режим (Pro): OpenAI-совместимый endpoint и ключ. Документы и анализ — в веб Liza; здесь — прямой API." FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                                                 <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
                                                     <TextBox Classes="MacField" Text="{Binding ExternalOpenAiBaseUrl}" PlaceholderText="https://…/v1beta/openai" />
                                                 </Border>
@@ -1073,12 +1086,12 @@
                                FontSize="12"
                                Foreground="{DynamicResource TextMuted}"
                                LineHeight="18"
-                               Text="Проверьте доступность сервера Roza и при желании укажите OpenAI-совместимый endpoint (например Google Gemini). Ключ и URL хранятся локально в %LocalAppData%\RozaCompanion\companion_settings.json." />
-                    <TextBlock Text="URL сервера" FontSize="11" Foreground="{DynamicResource TextMuted}" />
+                               Text="Проверьте локальный сервер Roza (python -m roza web). Для режима Liza AI (облако) можно указать OpenAI-совместимый endpoint и ключ. Настройки — в %LocalAppData%\RozaCompanion\companion_settings.json." />
+                    <TextBlock Text="URL сервера Roza" FontSize="11" Foreground="{DynamicResource TextMuted}" />
                     <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
                         <TextBox Classes="MacField" Text="{Binding ServerUrl}" />
                     </Border>
-                    <TextBlock Text="Внешний API (опционально)" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,6,0,0" />
+                    <TextBlock Text="Liza AI — облачный API (опционально)" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,6,0,0" />
                     <Border CornerRadius="8" Background="{DynamicResource FillSoft}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Padding="2,0">
                         <TextBox Classes="MacField" Text="{Binding ExternalOpenAiBaseUrl}" PlaceholderText="https://…/v1beta/openai" />
                     </Border>

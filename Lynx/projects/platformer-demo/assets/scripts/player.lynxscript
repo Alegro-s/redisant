@@ -1,0 +1,17 @@
+#lynxscript
+-- Паритет с player.lua (волна 0 / M5a)
+set_velocity(0, vy)
+if key_a then
+  set_velocity(-260, vy)
+end
+if key_d then
+  set_velocity(260, vy)
+end
+if action_pressed("jump") then
+  if on_ground then
+    set_velocity(vx, -520)
+  end
+end
+
+function on_signal()
+end

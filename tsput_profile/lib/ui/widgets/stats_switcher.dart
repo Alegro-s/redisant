@@ -11,6 +11,7 @@ import '../../data/models/event.dart';
 import '../../data/models/grade.dart';
 import '../../data/models/exam.dart';
 import 'sheet_handle.dart';
+import 'app_motion.dart';
 
 class StatsSwitcher extends StatefulWidget {
   const StatsSwitcher({super.key});
@@ -81,10 +82,12 @@ class _StatsSwitcherState extends State<StatsSwitcher> {
                     _selectedTab = index;
                   });
                 },
-                child: Container(
-                  constraints: BoxConstraints(minWidth: 80),
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  margin: EdgeInsets.only(right: 12),
+                child: AnimatedContainer(
+                  duration: AppMotion.chipDuration,
+                  curve: AppMotion.curve,
+                  constraints: const BoxConstraints(minWidth: 80),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
                     color: _selectedTab == index ? AppConstants.blockBlack : AppConstants.surfaceMuted,
                     borderRadius: BorderRadius.circular(20),
@@ -107,9 +110,12 @@ class _StatsSwitcherState extends State<StatsSwitcher> {
         ),
         SizedBox(height: 16),
 
-        Container(
+        SizedBox(
           height: 150,
-          child: _buildContent(gradesProvider, examsProvider, eventsProvider),
+          child: AppPanelSwitcher(
+            itemKey: _selectedTab,
+            child: _buildContent(gradesProvider, examsProvider, eventsProvider),
+          ),
         ),
       ],
     );

@@ -1,18 +1,15 @@
 from datetime import datetime
 from pydantic import BaseModel
 
-
 class LoginRequest(BaseModel):
     login: str
     password: str
-
 
 class LoginResponse(BaseModel):
     success: bool
     token: str | None = None
     error: str | None = None
     user: dict | None = None
-
 
 class StudentResponse(BaseModel):
     id: str
@@ -28,7 +25,6 @@ class StudentResponse(BaseModel):
     address: str
     additionalInfo: dict
 
-
 class ScheduleItem(BaseModel):
     id: str
     subject: str
@@ -37,7 +33,6 @@ class ScheduleItem(BaseModel):
     startTime: datetime
     endTime: datetime
     type: str
-
 
 class GradeItem(BaseModel):
     id: str
@@ -51,7 +46,6 @@ class GradeItem(BaseModel):
     hours: int | None = None
     gradeLabel: str | None = None
 
-
 class ExamItem(BaseModel):
     id: str
     subject: str
@@ -63,7 +57,6 @@ class ExamItem(BaseModel):
     type: str
     grade: int | None = None
 
-
 class PortfolioItem(BaseModel):
     id: str
     title: str
@@ -71,7 +64,6 @@ class PortfolioItem(BaseModel):
     status: str
     date: datetime
     source: str
-
 
 class LabItem(BaseModel):
     id: str
@@ -81,14 +73,28 @@ class LabItem(BaseModel):
     teacherComment: str | None = None
     updatedAt: datetime
     deadline: datetime | None = None
+    submittedAt: datetime | None = None
     workType: str | None = None
     theme: str | None = None
     score: int | None = None
+    taskFileUrl: str | None = None
+    taskFileName: str | None = None
+    submissionFileUrl: str | None = None
+    submissionFileName: str | None = None
 
+
+class LabCommentItem(BaseModel):
+    id: str
+    text: str
+    timestamp: datetime
+    authorName: str = "Студент"
+
+
+class LabCommentCreate(BaseModel):
+    text: str
 
 class PartnerScanBody(BaseModel):
     raw: str
-
 
 class PartnerServiceItem(BaseModel):
     id: str

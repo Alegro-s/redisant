@@ -5,6 +5,7 @@ import 'package:client/app/router_editor.dart';
 import 'package:client/features/auth/nexus_deep_link.dart';
 import 'package:client/features/auth/providers/auth_provider.dart';
 import 'package:client/features/engine/project_manager.dart';
+import 'package:client/features/plugins/lynx_plugin_registry.dart';
 import 'package:client/features/projects/providers/project_provider.dart';
 import 'package:client/features/assets/providers/asset_provider.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  LynxPluginRegistry.instance.ensureInitialized();
   final auth = AuthProvider();
   final boot = EditorBootstrap.instance;
   if (boot.apiBaseOverride != null && boot.apiBaseOverride!.trim().isNotEmpty) {

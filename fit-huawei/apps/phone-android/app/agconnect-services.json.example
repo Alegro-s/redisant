@@ -1,0 +1,24 @@
+{
+  "agcgw": {
+    "url": "https://your-region.example.com"
+  },
+  "client": {
+    "cp_id": "000000000",
+    "product_id": "000000000",
+    "client_id": "REPLACE_FROM_APPGALLERY_CONNECT",
+    "client_secret": "REPLACE_FROM_APPGALLERY_CONNECT",
+    "project_id": "000000000",
+    "app_id": "000000000",
+    "api_key": "REPLACE_API_KEY",
+    "package_name": "com.chairup.android"
+  },
+  "oauth_client": {
+    "client_id": "REPLACE_OAUTH_CLIENT_ID",
+    "client_type": 1
+  },
+  "app_info": {
+    "app_id": "000000000",
+    "package_name": "com.chairup.android"
+  },
+  "configuration_version": "3.0"
+}

@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart'
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../app/providers/settings_provider.dart';
-import '../../launcher/nexus_editor_launcher.dart';
+import '../../launcher/lynx_work_launcher.dart';
 import '../providers/project_provider.dart';
 import '../../assets/providers/asset_provider.dart';
 import '../../assets/widgets/asset_grid.dart';
@@ -122,54 +122,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   ),
                 IconButton(
                   icon: const Icon(Icons.play_arrow),
-                  tooltip: 'Редактор / Play',
+                  tooltip: 'Работать',
                   onPressed: () async {
-                    if (!_runtimeSupportedOnDevice) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'На телефоне доступен редактор. Режим Play (native runtime) пока для desktop.',
-                          ),
-                        ),
-                      );
-                    }
-                    final settings = context.read<SettingsProvider>();
-                    final auth = context.read<AuthProvider>();
-                    final useSeparate =
-                        !kIsWeb &&
-                        (defaultTargetPlatform == TargetPlatform.windows ||
-                            defaultTargetPlatform == TargetPlatform.linux ||
-                            defaultTargetPlatform == TargetPlatform.macOS) &&
-                        settings.launchEditorSeparate;
-                    if (useSeparate) {
-                      final r = await launchNexusEditorProcess(
-                        executablePath: settings.nexusEditorExecutablePath,
-                        arguments: [
-                          '--project-id',
-                          widget.projectId,
-                          '--project-name',
-                          project.name,
-                          '--api-base',
-                          auth.dioBaseUrl,
-                          if (readOnly) '--cloud-read-only',
-                        ],
-                      );
-                      if (!context.mounted) return;
-                      if (!r.ok) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(r.message ?? 'Не удалось запустить Lynx Editor')),
-                        );
-                      }
-                      return;
-                    }
-                    if (!context.mounted) return;
-                    context.push(
-                      '/engine',
-                      extra: {
-                        'projectId': widget.projectId,
-                        'projectName': project.name,
-                        'cloudReadOnly': readOnly,
-                      },
+                    await launchLynxWorkOrSnackBar(
+                      context,
+                      projectId: widget.projectId,
+                      projectName: project.name,
+                      cloudReadOnly: readOnly,
                     );
                   },
                 ),

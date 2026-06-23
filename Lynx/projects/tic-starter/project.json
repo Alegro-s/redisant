@@ -1,0 +1,14 @@
+{
+  "formatVersion": 2,
+  "displayName": "TIC Starter",
+  "gameTemplate": "tic",
+  "projectMode": "tic",
+  "designWidth": 240,
+  "designHeight": 136,
+  "engineMinVersion": "0.14.0",
+  "audioMasterVolume": 1.0,
+  "lynxPlugins": {
+    "apiVersion": 1,
+    "enabled": []
+  }
+}

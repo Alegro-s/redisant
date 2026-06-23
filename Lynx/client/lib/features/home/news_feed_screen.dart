@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:xml/xml.dart';
 
 import '../../app/providers/settings_provider.dart';
+import 'lynx_hub_content_service.dart';
 
 class NewsFeedScreen extends StatefulWidget {
   const NewsFeedScreen({super.key});
@@ -13,14 +14,9 @@ class NewsFeedScreen extends StatefulWidget {
   State<NewsFeedScreen> createState() => _NewsFeedScreenState();
 }
 
-class _NewsFeedItem {
-  _NewsFeedItem({required this.title, required this.link});
-  final String title;
-  final String link;
-}
-
 class _NewsFeedScreenState extends State<NewsFeedScreen> {
-  List<_NewsFeedItem>? _items;
+  List<LynxHubNewsItem> _hubNews = const [];
+  List<_RssItem> _rssItems = const [];
   String? _error;
   bool _loading = false;
 
@@ -31,60 +27,72 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
   }
 
   Future<void> _load() async {
-    final url = context.read<SettingsProvider>().newsFeedUrl.trim();
-    if (url.isEmpty) {
-      setState(() {
-        _items = [];
-        _error = null;
-      });
-      return;
-    }
     setState(() {
       _loading = true;
       _error = null;
     });
+    final settings = context.read<SettingsProvider>();
     try {
-      final dio = Dio();
-      final r = await dio.get<String>(url, options: Options(responseType: ResponseType.plain));
-      final body = r.data ?? '';
-      final doc = XmlDocument.parse(body);
-      final out = <_NewsFeedItem>[];
-      for (final item in doc.findAllElements('item')) {
-        final t = item.getElement('title')?.innerText.trim() ?? '';
-        final l = item.getElement('link')?.innerText.trim() ?? '';
-        if (t.isEmpty) continue;
-        out.add(_NewsFeedItem(title: t, link: l));
-      }
-      if (out.isEmpty) {
-        for (final entry in doc.findAllElements('entry')) {
-          final t = entry.getElement('title')?.innerText.trim() ?? '';
-          var l = entry.getElement('link')?.innerText.trim() ?? '';
-          if (l.isEmpty) {
-            final ln = entry.getElement('link');
-            l = ln?.getAttribute('href') ?? '';
-          }
-          if (t.isEmpty) continue;
-          out.add(_NewsFeedItem(title: t, link: l));
-        }
+      final hubUrl = settings.hubContentUrl.trim().isNotEmpty
+          ? settings.hubContentUrl.trim()
+          : LynxHubContentService.defaultHubContentUrl;
+      final hub = await LynxHubContentService.fetchNews(contentUrl: hubUrl);
+      var rss = <_RssItem>[];
+      final rssUrl = settings.newsFeedUrl.trim();
+      if (rssUrl.isNotEmpty) {
+        rss = await _loadRss(rssUrl);
       }
       if (!mounted) return;
       setState(() {
-        _items = out;
+        _hubNews = hub;
+        _rssItems = rss;
         _loading = false;
+      });
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final code = e.response?.statusCode;
+      setState(() {
+        _loading = false;
+        _error = code == 429
+            ? 'Слишком много запросов. Подождите минуту и обновите.'
+            : 'Не удалось загрузить новости ($code).';
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = '$e';
         _loading = false;
-        _items = null;
+        _error = 'Не удалось загрузить новости.';
       });
     }
   }
 
+  Future<List<_RssItem>> _loadRss(String url) async {
+    final dio = Dio();
+    final r = await dio.get<String>(url, options: Options(responseType: ResponseType.plain));
+    final doc = XmlDocument.parse(r.data ?? '');
+    final out = <_RssItem>[];
+    for (final item in doc.findAllElements('item')) {
+      final t = item.getElement('title')?.innerText.trim() ?? '';
+      final l = item.getElement('link')?.innerText.trim() ?? '';
+      if (t.isNotEmpty) out.add(_RssItem(title: t, link: l));
+    }
+    return out;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final url = context.watch<SettingsProvider>().newsFeedUrl.trim();
+    final cs = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final items = [
+      ..._hubNews.map((n) => _NewsRow(
+        title: n.title,
+        subtitle: n.date,
+        body: n.body,
+        link: 'https://lynx.app/blog#${n.slug}',
+      )),
+      ..._rssItems.map((n) => _NewsRow(title: n.title, subtitle: '', body: '', link: n.link)),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Новости'),
@@ -92,41 +100,83 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loading ? null : _load),
         ],
       ),
-      body: url.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Укажите URL RSS в «Профиль» → «Lynx Launcher и Editor».',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-            )
-          : _loading
-          ? const Center(child: CircularProgressIndicator())
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
           : _error != null
-          ? Center(child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)))
+          ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!, style: TextStyle(color: cs.error))))
+          : items.isEmpty
+          ? const Center(child: Text('Новостей пока нет'))
           : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: _items?.length ?? 0,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final it = _items![i];
-                return ListTile(
-                  title: Text(it.title),
-                  trailing: it.link.isNotEmpty ? const Icon(Icons.open_in_new, size: 18) : null,
-                  onTap: it.link.isEmpty
-                      ? null
-                      : () async {
-                          final u = Uri.tryParse(it.link);
-                          if (u != null && await canLaunchUrl(u)) {
-                            await launchUrl(u, mode: LaunchMode.externalApplication);
-                          }
-                        },
-                );
-              },
+              padding: EdgeInsets.all(isMobile ? 12 : 20),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => SizedBox(height: isMobile ? 10 : 14),
+              itemBuilder: (context, i) => _NewsCard(row: items[i], compact: isMobile),
             ),
+    );
+  }
+}
+
+class _RssItem {
+  final String title;
+  final String link;
+  const _RssItem({required this.title, required this.link});
+}
+
+class _NewsRow {
+  final String title;
+  final String subtitle;
+  final String body;
+  final String link;
+  const _NewsRow({
+    required this.title,
+    required this.subtitle,
+    required this.body,
+    required this.link,
+  });
+}
+
+class _NewsCard extends StatelessWidget {
+  final _NewsRow row;
+  final bool compact;
+  const _NewsCard({required this.row, required this.compact});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(compact ? 12 : 14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(compact ? 12 : 14),
+        onTap: row.link.isEmpty
+            ? null
+            : () async {
+                final u = Uri.tryParse(row.link);
+                if (u != null && await canLaunchUrl(u)) {
+                  await launchUrl(u, mode: LaunchMode.externalApplication);
+                }
+              },
+        child: Padding(
+          padding: EdgeInsets.all(compact ? 12 : 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (row.subtitle.isNotEmpty)
+                Text(row.subtitle, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              Text(row.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: compact ? 14 : 16, color: cs.onSurface)),
+              if (row.body.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  row.body,
+                  maxLines: compact ? 2 : 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.35),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

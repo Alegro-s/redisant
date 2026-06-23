@@ -1,0 +1,70 @@
+{
+  "apiVersion": 1,
+  "updatedAt": "2026-06-02T12:00:00Z",
+  "items": [
+    {
+      "id": "lynx.3d",
+      "kind": "plugin",
+      "title": "Lynx 3D",
+      "author": "Lynx Team",
+      "category": "plugins",
+      "version": "0.2.0",
+      "engineMinVersion": "1.2.0",
+      "builtin": true,
+      "pluginId": "lynx.3d",
+      "rating": 4.8,
+      "description": "3D-сцены, GLB, orbit viewport, Play overlay. Полный PBR — волна 12+.",
+      "tags": ["3d", "gltf", "plugin"]
+    },
+    {
+      "id": "template-empty",
+      "kind": "template",
+      "title": "Пустой 2D проект",
+      "author": "Lynx",
+      "category": "templates",
+      "templateId": "empty",
+      "rating": 4.5,
+      "description": "Сцена main и структура assets/ без контента."
+    },
+    {
+      "id": "template-platformer",
+      "kind": "template",
+      "title": "Platformer Demo",
+      "author": "Lynx",
+      "category": "templates",
+      "templateId": "platformer",
+      "rating": 4.9,
+      "description": "Эталонный 2D платформер с тайлмапами и AnimationPlayer."
+    },
+    {
+      "id": "template-platformer-wave2",
+      "kind": "template",
+      "title": "Platformer + меню (волна 2)",
+      "author": "Lynx",
+      "category": "templates",
+      "templateId": "platformer-wave2",
+      "rating": 4.7,
+      "description": "Меню, autoload, input map, load_scene."
+    },
+    {
+      "id": "template-3d-room",
+      "kind": "template",
+      "title": "3D Room Demo",
+      "author": "Lynx",
+      "category": "3d",
+      "templateId": "platformer-3d-room",
+      "rating": 4.6,
+      "description": "Комната + crate.glb, плагин lynx.3d включён.",
+      "tags": ["3d", "demo"]
+    },
+    {
+      "id": "lynx-core-stable",
+      "kind": "engine_core",
+      "title": "Lynx Core Stable",
+      "author": "Lynx",
+      "category": "tools",
+      "version": "1.2.0",
+      "description": "Рекомендуемое ядро для продакшена. Скачать с Hub → Download."
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "apiVersion": 1,
+  "updatedAt": "2026-06-22T12:00:00Z",
+  "items": [
+    {
+      "id": "lynx.3d",
+      "kind": "plugin",
+      "title": "Lynx 3D",
+      "author": "Lynx Team",
+      "category": "plugins",
+      "version": "0.2.0",
+      "engineMinVersion": "1.2.0",
+      "builtin": true,
+      "pluginId": "lynx.3d",
+      "rating": 4.8,
+      "description": "3D-сцены, GLB, orbit viewport.",
+      "tags": ["3d", "gltf"]
+    },
+    {
+      "id": "template-platformer",
+      "kind": "template",
+      "title": "Platformer Demo",
+      "author": "Lynx Team",
+      "category": "templates",
+      "templateId": "platformer-demo",
+      "description": "2D платформер с Box2D и Lua."
+    },
+    {
+      "id": "game-tetris-demo",
+      "kind": "game",
+      "title": "Tetris Demo",
+      "author": "Alegro",
+      "category": "games",
+      "version": "1.0.0",
+      "description": "Классический тетрис на Lynx Engine.",
+      "rating": 4.5,
+      "tags": ["puzzle", "arcade"]
+    },
+    {
+      "id": "game-wave2",
+      "kind": "game",
+      "title": "Wave Runner",
+      "author": "Community",
+      "category": "games",
+      "version": "0.3.1",
+      "description": "Беги по волнам — демо от сообщества.",
+      "rating": 4.2,
+      "tags": ["platformer"]
+    }
+  ]
+}

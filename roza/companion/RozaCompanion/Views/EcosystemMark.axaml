@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="using:RozaCompanion.Views"
+             x:Class="RozaCompanion.Views.EcosystemMark"
+             Width="36" Height="36">
+  <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="2">
+    <Border Grid.Column="0"
+            Width="32" Height="32"
+            CornerRadius="10"
+            Background="{DynamicResource FillSoft}"
+            BorderBrush="{DynamicResource RozaAccentBrush}"
+            BorderThickness="2"
+            ClipToBounds="True"
+            BoxShadow="0 2 12 0 #28000000">
+      <Image Source="/Assets/roza-icon.png" Stretch="UniformToFill" Margin="4" />
+    </Border>
+    <v:WaypointMark Grid.Column="1"
+                    Width="14" Height="14"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,2"
+                    Opacity="0.92" />
+  </Grid>
+</UserControl>

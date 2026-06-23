@@ -1,0 +1,21 @@
+{
+  "forms": [
+    {
+      "name": "MicroDots",
+      "description": "8 micro slots",
+      "src": "./ets/widgets/MicroDotsForm.ets",
+      "uiSyntax": "arkts",
+      "window": {
+        "designWidth": 454,
+        "autoDesignWidth": true
+      },
+      "colorMode": "dark",
+      "isDefault": true,
+      "updateEnabled": true,
+      "scheduledUpdateTime": "10:00",
+      "updateDuration": 1,
+      "defaultDimension": "1*2",
+      "supportDimensions": ["1*2", "2*2"]
+    }
+  ]
+}

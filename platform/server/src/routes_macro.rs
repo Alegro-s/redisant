@@ -324,6 +324,23 @@ macro_rules! po_lynx_routes {
                 "/integrations/nexus-cloud/build-report",
                 web::post().to(nexus_cloud_builds::worker_build_report),
             )
+            .route("/v1/hub/content", web::get().to(hub_public::get_hub_content))
+            .route("/v1/hub/content", web::put().to(hub_public::put_hub_content))
+            .route(
+                "/v1/hub/marketplace-catalog",
+                web::get().to(hub_public::get_marketplace_catalog),
+            )
+            .route(
+                "/v1/hub/marketplace-catalog",
+                web::put().to(hub_public::put_marketplace_catalog),
+            )
+            .route("/v1/arcade/catalog", web::get().to(arcade::get_catalog))
+            .route("/v1/arcade/carts", web::post().to(arcade::upload_cart))
+            .route("/v1/arcade/carts/{id}", web::get().to(arcade::get_cart_meta))
+            .route(
+                "/v1/arcade/carts/{id}/download",
+                web::get().to(arcade::download_cart),
+            )
             .route(
                 "/me/lynx-cloud/projects",
                 web::get().to(nexus_cloud::list_projects),

@@ -1,8 +1,18 @@
-import 'package:dio/dio.dart';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/themes/lynx_hub_palette.dart';
+import '../../app/widgets/lynx_xbox_tile.dart';
+
+import '../auth/providers/auth_provider.dart';
 import '../../app/providers/settings_provider.dart';
+import '../ecosystem/lynx_marketplace.dart';
+import '../projects/lynx_local_project_service.dart';
+import 'marketplace_item_detail.dart';
 
 class AssetStoreCatalogScreen extends StatefulWidget {
   const AssetStoreCatalogScreen({super.key});
@@ -12,7 +22,7 @@ class AssetStoreCatalogScreen extends StatefulWidget {
 }
 
 class _AssetStoreCatalogScreenState extends State<AssetStoreCatalogScreen> {
-  List<Map<String, dynamic>> _items = [];
+  LynxMarketplaceCatalog? _catalog;
   String? _error;
   bool _loading = false;
   final _searchCtrl = TextEditingController();
@@ -20,6 +30,9 @@ class _AssetStoreCatalogScreenState extends State<AssetStoreCatalogScreen> {
 
   static const _kCategories = <String, String>{
     'all': 'Все',
+    'games': 'Игры',
+    'plugins': 'Плагины',
+    '3d': '3D',
     '2d': '2D',
     'audio': 'Аудио',
     'templates': 'Шаблоны',
@@ -39,36 +52,20 @@ class _AssetStoreCatalogScreenState extends State<AssetStoreCatalogScreen> {
   }
 
   Future<void> _load() async {
-    final url = context.read<SettingsProvider>().storeCatalogUrl.trim();
-    if (url.isEmpty) {
-      setState(() => _items = []);
-      return;
-    }
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final dio = Dio();
-      final r = await dio.get<dynamic>(url);
-      final data = r.data;
-      final list = <Map<String, dynamic>>[];
-      if (data is Map && data['items'] is List) {
-        for (final e in data['items'] as List) {
-          if (e is Map) {
-            list.add(Map<String, dynamic>.from(e));
-          }
-        }
-      } else if (data is List) {
-        for (final e in data) {
-          if (e is Map) {
-            list.add(Map<String, dynamic>.from(e));
-          }
-        }
-      }
+      final auth = context.read<AuthProvider>();
+      final url = context.read<SettingsProvider>().storeCatalogUrl.trim();
+      final cat = await LynxMarketplace.fetchCatalog(
+        url,
+        cloudDio: auth.isAuthenticated ? auth.http : null,
+      );
       if (!mounted) return;
       setState(() {
-        _items = list;
+        _catalog = cat;
         _loading = false;
       });
     } catch (e) {
@@ -80,299 +77,260 @@ class _AssetStoreCatalogScreenState extends State<AssetStoreCatalogScreen> {
     }
   }
 
-  List<Map<String, dynamic>> get _filtered {
+  List<LynxMarketplaceItem> get _filtered {
+    final items = _catalog?.items ?? [];
     final q = _searchCtrl.text.trim().toLowerCase();
-    return _items.where((m) {
-      final cat = (m['category']?.toString() ?? 'all').toLowerCase();
-      if (_category != 'all' && cat != _category) return false;
+    return items.where((m) {
+      if (_category != 'all' && m.category != _category) return false;
       if (q.isEmpty) return true;
-      final title = (m['title']?.toString() ?? '').toLowerCase();
-      final author = (m['author']?.toString() ?? '').toLowerCase();
-      final tags = m['tags'];
-      var tagHit = false;
-      if (tags is List) {
-        for (final t in tags) {
-          if (t.toString().toLowerCase().contains(q)) {
-            tagHit = true;
-            break;
-          }
-        }
+      if (m.title.toLowerCase().contains(q)) return true;
+      if ((m.author ?? '').toLowerCase().contains(q)) return true;
+      for (final t in m.tags) {
+        if (t.toLowerCase().contains(q)) return true;
       }
-      return title.contains(q) || author.contains(q) || tagHit;
+      return false;
     }).toList();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final url = context.watch<SettingsProvider>().storeCatalogUrl.trim();
-    final cs = Theme.of(context).colorScheme;
-    final filtered = _filtered;
+  Future<void> _onItemTap(LynxMarketplaceItem item) async {
+    final label = item.kind == 'template' ? 'Создать проект' : 'Установить';
+    await openMarketplaceItemDetail(
+      context,
+      item: item,
+      primaryActionLabel: label,
+      onPrimaryAction: () => _runItemAction(item),
+    );
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Lynx Cloud'),
-            Text(
-              'каталог ассетов',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ],
+  Future<void> _runItemAction(LynxMarketplaceItem item) async {
+    if (item.kind == 'template') {
+      await _createFromTemplate(item);
+      return;
+    }
+    if (item.kind == 'engine_core') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(item.description ?? 'Скачайте ядро с Lynx Hub.')),
+      );
+      return;
+    }
+    await _installIntoProject(item);
+  }
+
+  Future<void> _createFromTemplate(LynxMarketplaceItem item) async {
+    final nameCtrl = TextEditingController(text: item.title);
+    final dest = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Создать: ${item.title}'),
+        content: TextField(
+          controller: nameCtrl,
+          decoration: const InputDecoration(labelText: 'Имя папки проекта'),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _load,
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
+          FilledButton(
+            onPressed: () async {
+              final picked = await FilePicker.platform.getDirectoryPath(
+                dialogTitle: 'Папка для нового проекта',
+              );
+              if (picked == null || !ctx.mounted) return;
+              Navigator.pop(ctx, p.join(picked, nameCtrl.text.trim()));
+            },
+            child: const Text('Выбрать папку'),
           ),
         ],
       ),
-      body: url.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Укажите URL каталога (JSON: { "items": [ { "title", "author", "price", '
-                  '"category", "rating", "image" } ] }) в «Профиль» → «Lynx Launcher и Editor». '
-                  'Категории: 2d, audio, templates, tools.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-            )
-          : _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          _error!,
-                          style: TextStyle(color: cs.error),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )
-                  : CustomScrollView(
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                          sliver: SliverToBoxAdapter(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                SearchBar(
-                                  controller: _searchCtrl,
-                                  hintText: 'Поиск по названию, автору, тегам',
-                                  leading: const Icon(Icons.search),
-                                  trailing: [
-                                    IconButton(
-                                      icon: const Icon(Icons.clear),
-                                      onPressed: () {
-                                        _searchCtrl.clear();
-                                        setState(() {});
-                                      },
-                                    ),
-                                  ],
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                                const SizedBox(height: 12),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      for (final e in _kCategories.entries)
-                                        Padding(
-                                          padding: const EdgeInsets.only(right: 8),
-                                          child: FilterChip(
-                                            label: Text(e.value),
-                                            selected: _category == e.key,
-                                            onSelected: (sel) {
-                                              if (sel) setState(() => _category = e.key);
-                                            },
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (filtered.isNotEmpty)
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                            sliver: SliverToBoxAdapter(
-                              child: Text(
-                                'Рекомендуем',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                            ),
-                          ),
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          sliver: SliverLayoutBuilder(
-                            builder: (context, constraints) {
-                              final w = constraints.crossAxisExtent;
-                              final cols = w >= 900
-                                  ? 3
-                                  : w >= 560
-                                      ? 2
-                                      : 1;
-                              final gap = 14.0;
-                              final tileW = (w - gap * (cols - 1)) / cols;
-                              return SliverGrid(
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: cols,
-                                  mainAxisSpacing: gap,
-                                  crossAxisSpacing: gap,
-                                  childAspectRatio: tileW / 268,
-                                ),
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, i) {
-                                    if (i >= filtered.length) return null;
-                                    return _StoreAssetCard(item: filtered[i]);
-                                  },
-                                  childCount: filtered.length,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        if (filtered.isEmpty && _items.isNotEmpty)
-                          const SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: Center(child: Text('Ничего не найдено — смените фильтр или запрос.')),
-                          ),
-                        if (_items.isEmpty && !_loading)
-                          const SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: Center(child: Text('Каталог пуст. Проверьте JSON.')),
-                          ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                      ],
-                    ),
+    );
+    nameCtrl.dispose();
+    if (dest == null || dest.isEmpty) return;
+
+    final repoRoot = p.normalize(p.join(Directory.current.path, '..'));
+    final result = await LynxMarketplace.createFromTemplateItem(
+      item: item,
+      destPath: dest,
+      repoRoot: repoRoot,
+      displayName: item.title,
+    );
+    if (!mounted) return;
+    if (!result.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
+      return;
+    }
+    await rememberLynxLocalProject(
+      projectPath: dest,
+      projectName: p.basename(dest),
+    );
+    if (!mounted) return;
+    openLynxLocalProjectInEditor(
+      context,
+      projectPath: dest,
+      projectName: p.basename(dest),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message)),
     );
   }
-}
 
-class _StoreAssetCard extends StatelessWidget {
-  final Map<String, dynamic> item;
+  Future<void> _installIntoProject(LynxMarketplaceItem item) async {
+    final projectRoot = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Папка проекта Lynx (с project.json)',
+    );
+    if (projectRoot == null) return;
 
-  const _StoreAssetCard({required this.item});
+    final repoRoot = p.normalize(p.join(Directory.current.path, '..'));
+    final auth = context.read<AuthProvider>();
+    final result = await LynxMarketplace.installIntoProject(
+      projectRoot: projectRoot,
+      item: item,
+      repoRoot: repoRoot,
+      cloudDio: auth.isAuthenticated ? auth.http : null,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message),
+        backgroundColor: result.ok ? null : Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final title = item['title']?.toString() ?? 'Без названия';
-    final author = item['author']?.toString() ?? '';
-    final price = item['price'];
-    final rating = (item['rating'] as num?)?.toDouble();
-    final imageUrl = item['image']?.toString() ?? item['thumbnail']?.toString();
+    final isHub = cs.primary.value == LynxHubPalette.accent.value;
+    final bg = isHub ? LynxHubPalette.bg : cs.surface;
+    final filtered = _filtered;
+    final games = filtered.where((m) => m.kind == 'game' || m.category == 'games').toList();
+    final assets = filtered.where((m) => m.kind != 'game' && m.category != 'games').toList();
 
-    return Material(
-      color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(14),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('«$title» — покупка и загрузка появятся в следующих релизах.')),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 10,
-              child: imageUrl != null && imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _placeholder(cs),
-                    )
-                  : _placeholder(cs),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                  ),
-                  if (author.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      author,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (rating != null) ...[
-                        Icon(Icons.star_rounded, size: 16, color: cs.primary),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+    return Scaffold(
+      backgroundColor: bg,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+          : _error != null
+              ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!, style: TextStyle(color: cs.error))))
+              : CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Lynx Cloud', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: isHub ? LynxHubPalette.text : cs.onSurface)),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Магазин ассетов, шаблонов и игр от сообщества. Скачивайте, создавайте проекты и публикуйте свои.',
+                              style: TextStyle(fontSize: 14, color: isHub ? LynxHubPalette.muted : cs.onSurfaceVariant, height: 1.4),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                      ] else
-                        const Spacer(),
-                      if (price != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: cs.primaryContainer.withValues(alpha: 0.65),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '₽$price',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: cs.onPrimaryContainer,
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                      sliver: SliverToBoxAdapter(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SearchBar(
+                                controller: _searchCtrl,
+                                hintText: 'Поиск',
+                                leading: const Icon(Icons.search),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                            IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _loading ? null : _load),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            for (final e in _kCategories.entries)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: FilterChip(
+                                  label: Text(e.value),
+                                  selected: _category == e.key,
+                                  onSelected: (sel) { if (sel) setState(() => _category = e.key); },
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (games.isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                          child: Text('Игры', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: isHub ? LynxHubPalette.text : cs.onSurface)),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 290,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: games.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (ctx, i) => LynxXboxTile(
+                              title: games[i].title,
+                              subtitle: games[i].author,
+                              imageUrl: games[i].imageUrl,
+                              icon: Icons.sports_esports_outlined,
+                              badge: 'ИГРА',
+                              onTap: () => _onItemTap(games[i]),
                             ),
                           ),
                         ),
+                      ),
                     ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _placeholder(ColorScheme cs) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            cs.surfaceContainerHigh,
-            cs.surfaceContainerHighest,
-          ],
-        ),
-      ),
-      child: Center(
-        child: Icon(Icons.image_outlined, size: 40, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
-      ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                        child: Text('Ассеты и шаблоны', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: isHub ? LynxHubPalette.text : cs.onSurface)),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      sliver: SliverGrid(
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 220,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.72,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) {
+                            final list = assets.isEmpty ? filtered : assets;
+                            if (i >= list.length) return null;
+                            final item = list[i];
+                            return LynxXboxTile(
+                              title: item.title,
+                              subtitle: item.description,
+                              imageUrl: item.imageUrl,
+                              icon: item.category == '3d' ? Icons.view_in_ar : Icons.extension_outlined,
+                              badge: item.kind.toUpperCase(),
+                              height: 240,
+                              width: double.infinity,
+                              onTap: () => _onItemTap(item),
+                            );
+                          },
+                          childCount: (assets.isEmpty ? filtered : assets).length,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
     );
   }
 }

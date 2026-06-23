@@ -17,8 +17,10 @@ public partial class AuthGateViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isBusy;
 
-    [ObservableProperty] private string _statusHint =
-        "Войдите аккаунтом Roza AI. Если аккаунта нет — зарегистрируйтесь в личном кабинете на сайте.";
+    [ObservableProperty]
+    private string _statusHint =
+        "Вход нужен для подписки и синхронизации с облаком. "
+        + "Для кода и проектов на этом компьютере можно начать без аккаунта — кнопка ниже.";
 
     public event Action? SignedIn;
 
@@ -28,7 +30,7 @@ public partial class AuthGateViewModel : ViewModelBase
         ErrorText = "";
         if (string.IsNullOrWhiteSpace(Login) || string.IsNullOrEmpty(Password))
         {
-            ErrorText = "Введите логин и пароль.";
+            ErrorText = "Введите email (или логин) и пароль.";
             return;
         }
 
@@ -47,6 +49,7 @@ public partial class AuthGateViewModel : ViewModelBase
 
             prefs.AuthToken = token;
             prefs.AuthLogin = savedLogin;
+            prefs.LocalOnlyMode = false;
             CompanionLocalSettingsStore.Save(prefs);
             await RozaPlatformApi.SyncPrefsFromServerAsync(prefs).ConfigureAwait(true);
             SignedIn?.Invoke();
@@ -59,6 +62,20 @@ public partial class AuthGateViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private void ContinueLocal()
+    {
+        ErrorText = "";
+        var prefs = CompanionLocalSettingsStore.Load();
+        prefs.LocalOnlyMode = true;
+        prefs.AuthToken = "";
+        prefs.AuthLogin = "";
+        if (prefs.ServerUrl.Contains("waypointclub.ru", StringComparison.OrdinalIgnoreCase))
+            prefs.ServerUrl = "http://127.0.0.1:8765";
+        CompanionLocalSettingsStore.Save(prefs);
+        SignedIn?.Invoke();
     }
 
     [RelayCommand]

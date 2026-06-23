@@ -22,7 +22,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var prefs = CompanionLocalSettingsStore.Load();
-            if (string.IsNullOrWhiteSpace(prefs.AuthToken))
+            if (string.IsNullOrWhiteSpace(prefs.AuthToken) && !prefs.LocalOnlyMode)
             {
                 var gateVm = new AuthGateViewModel();
                 var gate = new AuthGateWindow { DataContext = gateVm };

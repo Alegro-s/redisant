@@ -2,6 +2,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'tilemap_catalog.dart';
+
 void paintRustFormatTilemaps({
   required Canvas canvas,
   required Size viewSize,
@@ -14,14 +16,6 @@ void paintRustFormatTilemaps({
   bool collisionTintInEditor = false,
 }) {
   if (tilemaps.isEmpty) return;
-
-  Map<String, dynamic>? catalogEntry(String? id) {
-    if (id == null || id.isEmpty) return null;
-    for (final t in tilesetCatalog) {
-      if (t['id'] == id) return t;
-    }
-    return null;
-  }
 
   Color tileCollisionColor(int coll) {
     switch (coll) {
@@ -38,6 +32,11 @@ void paintRustFormatTilemaps({
     }
   }
 
+  Color decorativeTileColor(int tileId) {
+    final hue = (tileId * 47) % 360;
+    return HSLColor.fromAHSL(1, hue.toDouble(), 0.35, 0.42).toColor();
+  }
+
   final sorted = List<Map<String, dynamic>>.from(tilemaps);
   sorted.sort((a, b) {
     final za = (a['z_order'] as num?)?.toInt() ?? 0;
@@ -47,16 +46,16 @@ void paintRustFormatTilemaps({
 
   for (final layer in sorted) {
     if (layer['visible'] == false) continue;
-    final tw = (layer['tile_w'] as num?)?.toDouble() ?? 32;
-    final th = (layer['tile_h'] as num?)?.toDouble() ?? 32;
+    final dstTw = (layer['tile_w'] as num?)?.toDouble() ?? 32;
+    final dstTh = (layer['tile_h'] as num?)?.toDouble() ?? 32;
     final autotile = layer['autotile'] == true;
     final tilesetId = layer['tileset_id'] as String?;
-    final cat = catalogEntry(tilesetId);
-    final texturePath = cat?['texturePath'] as String? ?? cat?['texture_path'] as String?;
-    final columns = (cat?['columns'] as num?)?.toInt() ?? 16;
-    final img = (texturePath != null && texturePath.isNotEmpty)
-        ? textureImages[texturePath]
-        : null;
+    final cat = TilesetCatalogEntry.find(tilesetCatalog, tilesetId);
+    final texturePath = cat?.texturePath ?? '';
+    final columns = cat?.columns ?? 16;
+    final srcTw = cat?.sourceTileW ?? dstTw;
+    final srcTh = cat?.sourceTileH ?? dstTh;
+    final img = texturePath.isNotEmpty ? textureImages[texturePath] : null;
 
     final chunks = layer['chunks'] as List? ?? [];
     for (final raw in chunks) {
@@ -70,40 +69,41 @@ void paintRustFormatTilemaps({
       final tileList = (ch['tile_ids'] as List?)?.map((e) => (e as num).toInt()).toList() ??
           const <int>[];
 
-      final baseX = cx * ctw * tw;
-      final baseY = cy * cth * th;
+      final baseX = cx * ctw * dstTw;
+      final baseY = cy * cth * dstTh;
 
       for (var ly = 0; ly < cth; ly++) {
         for (var lx = 0; lx < ctw; lx++) {
           final i = ly * ctw + lx;
           final coll = i < collList.length ? collList[i] : 0;
           final tileId = i < tileList.length ? tileList[i] : 0;
+          if (tileId == 0 && coll == 0) continue;
 
-          final wx = baseX + lx * tw + tw / 2;
-          final wy = baseY + ly * th + th / 2;
+          final wx = baseX + lx * dstTw + dstTw / 2;
+          final wy = baseY + ly * dstTh + dstTh / 2;
           final center = worldToScreen(wx, wy);
           final dst = Rect.fromCenter(
             center: center,
-            width: tw * zoom,
-            height: th * zoom,
+            width: dstTw * zoom,
+            height: dstTh * zoom,
           );
 
           var drewAtlas = false;
-          if (img != null && columns > 0 && tw > 0 && th > 0) {
+          if (img != null && columns > 0 && srcTw > 0 && srcTh > 0) {
             int? atlasIndex;
             if (autotile) {
               if (tileId >= 0) atlasIndex = tileId;
-            } else {
-              if (tileId >= 1) atlasIndex = tileId - 1;
+            } else if (tileId >= 1) {
+              atlasIndex = tileId - 1;
             }
             if (atlasIndex != null && atlasIndex >= 0) {
               final col = atlasIndex % columns;
               final row = atlasIndex ~/ columns;
-              final srcLeft = col * tw;
-              final srcTop = row * th;
-              if (srcLeft + tw <= img.width + 0.5 &&
-                  srcTop + th <= img.height + 0.5) {
-                final src = Rect.fromLTWH(srcLeft, srcTop, tw, th);
+              final srcLeft = col * srcTw;
+              final srcTop = row * srcTh;
+              if (srcLeft + srcTw <= img.width + 0.5 &&
+                  srcTop + srcTh <= img.height + 0.5) {
+                final src = Rect.fromLTWH(srcLeft, srcTop, srcTw, srcTh);
                 canvas.drawImageRect(
                   img,
                   src,
@@ -113,6 +113,14 @@ void paintRustFormatTilemaps({
                 drewAtlas = true;
               }
             }
+          }
+
+          if (!drewAtlas && tileId > 0 && !collisionTintInEditor) {
+            canvas.drawRect(
+              dst,
+              Paint()..color = decorativeTileColor(tileId).withValues(alpha: 0.88),
+            );
+            drewAtlas = true;
           }
 
           if (!drewAtlas && coll != 0) {

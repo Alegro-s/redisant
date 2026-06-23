@@ -1,0 +1,21 @@
+{
+  "id": "lynx.3d",
+  "name": "Lynx 3D",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "description": "3D-сцены, камера и mesh-объекты поверх Lynx 2D (волна 6 — viewport и native).",
+  "capabilities": [
+    "scene.3d",
+    "render.3d",
+    "physics.3d",
+    "editor.viewport.3d"
+  ],
+  "engine": {
+    "optionalNativeLib": "lynx_plugin_3d",
+    "sceneExtensionKey": "lynx.3d",
+    "objectPropertyKey": "lynx.3d"
+  },
+  "client": {
+    "builtinId": "lynx.3d"
+  }
+}

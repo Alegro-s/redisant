@@ -22,14 +22,14 @@ Future<bool> ensureStudioEngineForLocalProject(
     builder: (ctx) => PopScope(
       canPop: false,
       child: AlertDialog(
-        title: const Text('Ядро NEXUS'),
+        title: const Text('Lynx Engine'),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Скачивается нативная библиотека Rust (аналог установки модулей движка). '
-              'Без неё предпросмотр и Play не работают на ПК.',
+              'Скачивается Lynx Engine (.lynxengine). '
+              'Без него предпросмотр и Play не работают на ПК.',
             ),
             SizedBox(height: 16),
             Center(child: CircularProgressIndicator()),
@@ -57,10 +57,10 @@ Future<bool> ensureStudioEngineForLocalProject(
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Ядро не установлено'),
+      title: const Text('Lynx Engine не установлен'),
       content: Text(
         err ??
-            'Откройте «Центр ядра» в списке проектов и установите ядро. Нужен вход в Lynx и доступ в интернет.',
+            'Откройте «Lynx Engine» в списке проектов и установите версию. Нужен вход в Lynx и доступ в интернет.',
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),

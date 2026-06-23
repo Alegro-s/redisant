@@ -4,17 +4,23 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import '../runtime/tic_audio_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:client/features/auth/providers/auth_provider.dart';
 import 'package:client/features/engine/ffi/engine_bridge.dart';
 import 'package:client/features/engine/ffi/engine_types.dart';
 import 'package:client/features/engine/runtime/engine_binary_loader.dart';
+import 'package:client/features/engine/runtime/play_engine_init.dart';
 import 'package:client/features/engine/runtime/nexus_gamepad_feeder.dart';
 import 'package:client/features/game/game_play_loader.dart';
 import 'package:client/features/game/game_touch_controls.dart';
+import 'package:client/features/game/logic_grid_play_helpers.dart';
 import 'package:client/features/engine/runtime/engine_frame_stats.dart';
+import 'package:client/features/engine/runtime/unified_play_viewport.dart';
 import 'package:client/features/game/game_render_snapshot.dart';
 import 'package:client/features/game/game_world_painter.dart';
+import 'package:client/features/game/play_camera_sync.dart';
+import 'package:client/features/game/sprite_uv_resolve.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -28,6 +34,8 @@ class EmbeddedGamePreview extends StatefulWidget {
   final bool freshPlay;
   final bool active;
   final void Function(String line)? onConsoleLine;
+  /// E20b — консоль/cart всегда letterbox pixel-perfect.
+  final bool forcePixelPerfect;
 
   const EmbeddedGamePreview({
     super.key,
@@ -35,6 +43,7 @@ class EmbeddedGamePreview extends StatefulWidget {
     this.freshPlay = false,
     required this.active,
     this.onConsoleLine,
+    this.forcePixelPerfect = false,
   });
 
   @override
@@ -60,6 +69,7 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
   double _zoom = 1;
   double _designW = 1280;
   double _designH = 720;
+  bool _pixelPerfect = false;
 
   final Map<String, ui.Image> _textureCache = {};
   Duration? _prevTick;
@@ -70,10 +80,14 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
   bool _camTouchRight = false;
   bool _camTouchUp = false;
   bool _camTouchDown = false;
+  int _touchGpMask = 0;
   bool _paused = false;
+
+  bool get _isLogicGridGame => snapshotIsLogicGridGame(_renderSnapshot);
   bool _showFrameStats = false;
   final ValueNotifier<EngineFrameStats?> _frameStats = ValueNotifier(null);
   final AudioPlayer _audio = AudioPlayer();
+  late final TicAudioEngine _ticAudio = TicAudioEngine(_audio);
 
   @override
   void initState() {
@@ -130,6 +144,7 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
       setState(() => _error = load.error);
       return;
     }
+    await _ticAudio.loadProject(widget.projectPath);
     final rust = load.rustSceneJson;
     if (rust == null) {
       setState(() => _error = 'Нет данных сцены');
@@ -144,6 +159,8 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
     );
     _designW = (_playBootstrap['designWidth'] as num?)?.toDouble() ?? 1280;
     _designH = (_playBootstrap['designHeight'] as num?)?.toDouble() ?? 720;
+    _pixelPerfect = widget.forcePixelPerfect ||
+        (_playBootstrap['pixelPerfect'] as bool? ?? false);
     final cam = _playBootstrap['camera'] as Map<String, dynamic>?;
     _cameraX = (cam?['x'] as num?)?.toDouble() ?? _designW / 2;
     _cameraY = (cam?['y'] as num?)?.toDouble() ?? _designH / 2;
@@ -158,9 +175,17 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
 
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final cached = await ensureEngineBinary(auth.http);
+      var libPath = await resolvePlayEngineLibrary(http: auth.http);
+      libPath ??= await ensureEngineBinary(auth.http);
       if (!mounted) return;
-      EngineBridge.init(preferredLibraryPath: cached);
+      if (libPath == null || libPath.isEmpty) {
+        setState(
+          () => _error =
+              'Lynx Engine не установлен.\nHub → Lynx Engine → импорт файла .lynxengine',
+        );
+        return;
+      }
+      EngineBridge.init(preferredLibraryPath: libPath);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Движок: $e');
@@ -189,7 +214,7 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
     for (final e in _renderSnapshot.entities) {
       final sp = e['sprite'] as Map<String, dynamic>?;
       final tp = sp?['texture_path'] as String?;
-      if (tp != null) paths.add(tp);
+      if (tp != null) paths.add(normalizeTextureCacheKey(tp));
     }
     final wantedTilesets = <String>{};
     for (final l in _renderSnapshot.tilemaps) {
@@ -200,7 +225,9 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
       final tid = t['id'] as String?;
       if (tid == null || !wantedTilesets.contains(tid)) continue;
       final rel = t['texturePath'] as String? ?? t['texture_path'] as String?;
-      if (rel != null && rel.isNotEmpty) paths.add(rel);
+      if (rel != null && rel.isNotEmpty) {
+        paths.add(normalizeTextureCacheKey(rel));
+      }
     }
     for (final rel in paths) {
       if (_textureCache.containsKey(rel)) continue;
@@ -227,18 +254,29 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
       _camTouchDown;
 
   void _syncCameraFromEngine(Map<String, dynamic> sceneData) {
+    if (sceneDataIsLogicGridGame(sceneData)) {
+      lockCameraForLogicGrid(
+        designWidth: _designW,
+        designHeight: _designH,
+        setCenter: (x, y) {
+          _cameraX = x;
+          _cameraY = y;
+        },
+        setZoom: (z) => _zoom = z,
+      );
+      return;
+    }
     if (_cameraManualInput()) return;
-    final cc = sceneData['camera_center'] as Map<String, dynamic>?;
-    if (cc != null) {
-      _cameraX = (cc['x'] as num).toDouble();
-      _cameraY = (cc['y'] as num).toDouble();
-    }
-    final cams = sceneData['cameras'] as List?;
-    if (cams != null && cams.isNotEmpty) {
-      final cam = cams.first as Map<String, dynamic>;
-      final z = cam['zoom'];
-      if (z is num) _zoom = z.toDouble();
-    }
+    applyEngineCameraCenter(
+      sceneData: sceneData,
+      designWidth: _designW,
+      designHeight: _designH,
+      setCenter: (x, y) {
+        _cameraX = x;
+        _cameraY = y;
+      },
+      setZoom: (z) => _zoom = z,
+    );
   }
 
   void _refreshEntities() {
@@ -269,17 +307,19 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
     _elapsedSec = elapsed.inMilliseconds / 1000.0;
 
     const pan = 520.0;
-    if (_held.contains(LogicalKeyboardKey.arrowLeft) || _camTouchLeft) {
-      _cameraX -= pan * dt;
-    }
-    if (_held.contains(LogicalKeyboardKey.arrowRight) || _camTouchRight) {
-      _cameraX += pan * dt;
-    }
-    if (_held.contains(LogicalKeyboardKey.arrowUp) || _camTouchUp) {
-      _cameraY -= pan * dt;
-    }
-    if (_held.contains(LogicalKeyboardKey.arrowDown) || _camTouchDown) {
-      _cameraY += pan * dt;
+    if (!_isLogicGridGame) {
+      if (_held.contains(LogicalKeyboardKey.arrowLeft) || _camTouchLeft) {
+        _cameraX -= pan * dt;
+      }
+      if (_held.contains(LogicalKeyboardKey.arrowRight) || _camTouchRight) {
+        _cameraX += pan * dt;
+      }
+      if (_held.contains(LogicalKeyboardKey.arrowUp) || _camTouchUp) {
+        _cameraY -= pan * dt;
+      }
+      if (_held.contains(LogicalKeyboardKey.arrowDown) || _camTouchDown) {
+        _cameraY += pan * dt;
+      }
     }
 
     var engineMs = 0.0;
@@ -293,7 +333,7 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
 
     NexusGamepadFeeder.syncToScene(_sceneHandle);
     for (final s in EngineBridge.sceneDrainSounds(_sceneHandle)) {
-      unawaited(_playProjectSound(s));
+      unawaited(_dispatchEngineSound(s));
     }
     final logs = EngineBridge.sceneDrainDebugLog(_sceneHandle);
     if (logs.isNotEmpty && widget.onConsoleLine != null) {
@@ -308,6 +348,14 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
       entityCount: _renderSnapshot.entities.length,
       tilemapLayerCount: _renderSnapshot.tilemaps.length,
     );
+  }
+
+  Future<void> _dispatchEngineSound(String rel) async {
+    if (rel.trimLeft().startsWith('{')) {
+      await _ticAudio.handleSoundEvent(rel);
+      return;
+    }
+    await _playProjectSound(rel);
   }
 
   Future<void> _playProjectSound(String rel) async {
@@ -328,16 +376,39 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
     } catch (_) {}
   }
 
-  void _dispatchEngineKey(LogicalKeyboardKey key, bool down) {
-    if (sceneIsNull(_sceneHandle)) return;
-    if (key == LogicalKeyboardKey.space) {
-      EngineBridge.sceneSetKey(_sceneHandle, ' ', down);
+  void _touchGpBit(int bit, bool on) {
+    if (on) {
+      _touchGpMask |= bit;
+    } else {
+      _touchGpMask &= ~bit;
+    }
+    setPlayGamepadButtons(_sceneHandle, _touchGpMask);
+  }
+
+  void _onTouchArrow(LogicalKeyboardKey key, bool down) {
+    if (_isLogicGridGame) {
+      final bit = playGamepadBitForArrow(key);
+      if (bit != 0) _touchGpBit(bit, down);
       return;
     }
-    final ch = key.keyLabel;
-    if (ch.length == 1) {
-      EngineBridge.sceneSetKey(_sceneHandle, ch.toLowerCase(), down);
-    }
+    setState(() {
+      switch (key) {
+        case LogicalKeyboardKey.arrowLeft:
+          _camTouchLeft = down;
+        case LogicalKeyboardKey.arrowRight:
+          _camTouchRight = down;
+        case LogicalKeyboardKey.arrowUp:
+          _camTouchUp = down;
+        case LogicalKeyboardKey.arrowDown:
+          _camTouchDown = down;
+        default:
+          break;
+      }
+    });
+  }
+
+  void _dispatchEngineKey(LogicalKeyboardKey key, bool down) {
+    dispatchPlayEngineKey(_sceneHandle, key, down);
   }
 
   @override
@@ -423,8 +494,13 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
             builder: (context, constraints) {
               final maxW = constraints.maxWidth;
               final maxH = constraints.maxHeight;
-              final fit =
-                  math.min(maxW / _designW, maxH / _designH).clamp(0.05, 8.0).toDouble();
+              final fit = UnifiedPlayViewport.resolvePlayScale(
+                maxWidth: maxW,
+                maxHeight: maxH,
+                designWidth: _designW,
+                designHeight: _designH,
+                pixelPerfect: _pixelPerfect,
+              );
               final viewW = _designW * fit;
               final viewH = _designH * fit;
               final paintZoom = _zoom * fit;
@@ -489,8 +565,8 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
                                 GameHoldButton(
                                   size: 40,
                                   icon: Icons.keyboard_arrow_up_rounded,
-                                  onHold: () => setState(() => _camTouchUp = true),
-                                  onRelease: () => setState(() => _camTouchUp = false),
+                                  onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowUp, true),
+                                  onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowUp, false),
                                 ),
                               ],
                             ),
@@ -500,15 +576,15 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
                                 GameHoldButton(
                                   size: 40,
                                   icon: Icons.keyboard_arrow_left_rounded,
-                                  onHold: () => setState(() => _camTouchLeft = true),
-                                  onRelease: () => setState(() => _camTouchLeft = false),
+                                  onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowLeft, true),
+                                  onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowLeft, false),
                                 ),
                                 const SizedBox(width: 40),
                                 GameHoldButton(
                                   size: 40,
                                   icon: Icons.keyboard_arrow_right_rounded,
-                                  onHold: () => setState(() => _camTouchRight = true),
-                                  onRelease: () => setState(() => _camTouchRight = false),
+                                  onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowRight, true),
+                                  onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowRight, false),
                                 ),
                               ],
                             ),
@@ -519,12 +595,53 @@ class _EmbeddedGamePreviewState extends State<EmbeddedGamePreview>
                                 GameHoldButton(
                                   size: 40,
                                   icon: Icons.keyboard_arrow_down_rounded,
-                                  onHold: () => setState(() => _camTouchDown = true),
-                                  onRelease: () => setState(() => _camTouchDown = false),
+                                  onHold: () => _onTouchArrow(LogicalKeyboardKey.arrowDown, true),
+                                  onRelease: () => _onTouchArrow(LogicalKeyboardKey.arrowDown, false),
                                 ),
                               ],
                             ),
                           ],
+                        ),
+                      ),
+                    if (showTouchHud && maxW >= 360)
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GameHoldButton(
+                              size: 44,
+                              icon: Icons.rotate_right_rounded,
+                              onHold: () => _isLogicGridGame
+                                  ? _touchGpBit(kPlayGpA, true)
+                                  : _dispatchEngineKey(LogicalKeyboardKey.space, true),
+                              onRelease: () => _isLogicGridGame
+                                  ? _touchGpBit(kPlayGpA, false)
+                                  : _dispatchEngineKey(LogicalKeyboardKey.space, false),
+                            ),
+                            if (_isLogicGridGame) ...[
+                              const SizedBox(width: 8),
+                              GameHoldButton(
+                                size: 44,
+                                icon: Icons.vertical_align_bottom_rounded,
+                                onHold: () => _touchGpBit(kPlayGpB, true),
+                                onRelease: () => _touchGpBit(kPlayGpB, false),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    if (_isLogicGridGame &&
+                        logicGridPhase(_renderSnapshot) == 0 &&
+                        !_paused)
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: () => pulsePlayEngineKey(
+                            _sceneHandle,
+                            LogicalKeyboardKey.enter,
+                          ),
                         ),
                       ),
                     if (_paused)

@@ -7,7 +7,10 @@ namespace RozaCompanion.Themes;
 
 public static class CompanionThemeSwitcher
 {
+    /// <summary>Roza AI — тёмная палитра.</summary>
     private static readonly Uri DarkUri = new("avares://RozaCompanion/Themes/GeminiDark.axaml");
+
+    /// <summary>Roza Studio — светлая палитра.</summary>
     private static readonly Uri LightUri = new("avares://RozaCompanion/Themes/GeminiLight.axaml");
 
     public static void Apply(Window window, bool useLight)

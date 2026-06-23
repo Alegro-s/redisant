@@ -6,7 +6,7 @@
 cd D:/PO/platform/server
 export PO_SERVICE=lynx
 export DATABASE_URL=postgres://waypoint:waypoint@127.0.0.1:5432/waypoint
-export JWT_SECRET=your-secret-min-32-chars
+export JWT_SECRET=1yXJxD99yzMsuUZVW8PNr9Y3kVovjW5ZA64jw4g2yHDUfkiG
 cargo run --bin lynx-api
 ```
 

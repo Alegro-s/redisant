@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../auth/providers/auth_provider.dart';
 import '../runtime/engine_binary_loader.dart';
+import '../runtime/engine_version_gate.dart';
 
 class EngineInstallHubScreen extends StatefulWidget {
   const EngineInstallHubScreen({super.key});
@@ -20,6 +23,7 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
   String? _busyVersion;
   String? _installedPath;
   String? _installedVer;
+  List<String> _localVersions = const [];
 
   @override
   void initState() {
@@ -36,13 +40,19 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
     try {
       final m = await fetchEngineManifestSnapshot(auth.http);
       final p = await getLastCachedEngineLibraryPath();
-      final v = await getInstalledEngineVersionLabel();
+      final runtime = await getInstalledRuntimeVersions();
+      final local = await listInstalledLynxEngineVersions();
       if (!mounted) return;
       setState(() {
         _manifest = m;
-        _loadErr = m == null && !kIsWeb ? 'Не удалось получить список версий ядра. Проверьте интернет и вход в Lynx.' : null;
+        _localVersions = local;
+        _loadErr = m == null && local.isEmpty && !kIsWeb
+            ? 'Не удалось загрузить каталог версий. Импортируйте .lynxengine или проверьте интернет.'
+            : null;
         _installedPath = p;
-        _installedVer = v;
+        _installedVer = runtime.displayLabel != '—'
+            ? runtime.displayLabel
+            : (local.isNotEmpty ? 'Lynx Engine ${local.first}' : null);
         _loading = false;
       });
     } catch (e) {
@@ -55,6 +65,44 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
     }
   }
 
+  Future<void> _importLocalPack() async {
+    if (kIsWeb) return;
+    final pick = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['lynxengine'],
+      withData: true,
+    );
+    if (pick == null || pick.files.isEmpty) return;
+    final bytes = pick.files.single.bytes;
+    if (bytes == null) return;
+    setState(() => _busyVersion = 'import');
+    try {
+      final path = await installLynxEngineFromBytes(bytes);
+      if (!mounted) return;
+      if (path != null) {
+        final runtime = await getInstalledRuntimeVersions();
+        setState(() {
+          _installedPath = path;
+          _installedVer = runtime.displayLabel;
+          _busyVersion = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lynx Engine установлен из .lynxengine')),
+        );
+      } else {
+        setState(() => _busyVersion = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось распаковать .lynxengine')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busyVersion = null);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
   Future<void> _download(String version) async {
     if (kIsWeb) return;
     setState(() => _busyVersion = version);
@@ -63,22 +111,22 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
       final path = await ensureEngineBinary(auth.http, preferredVersion: version);
       if (!mounted) return;
       if (path != null) {
-        final v = await getInstalledEngineVersionLabel();
+        final runtime = await getInstalledRuntimeVersions();
         if (!mounted) return;
         setState(() {
           _installedPath = path;
-          _installedVer = v;
+          _installedVer = runtime.displayLabel;
           _busyVersion = null;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ядро $version установлено')),
+          SnackBar(content: Text('Lynx Engine $version установлено')),
         );
       } else {
         setState(() => _busyVersion = null);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Не удалось скачать эту версию. Проверьте артефакт для вашей ОС в манифесте и авторизацию для шифрованного .nexus.',
+              'Не удалось скачать эту версию. Проверьте артефакт .lynxengine для вашей ОС в манифесте.',
             ),
           ),
         );
@@ -96,14 +144,14 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
     final cs = Theme.of(context).colorScheme;
     if (kIsWeb) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Ядро NEXUS')),
+        appBar: AppBar(title: const Text('Lynx Engine')),
         body: const Center(child: Text('В браузере нативное ядро не устанавливается. Используйте десктоп-клиент.')),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ядро NEXUS'),
+        title: const Text('Центр ядер Lynx Engine'),
         actions: [
           IconButton(onPressed: _loading ? null : _refresh, icon: const Icon(Icons.refresh_rounded)),
         ],
@@ -131,13 +179,19 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Нативное ядро',
+                        'Центр ядер Lynx Engine',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Библиотека Rust (engine.dll / libengine.so) кэшируется локально. Версии и хеши задаются манифестом API; зашифрованные пакеты загружаются после POST /me/engine/session.',
+                        'Lynx Engine — отдельный продукт (файл .lynxengine). Устанавливается в %LOCALAPPDATA%\\Lynx\\engines\\. Launcher не включает engine.dll.',
                         style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _busyVersion != null ? null : _importLocalPack,
+                        icon: const Icon(Icons.folder_open_outlined, size: 18),
+                        label: const Text('Импорт .lynxengine'),
                       ),
                       const SizedBox(height: 14),
                       if (_installedVer != null)
@@ -145,9 +199,14 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
                           'Активная версия: $_installedVer\n${_installedPath ?? ''}',
                           style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600),
                         )
+                      else if (_localVersions.isNotEmpty)
+                        Text(
+                          'На ПК: ${_localVersions.join(', ')}',
+                          style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600),
+                        )
                       else
                         Text(
-                          'Ядро ещё не установлено — выберите версию ниже.',
+                          'Движок не установлен — импортируйте .lynxengine или скачайте из каталога.',
                           style: TextStyle(color: cs.tertiary, fontWeight: FontWeight.w600),
                         ),
                     ],
@@ -165,26 +224,79 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
                   ),
                 ],
                 const SizedBox(height: 22),
+                if (_localVersions.isNotEmpty) ...[
+                  Text(
+                    'Установлено на этом ПК',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  ..._localVersions.map(
+                    (ver) => Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      color: cs.primaryContainer.withValues(alpha: 0.25),
+                      child: ListTile(
+                        leading: Icon(Icons.check_circle_rounded, color: cs.primary),
+                        title: Text('Lynx Engine $ver', style: const TextStyle(fontWeight: FontWeight.w800)),
+                        subtitle: const Text('Готово к работе в редакторе и Play'),
+                        trailing: IconButton(
+                          tooltip: 'Удалить версию',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: _busyVersion != null
+                              ? null
+                              : () async {
+                                  final ok = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Удалить ядро?'),
+                                      content: Text('Lynx Engine $ver будет удалён с диска.'),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+                                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Удалить')),
+                                      ],
+                                    ),
+                                  );
+                                  if (ok != true) return;
+                                  setState(() => _busyVersion = ver);
+                                  await removeInstalledLynxEngineVersion(ver);
+                                  if (mounted) await _refresh();
+                                },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text(
-                  'Доступные релизы',
+                  'Каталог версий',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 10),
                 if (_manifest == null || _manifest!.releases.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Text(
-                      'Манифест пуст. Задайте NEXUS_ENGINE_MANIFEST_JSON на сервере или URL в админке (политика engine).',
-                      style: TextStyle(color: cs.onSurfaceVariant),
+                      _localVersions.isNotEmpty
+                          ? 'Онлайн-каталог недоступен — используйте установленную версию или импорт .lynxengine.'
+                          : 'Каталог пуст. Импортируйте Lynx-Engine-….lynxengine из дистрибутива.',
+                      style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
                     ),
                   )
                 else
-                  ..._manifest!.releases.map((rel) {
-                    final ver = rel['version']?.toString() ?? '?';
-                    final notes = rel['notes']?.toString();
-                    final ok = engineReleaseSupportsCurrentHost(rel);
+                  ..._manifest!.releaseEntries.map((rel) {
+                    final ver = rel.version;
+                    final ok = engineReleaseSupportsCurrentHost(
+                      _manifest!.releases.firstWhere(
+                        (r) => r['version']?.toString() == ver,
+                        orElse: () => rel.artifacts.isNotEmpty
+                            ? {'version': ver, 'artifacts': rel.artifacts}
+                            : {'version': ver},
+                      ),
+                    );
                     final rec = _manifest!.recommendedVersion == ver;
                     final busy = _busyVersion == ver;
+                    final subtitle = rel.displaySubtitle.isNotEmpty
+                        ? rel.displaySubtitle
+                        : (ok ? 'Есть артефакт для этой ОС' : 'Нет артефакта под вашу платформу');
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),
                       child: ListTile(
@@ -201,9 +313,7 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
                             ],
                           ],
                         ),
-                        subtitle: notes != null && notes.isNotEmpty
-                            ? Text(notes, maxLines: 2, overflow: TextOverflow.ellipsis)
-                            : Text(ok ? 'Есть артефакт для этой ОС' : 'Нет артефакта под вашу платформу в манифесте'),
+                        subtitle: Text(subtitle, maxLines: 3, overflow: TextOverflow.ellipsis),
                         trailing: busy
                             ? const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2))
                             : FilledButton(
@@ -226,9 +336,11 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
 
 Future<String?> showEngineVersionInstallDialog(BuildContext context, Dio dio) async {
   if (kIsWeb) return null;
-  final existing = await getLastCachedEngineLibraryPath();
-  if (existing != null) {
-    return await getInstalledEngineVersionLabel();
+
+  final localVersions = await listInstalledLynxEngineVersions();
+  final cachedPath = await getLastCachedEngineLibraryPath();
+  if (cachedPath != null || localVersions.isNotEmpty) {
+    return await getInstalledEngineVersionLabel() ?? localVersions.firstOrNull;
   }
 
   final manifest = await fetchEngineManifestSnapshot(dio);
@@ -241,9 +353,32 @@ Future<String?> showEngineVersionInstallDialog(BuildContext context, Dio dio) as
           .toList() ??
       [];
 
+  if (supported.isEmpty) {
+    final goHub = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Нужен Lynx Engine'),
+        content: const Text(
+          'На сервере нет каталога для вашей ОС. Импортируйте файл .lynxengine '
+          '(рядом с установщиком) в разделе «Lynx Engine».',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Открыть Lynx Engine')),
+        ],
+      ),
+    );
+    if (goHub == true && context.mounted) {
+      await context.push('/engine-install');
+      final again = await listInstalledLynxEngineVersions();
+      if (again.isNotEmpty) return again.first;
+      return getInstalledEngineVersionLabel();
+    }
+    return null;
+  }
   String? chosen = manifest?.recommendedVersion;
   if (chosen == null || !supported.contains(chosen)) {
-    chosen = supported.isNotEmpty ? supported.first : null;
+    chosen = supported.first;
   }
 
   final result = await showDialog<String?>(
@@ -254,46 +389,35 @@ Future<String?> showEngineVersionInstallDialog(BuildContext context, Dio dio) as
       return StatefulBuilder(
         builder: (ctx, setS) {
           return AlertDialog(
-            title: const Text('Версия ядра'),
+            title: const Text('Версия Lynx Engine'),
             content: SizedBox(
               width: 420,
-              child: supported.isEmpty
-                  ? const Text(
-                      'В манифесте нет релиза с артефактом для вашей ОС. Откройте «Центр ядра» из списка проектов или проверьте /engine/manifest.',
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Выберите версию Rust-ядра для студии (как выбор версии Editor в Unity).',
-                          style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant, height: 1.4),
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButton<String>(
-                          isExpanded: true,
-                          value: localChosen,
-                          hint: const Text('Версия'),
-                          items: supported
-                              .map(
-                                (v) => DropdownMenuItem(
-                                  value: v,
-                                  child: Text(v),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (v) => setS(() => localChosen = v),
-                        ),
-                      ],
-                    ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Выберите версию Lynx Engine для проекта.',
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButton<String>(
+                    isExpanded: true,
+                    value: localChosen,
+                    items: supported
+                        .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                        .toList(),
+                    onChanged: (v) => setS(() => localChosen = v),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('Отмена')),
-              if (supported.isNotEmpty)
-                FilledButton(
-                  onPressed: localChosen == null ? null : () => Navigator.pop(ctx, localChosen),
-                  child: const Text('Скачать и продолжить'),
-                ),
+              FilledButton(
+                onPressed: localChosen == null ? null : () => Navigator.pop(ctx, localChosen),
+                child: const Text('Скачать и продолжить'),
+              ),
             ],
           );
         },
@@ -314,7 +438,7 @@ Future<String?> showEngineVersionInstallDialog(BuildContext context, Dio dio) as
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 20),
-            Expanded(child: Text('Скачивание ядра…')),
+            Expanded(child: Text('Скачивание Lynx Engine…')),
           ],
         ),
       ),
@@ -329,9 +453,9 @@ Future<String?> showEngineVersionInstallDialog(BuildContext context, Dio dio) as
       await showDialog<void>(
         context: context,
         builder: (c) => AlertDialog(
-          title: const Text('Ядро не установлено'),
+          title: const Text('Lynx Engine не установлен'),
           content: const Text(
-            'Проверьте сеть, артефакт для вашей ОС в манифесте и (для .nexus) вход в аккаунт.',
+            'Проверьте сеть, артефакт .lynxengine для вашей ОС в манифесте или импортируйте файл в «Lynx Engine».',
           ),
           actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('OK'))],
         ),

@@ -2,6 +2,7 @@ import 'dart:convert' as convert;
 import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart';
+import 'package:path/path.dart' as p;
 
 import 'engine_types_io.dart';
 
@@ -47,9 +48,45 @@ typedef CoreFreeStringC = Void Function(Pointer<Utf8>);
 typedef CoreFreeStringDart = void Function(Pointer<Utf8>);
 typedef SceneDrainJsonC = Pointer<Utf8> Function(Pointer<Void>);
 typedef SceneDrainJsonDart = Pointer<Utf8> Function(Pointer<Void>);
+typedef SceneSetPausedC = Void Function(Pointer<Void>, Bool);
+typedef SceneSetPausedDart = void Function(Pointer<Void>, bool);
+typedef SceneSetTimeScaleC = Void Function(Pointer<Void>, Float);
+typedef SceneSetTimeScaleDart = void Function(Pointer<Void>, double);
+typedef SceneTakePendingLoadC = Pointer<Utf8> Function(Pointer<Void>);
+typedef SceneTakePendingLoadDart = Pointer<Utf8> Function(Pointer<Void>);
+typedef SceneSetNamedKeyC = Void Function(Pointer<Void>, Pointer<Utf8>, Bool);
+typedef SceneSetNamedKeyDart = void Function(Pointer<Void>, Pointer<Utf8>, bool);
+typedef SceneDrainBtDebugC = Pointer<Utf8> Function(Pointer<Void>);
+typedef SceneDrainBtDebugDart = Pointer<Utf8> Function(Pointer<Void>);
+typedef SceneSetBtBreakpointC = Void Function(Pointer<Void>, Pointer<Utf8>);
+typedef SceneSetBtBreakpointDart = void Function(Pointer<Void>, Pointer<Utf8>);
+typedef SceneBtDebugStepC = Void Function(Pointer<Void>);
+typedef SceneBtDebugStepDart = void Function(Pointer<Void>);
+
+List<String> _installedEngineLibraryCandidates() {
+  final local = Platform.environment['LOCALAPPDATA'];
+  if (local == null || local.isEmpty) return const [];
+  final root = Directory(p.join(local, 'Lynx', 'engines'));
+  if (!root.existsSync()) return const [];
+
+  final versions = root
+      .listSync()
+      .whereType<Directory>()
+      .map((d) => p.basename(d.path))
+      .toList()
+    ..sort((a, b) => b.compareTo(a));
+
+  final out = <String>[];
+  for (final version in versions) {
+    out.add(p.join(root.path, version, 'windows', 'engine.dll'));
+  }
+  return out;
+}
 
 class EngineBridge {
   static late DynamicLibrary _lib;
+
+  static DynamicLibrary get lib => _lib;
 
   static void init({String? preferredLibraryPath}) {
     if (preferredLibraryPath != null && preferredLibraryPath.isNotEmpty) {
@@ -65,6 +102,7 @@ class EngineBridge {
         'engine/target/release/engine.dll',
         'engine.dll',
         r'..\engine\target\release\engine.dll',
+        ..._installedEngineLibraryCandidates(),
       ];
       String? foundPath;
       for (final path in possiblePaths) {
@@ -74,7 +112,9 @@ class EngineBridge {
         }
       }
       if (foundPath == null) {
-        throw Exception('Could not find engine.dll');
+        throw Exception(
+          'Could not find engine.dll. Импортируйте Lynx Engine (.lynxengine) в Hub.',
+        );
       }
       _lib = DynamicLibrary.open(foundPath);
     } else if (Platform.isLinux) {
@@ -246,6 +286,59 @@ class EngineBridge {
     return [];
   }
 
+  static void sceneSetPaused(SceneHandle scene, bool paused) {
+    if (sceneIsNull(scene)) return;
+    try {
+      final f = _lib
+          .lookup<NativeFunction<SceneSetPausedC>>('scene_set_paused')
+          .asFunction<SceneSetPausedDart>();
+      f(scene, paused);
+    } catch (_) {}
+  }
+
+  static void sceneSetTimeScale(SceneHandle scene, double scale) {
+    if (sceneIsNull(scene)) return;
+    try {
+      final f = _lib
+          .lookup<NativeFunction<SceneSetTimeScaleC>>('scene_set_time_scale')
+          .asFunction<SceneSetTimeScaleDart>();
+      f(scene, scale);
+    } catch (_) {}
+  }
+
+  static String? sceneTakePendingLoad(SceneHandle scene) {
+    if (sceneIsNull(scene)) return null;
+    try {
+      final take = _lib
+          .lookup<NativeFunction<SceneTakePendingLoadC>>('scene_take_pending_load')
+          .asFunction<SceneTakePendingLoadDart>();
+      final ptr = take(scene);
+      if (ptr == nullptr) return null;
+      try {
+        return ptr.toDartString();
+      } finally {
+        coreFreeString(ptr);
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void sceneSetNamedKey(SceneHandle scene, String name, bool pressed) {
+    if (sceneIsNull(scene)) return;
+    try {
+      final f = _lib
+          .lookup<NativeFunction<SceneSetNamedKeyC>>('scene_set_named_key')
+          .asFunction<SceneSetNamedKeyDart>();
+      final namePtr = name.toNativeUtf8();
+      try {
+        f(scene, namePtr, pressed);
+      } finally {
+        calloc.free(namePtr);
+      }
+    } catch (_) {}
+  }
+
   static List<String> sceneDrainDebugLog(SceneHandle scene) {
     if (sceneIsNull(scene)) return [];
     final drain = _lib
@@ -264,5 +357,58 @@ class EngineBridge {
       coreFreeString(ptr);
     }
     return [];
+  }
+
+  static List<Map<String, dynamic>> sceneDrainBtDebug(SceneHandle scene) {
+    if (sceneIsNull(scene)) return [];
+    try {
+      final drain = _lib
+          .lookup<NativeFunction<SceneDrainBtDebugC>>('scene_drain_bt_debug_json')
+          .asFunction<SceneDrainBtDebugDart>();
+      final ptr = drain(scene);
+      if (ptr == nullptr) return [];
+      try {
+        final str = ptr.toDartString();
+        final list = convert.jsonDecode(str);
+        if (list is List) {
+          return list
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        }
+      } finally {
+        coreFreeString(ptr);
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static void sceneSetBtBreakpoint(SceneHandle scene, String subpath) {
+    if (sceneIsNull(scene)) return;
+    try {
+      final f = _lib
+          .lookup<NativeFunction<SceneSetBtBreakpointC>>('scene_set_bt_breakpoint')
+          .asFunction<SceneSetBtBreakpointDart>();
+      final ptr = subpath.toNativeUtf8();
+      try {
+        f(scene, ptr);
+      } finally {
+        calloc.free(ptr);
+      }
+    } catch (_) {}
+  }
+
+  static void sceneInitCartLua(SceneHandle scene, String code) {}
+
+  static void sceneSetTicAudio(SceneHandle scene, Object? engine) {}
+
+  static void sceneBtDebugStep(SceneHandle scene) {
+    if (sceneIsNull(scene)) return;
+    try {
+      final f = _lib
+          .lookup<NativeFunction<SceneBtDebugStepC>>('scene_bt_debug_step')
+          .asFunction<SceneBtDebugStepDart>();
+      f(scene);
+    } catch (_) {}
   }
 }

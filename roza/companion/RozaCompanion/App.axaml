@@ -2,7 +2,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="RozaCompanion.App"
              xmlns:local="using:RozaCompanion"
-             RequestedThemeVariant="Light">
+             RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+        <SolidColorBrush x:Key="RozaAccentBrush" Color="#D12D5A" />
+        <SolidColorBrush x:Key="RozaAccentHoverBrush" Color="#E8477A" />
+        <SolidColorBrush x:Key="LizaAccentBrush" Color="#12B5CB" />
+    </Application.Resources>
 
     <Application.DataTemplates>
         <local:ViewLocator/>

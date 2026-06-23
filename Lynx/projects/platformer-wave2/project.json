@@ -1,0 +1,57 @@
+{
+  "settingsVersion": 1,
+  "projectId": "00000000-0000-4000-8000-000000000001",
+  "displayName": "Platformer Wave 2 (Runtime)",
+  "gameTemplate": "platformer",
+  "startupSceneId": "menu",
+  "designWidth": 960,
+  "designHeight": 540,
+  "pixelPerfect": false,
+  "defaultGravityY": 980,
+  "pixelsPerUnit": 1,
+  "physicsLayers": [
+    "default",
+    "player",
+    "enemy"
+  ],
+  "inputMap": {
+    "move_left": [
+      "A",
+      "Left"
+    ],
+    "move_right": [
+      "D",
+      "Right"
+    ],
+    "jump": [
+      "Space",
+      "W"
+    ],
+    "confirm": [
+      "Return",
+      "Space"
+    ]
+  },
+  "tilesets": [
+    {
+      "id": "platform",
+      "texturePath": "assets/tilesets/platform.png",
+      "columns": 4,
+      "tileWidth": 32,
+      "tileHeight": 32
+    }
+  ],
+  "audioMasterVolume": 1.0,
+  "audioBusVolumes": {},
+  "projectMode": "2d",
+  "lynxPlugins": {
+    "apiVersion": 1,
+    "enabled": []
+  },
+  "autoloadSceneIds": [
+    "bootstrap"
+  ],
+  "minNexusEngineVersion": "0.1.0",
+  "minLynxCoreVersion": "0.6.0-m6",
+  "webRuntime": "web_scene_engine"
+}

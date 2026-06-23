@@ -28,6 +28,15 @@ class SceneCanvasOptionsBar extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             FilterChip(
+              label: const Text('Сетка'),
+              selected: sp.showSceneGrid,
+              visualDensity: VisualDensity.compact,
+              onSelected: mgr.isCloudReadOnly
+                  ? null
+                  : (v) => context.read<SceneProvider>().setShowSceneGrid(v),
+            ),
+            const SizedBox(width: 6),
+            FilterChip(
               label: const Text('Комнаты'),
               selected: sp.showRoomZones,
               visualDensity: VisualDensity.compact,

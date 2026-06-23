@@ -44,8 +44,12 @@ flutter run
 
 ## Документация
 
+- `docs/ROADMAP_WAVES.md` — дорожная карта по волнам (волна 0 ✅)
+- `projects/platformer-demo/` — эталон Play (волна 0); `scripts/run-wave0-regression.ps1`
+- `projects/platformer-demo-3d/` — плагин `lynx.3d` (волна 1); `scripts/run-wave1-regression.ps1`
+- `docs/PLUGIN_SYSTEM.md` — плагины, в т.ч. **Lynx 3D** (`plugins/lynx_3d/`)
 - `docs/LYNX_DOMAINS_AND_DEPLOY.md` — домены, nginx
-- `docs/GAME_AUTHOR.md` — формат сцены, редактор (если перенесён в Lynx/docs)
+- `docs/GAME_AUTHOR.md` — формат сцены, редактор
 - [`../Waypoint/docs/`](../Waypoint/docs/) — общие операции API
 
 ## Не входит в Lynx

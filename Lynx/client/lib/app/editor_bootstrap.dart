@@ -6,6 +6,7 @@ import 'bootstrap_raw_stub.dart'
 class EditorBootstrap {
   EditorBootstrap._({
     this.projectId,
+    this.projectPath,
     this.projectName,
     this.apiBaseOverride,
     this.cloudReadOnly = false,
@@ -22,6 +23,7 @@ class EditorBootstrap {
     final m = raw.readEditorBootstrapRaw();
     _instance = EditorBootstrap._(
       projectId: m['projectId'] as String?,
+      projectPath: m['projectPath'] as String?,
       projectName: m['projectName'] as String?,
       apiBaseOverride: m['apiBaseOverride'] as String?,
       cloudReadOnly: m['cloudReadOnly'] as bool? ?? false,
@@ -30,9 +32,12 @@ class EditorBootstrap {
   }
 
   final String? projectId;
+  final String? projectPath;
   final String? projectName;
   final String? apiBaseOverride;
   final bool cloudReadOnly;
 
-  bool get hasProjectContext => projectId != null && projectId!.isNotEmpty;
+  bool get hasProjectContext =>
+      (projectId != null && projectId!.isNotEmpty) ||
+      (projectPath != null && projectPath!.isNotEmpty);
 }

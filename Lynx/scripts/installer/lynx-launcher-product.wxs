@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="Lynx Launcher"
+           Language="1049"
+           Codepage="1251"
+           Version="$(var.ProductVersion)"
+           Manufacturer="Lynx"
+           UpgradeCode="7C9E2A10-5B4F-4D8E-9A1C-000000000002">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="Lynx Launcher: projects, store, account and game engine hub"
+             Comments="https://lynx.app" />
+
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of Lynx Launcher is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="LynxLauncherIcon.ico" SourceFile="lynx_launcher.ico" />
+    <Property Id="ARPPRODUCTICON" Value="LynxLauncherIcon.ico" />
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+    <UIRef Id="WixUI_InstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="license_ru.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
+
+    <Feature Id="MainFeature" Title="Lynx Launcher" Level="1"
+             Description="Main application, project templates and build tools">
+      <ComponentGroupRef Id="LynxLauncherHarvest" />
+      <ComponentRef Id="LauncherShortcut" />
+      <ComponentRef Id="InstallDirRegistry" />
+    </Feature>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="Lynx Launcher" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Lynx Launcher" />
+      </Directory>
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <Component Id="InstallDirRegistry"
+               Directory="INSTALLDIR"
+               Guid="D4E5F6A7-B8C9-0123-DEF0-234567890123">
+      <RegistryValue Root="HKLM"
+                     Key="Software\Lynx\Launcher"
+                     Name="InstallDir"
+                     Type="string"
+                     Value="[INSTALLDIR]"
+                     KeyPath="yes" />
+    </Component>
+
+    <Component Id="LauncherShortcut"
+               Directory="ApplicationProgramsFolder"
+               Guid="C3D4E5F6-A7B8-9012-CDEF-123456789012">
+      <Shortcut Id="LauncherStartMenu"
+                Name="Lynx Launcher"
+                Description="Start Lynx Launcher"
+                Target="[INSTALLDIR]LynxLauncher.exe"
+                WorkingDirectory="INSTALLDIR"
+                Icon="LynxLauncherIcon.ico"
+                IconIndex="0" />
+      <Shortcut Id="LauncherDesktop"
+                Directory="DesktopFolder"
+                Name="Lynx Launcher"
+                Description="Start Lynx Launcher"
+                Target="[INSTALLDIR]LynxLauncher.exe"
+                WorkingDirectory="INSTALLDIR"
+                Icon="LynxLauncherIcon.ico"
+                IconIndex="0" />
+      <RemoveFolder Id="CleanupPrograms" Directory="ApplicationProgramsFolder" On="uninstall" />
+      <RegistryValue Root="HKCU"
+                     Key="Software\LynxLauncher"
+                     Name="installed"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+    </Component>
+
+  </Product>
+</Wix>

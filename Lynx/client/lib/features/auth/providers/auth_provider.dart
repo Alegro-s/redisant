@@ -30,7 +30,7 @@ String _friendlyAuthError(dynamic responseData, {required String fallback}) {
   final raw = _apiErrorRaw(responseData);
   if (raw == null) return fallback;
   if (raw == 'Invalid login or password') {
-    return 'Неверный email/ник или пароль. Пустая база? Сначала зарегистрируйтесь во вкладке «Нет аккаунта».';
+    return 'Неверный email/ник или пароль. Проверьте данные или зарегистрируйтесь во вкладке «Нет аккаунта».';
   }
   if (raw == 'Email or nickname already taken') {
     return 'Этот email или ник уже заняты.';
@@ -167,6 +167,7 @@ class AuthProvider extends ChangeNotifier {
       final p = await SharedPreferences.getInstance();
       await p.setString(_webTokenKey, token);
     }
+    notifyListeners();
   }
 
   Future<void> _init() async {
@@ -353,6 +354,7 @@ class AuthProvider extends ChangeNotifier {
           }
         }
         await fetchProfile();
+        notifyListeners();
         return null;
       } else {
         final err = response.data is Map ? (response.data as Map)['error'] : null;
@@ -488,7 +490,9 @@ class AuthProvider extends ChangeNotifier {
       }
     } catch (e, st) {
       debugPrint('fetchProfile: $e\n$st');
-      await logout();
+      if (e is DioException && e.response?.statusCode == 401) {
+        await logout();
+      }
     }
   }
 

@@ -15,14 +15,11 @@ _DEFAULT_FILE = _ROOT / "local_users.json"
 _cache_mtime: float | None = None
 _cache_rows: list[dict[str, Any]] = []
 
-
 def _normalize_name(value: str) -> str:
     return " ".join(value.strip().split()).casefold()
 
-
 def local_users_path() -> Path:
     return _DEFAULT_FILE
-
 
 def load_local_user_entries() -> list[dict[str, Any]]:
     """Читает JSON при каждом изменении файла (по mtime)."""
@@ -59,11 +56,7 @@ def load_local_user_entries() -> list[dict[str, Any]]:
     _cache_mtime = mtime
     return _cache_rows
 
-
 def match_local_user(raw_login: str, password: str) -> dict[str, Any] | None:
-    """
-    Возвращает блок user из записи при совпадении пароля и одного из identifiers.
-    """
     ident_in = raw_login.strip()
     ident_cf = ident_in.casefold()
     ident_name = _normalize_name(ident_in)
@@ -91,7 +84,6 @@ def match_local_user(raw_login: str, password: str) -> dict[str, Any] | None:
                 return _extract_user_block(row)
 
     return None
-
 
 def _extract_user_block(row: dict[str, Any]) -> dict[str, Any]:
     u = row.get("user")

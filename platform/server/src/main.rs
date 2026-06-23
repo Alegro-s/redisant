@@ -218,6 +218,8 @@ mod wm_baas_realtime;
 mod openapi_doc;
 mod agent_integration;
 mod engine_download;
+mod arcade;
+mod hub_public;
 mod scene_collab_crdt;
 mod scene_ws;
 mod studio_ws;
@@ -3106,6 +3108,11 @@ async fn main() -> std::io::Result<()> {
     logging::init();
     println!(">>> Logger initialized");
 
+    if po_service == service::PoService::Lynx {
+        hub_public::ensure_dirs();
+        arcade::ensure_dirs();
+    }
+
     let runtime_config = Arc::new(config::RuntimeConfig::from_env());
     runtime_config.validate_secrets();
 
@@ -3266,8 +3273,14 @@ async fn main() -> std::io::Result<()> {
     println!(">>> Binding {} to {}", po_service.name(), bind_addr);
 
     let governor_conf = GovernorConfigBuilder::default()
-        .per_second(60)
-        .burst_size(120)
+        .per_second(match po_service {
+            service::PoService::Lynx => 180,
+            _ => 60,
+        })
+        .burst_size(match po_service {
+            service::PoService::Lynx => 400,
+            _ => 120,
+        })
         .key_extractor(rate_limit_key::ForwardedIpKeyExtractor)
         .finish()
         .expect("governor config");

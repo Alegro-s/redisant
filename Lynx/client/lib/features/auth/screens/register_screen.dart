@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import '../../../app/providers/settings_provider.dart';
+import '../../../app/widgets/lynx_logo.dart';
+import '../../../app/widgets/lynx_external_links.dart';
 import '../providers/auth_provider.dart';
 
 String? _validateStrongPassword(String? v) {
@@ -180,27 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.hexagon_outlined,
-                            size: 32,
-                            color: cs.primary,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'NEXUS',
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 2,
-                              color: cs.onSurface,
-                            ).copyWith(inherit: false),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Center(child: LynxLogo(size: 36, compact: true)),
                     const SizedBox(height: 14),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
@@ -284,14 +266,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           TextButton(
                             onPressed: _isLoading
                                 ? null
-                                : () => context.push('/legal?tab=privacy'),
+                                : () => openLynxLegal(context, tab: 'privacy'),
                             child: const Text('Конфиденциальность'),
                           ),
                           Text('·', style: TextStyle(color: cs.onSurfaceVariant)),
                           TextButton(
                             onPressed: _isLoading
                                 ? null
-                                : () => context.push('/legal?tab=terms'),
+                                : () => openLynxLegal(context, tab: 'terms'),
                             child: const Text('Условия'),
                           ),
                         ],

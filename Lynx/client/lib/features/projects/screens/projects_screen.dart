@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
@@ -11,14 +12,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:client/app/themes/nexus_theme.dart';
 
+import '../../launcher/lynx_work_launcher.dart';
 import '../../engine/runtime/project_zip_import_io.dart';
 import '../../engine/screens/engine_install_hub_screen.dart';
+import '../../engine/runtime/lynx_project_templates.dart';
 import '../../engine/runtime/engine_binary_loader.dart';
+import '../../engine/runtime/engine_version_gate.dart';
 import '../../engine/models/engine_models.dart';
 import '../../../app/themes/nexus_shell_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/project_provider.dart';
 import '../models/project.dart';
+import '../widgets/lynx_built_games_panel.dart';
+import '../lynx_local_project_service.dart';
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -50,13 +56,31 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   Future<void> _loadEngineStatus() async {
     if (kIsWeb) return;
-    final p = await getLastCachedEngineLibraryPath();
-    final v = await getInstalledEngineVersionLabel();
+    final local = await listInstalledLynxEngineVersions();
+    final runtime = await getInstalledRuntimeVersions();
     if (!mounted) return;
+    final installedLabel = runtime.displayLabel != '—'
+        ? runtime.displayLabel
+        : (local.isNotEmpty ? local.join(', ') : null);
     setState(() {
-      _engineStatusLine =
-          p != null ? 'Установлено: ${v ?? 'версия ?'}' : 'Не установлено — нужен engine.dll / libengine.so';
+      _engineStatusLine = installedLabel != null
+          ? 'Установлено: $installedLabel'
+          : 'Не установлено — импортируйте .lynxengine (редактор откроется внутри Launcher)';
     });
+  }
+
+  Future<String?> _readProjectEngineVersion(String projectPath) async {
+    try {
+      final pj = File(path.join(projectPath, 'project.json'));
+      if (!await pj.exists()) return null;
+      final map = jsonDecode(await pj.readAsString()) as Map<String, dynamic>;
+      final pjModel = GameProject.fromJson(map);
+      return pjModel.studioEngineBoundVersion ??
+          pjModel.minNexusEngineVersion ??
+          map['lynx_engine_version']?.toString();
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -88,11 +112,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         if (p.isEmpty || name.isEmpty) continue;
         final dir = Directory(p);
         if (!await dir.exists()) continue;
+        final engineVer = await _readProjectEngineVersion(p);
         out.add(
           _LocalProjectEntry(
             path: p,
             name: name,
             updatedAt: DateTime.fromMillisecondsSinceEpoch(at),
+            engineVersion: engineVer,
           ),
         );
       }
@@ -143,6 +169,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       path: projectPath,
       name: projectName,
       updatedAt: DateTime.now(),
+      engineVersion: await _readProjectEngineVersion(projectPath),
     );
     if (mounted) {
       setState(() {
@@ -172,6 +199,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     }
   }
 
+  Future<void> _openLocalProjectInEditor(
+    BuildContext context, {
+    required String projectPath,
+    required String projectName,
+  }) async {
+    if (!context.mounted) return;
+    await launchLynxWorkOrSnackBar(
+      context,
+      projectPath: projectPath,
+      projectName: projectName,
+    );
+  }
+
   Future<void> _createOfflineProject(BuildContext context) async {
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -185,93 +225,99 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     if (!context.mounted) return;
 
     final nameController = TextEditingController();
+    var selectedTemplate = kLynxProjectTemplates.first.id;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Локальный проект'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Данные только на этом компьютере, без синхронизации с сервером.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Имя папки / проекта',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Локальный проект'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Данные только на этом компьютере, без синхронизации с сервером.',
               ),
-              autofocus: true,
+              const SizedBox(height: 12),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Имя папки / проекта',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedTemplate,
+                decoration: const InputDecoration(labelText: 'Шаблон'),
+                items: kLynxProjectTemplates
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t.id,
+                        child: Text(t.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setLocal(() => selectedTemplate = v);
+                },
+              ),
+              Text(
+                kLynxProjectTemplates
+                    .firstWhere((t) => t.id == selectedTemplate)
+                    .description,
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Отмена'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Создать'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Создать'),
-          ),
-        ],
       ),
     );
 
     if (confirmed == true) {
       if (!context.mounted) return;
       final auth = context.read<AuthProvider>();
-      final engineOk = await showEngineVersionInstallDialog(context, auth.http);
-      if (engineOk == null) {
-        return;
-      }
-      if (!context.mounted) return;
-      final projectPath = path.join(selectedDirectory, nameController.text);
-      final projectDir = Directory(projectPath);
-      if (await projectDir.exists()) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Папка уже существует')));
-        }
-        return;
-      }
-      await projectDir.create(recursive: true);
-      await Directory(
-        path.join(projectPath, 'assets', 'sprites'),
-      ).create(recursive: true);
-      await Directory(
-        path.join(projectPath, 'assets', 'scripts'),
-      ).create(recursive: true);
-      await Directory(
-        path.join(projectPath, 'assets', 'sounds'),
-      ).create(recursive: true);
-      await Directory(path.join(projectPath, 'scenes')).create(recursive: true);
-      await File(
-        path.join(projectPath, 'scenes', 'main.json'),
-      ).writeAsString('{"entities":[], "next_id":0}');
+      final projectPath = path.join(selectedDirectory, nameController.text.trim());
       final rec = await fetchRecommendedEngineVersion(auth.http);
       final bound = await getInstalledEngineVersionLabel();
+      final runtime = await getInstalledRuntimeVersions();
       final gp = GameProject(
         projectId: 'local_${DateTime.now().millisecondsSinceEpoch}',
         displayName: nameController.text.trim(),
+        gameTemplate: selectedTemplate,
         minNexusEngineVersion: rec,
+        minLynxCoreVersion: runtime.lynxCore ?? '0.6.0-m6',
         studioEngineBoundVersion: bound,
       );
-      await File(path.join(projectPath, 'project.json')).writeAsString(jsonEncode(gp.toJson()));
-      await Directory(path.join(projectPath, '.nexus')).create(recursive: true);
-      await File(path.join(projectPath, '.nexus', 'engine_lock.json')).writeAsString(
-        jsonEncode({
-          'format': 'nexus_engine_lock',
-          'schema': 1,
-          'boundEngineVersion': bound ?? rec ?? 'unknown',
-          'boundAt': DateTime.now().toUtc().toIso8601String(),
-          'manifestRecommendedAtCreate': rec,
-        }),
+      final repoRoot = resolveLynxRepoRootFromClient();
+      final err = await materializeLynxProjectTemplate(
+        templateId: selectedTemplate,
+        destPath: projectPath,
+        repoRoot: repoRoot,
+        displayName: nameController.text.trim(),
+        projectOverrides: gp,
       );
-      await File(path.join(projectPath, 'project.nexus')).writeAsString(
-        '{"name":"${nameController.text}","version":"1.0.0","local":true}',
+      if (err != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+        }
+        return;
+      }
+      await File(path.join(projectPath, '.lynx', 'engine_lock.json')).writeAsString(
+        jsonEncode(lynxEngineLockJson(
+          boundEngineVersion: bound ?? rec ?? 'unknown',
+          manifestRecommended: rec,
+        )),
       );
       await _rememberLocalProject(
         projectPath: projectPath,
@@ -279,14 +325,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       );
       await _loadEngineStatus();
       if (context.mounted) {
-        context.push(
-          '/engine',
-          extra: {
-            'projectPath': projectPath,
-            'projectName': nameController.text,
-            'mode': 'offline',
-          },
+        await _openLocalProjectInEditor(
+          context,
+          projectPath: projectPath,
+          projectName: nameController.text.trim(),
         );
+        if (await getLastCachedEngineLibraryPath() == null && context.mounted) {
+          unawaited(showEngineVersionInstallDialog(context, auth.http));
+        }
       }
     }
   }
@@ -298,9 +344,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     final install = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Нужно ядро NEXUS'),
+        title: const Text('Нужен Lynx Engine'),
         content: const Text(
-          'Для редактора и предпросмотра на ПК установите нативную библиотеку Rust. Открыть центр установки?',
+          'Для локального проекта и Play нужна установленная версия Lynx Engine (.lynxengine). '
+          'Откройте «Lynx Engine» в списке проектов или создайте проект — будет предложена загрузка.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
@@ -316,7 +363,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   Future<void> _openProjectFolder(BuildContext context) async {
     if (kIsWeb) return;
-    if (!await _ensureNativeEngineOrPrompt(context)) return;
     if (!context.mounted) return;
     final dir = await FilePicker.platform.getDirectoryPath(
       dialogTitle: 'Папка с project.json',
@@ -328,7 +374,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Нет project.json — выберите корень проекта NEXUS (скачанный или экспортированный)',
+                      'Нет project.json — выберите корень проекта Lynx.',
             ),
           ),
         );
@@ -340,13 +386,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       projectPath: dir,
       projectName: path.basename(dir),
     );
-    context.push(
-      '/engine',
-      extra: {
-        'projectPath': dir,
-        'projectName': path.basename(dir),
-        'mode': 'offline',
-      },
+    if (!context.mounted) return;
+    await _openLocalProjectInEditor(
+      context,
+      projectPath: dir,
+      projectName: path.basename(dir),
     );
   }
 
@@ -399,13 +443,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       projectPath: root,
       projectName: path.basename(root),
     );
-    context.push(
-      '/engine',
-      extra: {
-        'projectPath': root,
-        'projectName': path.basename(root),
-        'mode': 'offline',
-      },
+    await launchLynxWorkOrSnackBar(
+      context,
+      projectPath: root,
+      projectName: path.basename(root),
     );
   }
 
@@ -419,8 +460,26 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       );
       return;
     }
+    if (!kIsWeb) {
+      final engineOk = await showEngineVersionInstallDialog(context, auth.http);
+      if (engineOk == null) return;
+    }
     final name = TextEditingController();
     var visibility = 'private';
+    String? selectedEngine = await getInstalledEngineVersionLabel();
+    final manifest = await fetchEngineManifestSnapshot(auth.http);
+    final supported = manifest?.releases
+            .where(engineReleaseSupportsCurrentHost)
+            .map((r) => r['version']?.toString())
+            .whereType<String>()
+            .toList() ??
+        [];
+    if (selectedEngine == null && supported.isNotEmpty) {
+      selectedEngine = manifest?.recommendedVersion;
+      if (selectedEngine == null || !supported.contains(selectedEngine)) {
+        selectedEngine = supported.first;
+      }
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -460,6 +519,28 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 selected: {visibility},
                 onSelectionChanged: (s) => setS(() => visibility = s.first),
               ),
+              if (supported.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Lynx Engine (lock)',
+                    style: Theme.of(ctx).textTheme.labelLarge,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: selectedEngine,
+                  decoration: const InputDecoration(
+                    labelText: 'Версия движка для облака',
+                    isDense: true,
+                  ),
+                  items: supported
+                      .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                      .toList(),
+                  onChanged: (v) => setS(() => selectedEngine = v),
+                ),
+              ],
             ],
           ),
           actions: [
@@ -477,14 +558,28 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
     if (ok != true || !context.mounted) return;
     final prov = context.read<ProjectProvider>();
-    final err = await prov.createProject(name.text.trim(), null, visibility);
+    final err = await prov.createProject(
+      name.text.trim(),
+      null,
+      visibility,
+      lynxEngineVersion: selectedEngine,
+    );
     if (!context.mounted) return;
     if (err != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Облачный проект создан')));
+      final created = prov.projects.isNotEmpty ? prov.projects.last : null;
+      if (created != null && context.mounted) {
+        await launchLynxWorkOrSnackBar(
+          context,
+          projectId: created.id,
+          projectName: created.name,
+        );
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Облачный проект создан')),
+        );
+      }
     }
   }
 
@@ -623,6 +718,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               context,
             ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
+          if (_engineStatusLine != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              _engineStatusLine!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+                height: 1.35,
+              ),
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
             isAuth
@@ -685,7 +790,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$role · ${p.visibility}$slugPart',
+                        p.lynxEngineVersion != null && p.lynxEngineVersion!.isNotEmpty
+                            ? '$role · движок: ${p.lynxEngineVersion} · ${p.visibility}$slugPart'
+                            : '$role · ${p.visibility}$slugPart',
                         style: NexusTheme.standaloneTextStyle(
                           GoogleFonts.jetBrainsMono(
                             fontSize: 11,
@@ -802,7 +909,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Нативное ядро',
+                              'Lynx Engine',
                               style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
                             ),
                             Text(
@@ -836,13 +943,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
           onTap: () {
-            context.push(
-              '/engine',
-              extra: {
-                'projectPath': p.path,
-                'projectName': p.name,
-                'mode': 'offline',
-              },
+            launchLynxWorkOrSnackBar(
+              context,
+              projectPath: p.path,
+              projectName: p.name,
             );
           },
           child: Container(
@@ -874,7 +978,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'LOCAL · offline',
+                        p.engineVersion != null && p.engineVersion!.isNotEmpty
+                            ? 'LOCAL · движок проекта: ${p.engineVersion}'
+                            : 'LOCAL · offline',
                         style: NexusTheme.standaloneTextStyle(
                           GoogleFonts.jetBrainsMono(
                             fontSize: 11,
@@ -887,9 +993,44 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
+                  onSelected: (v) async {
+                    if (v == 'download') {
+                      exportLynxLocalProjectZip(context, projectRoot: p.path);
+                    }
+                    if (v == 'open') {
+                      await launchLynxWorkOrSnackBar(
+                        context,
+                        projectPath: p.path,
+                        projectName: p.name,
+                      );
+                    }
+                    if (v == 'delete') {
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Удалить из списка?'),
+                          content: Text(
+                            'Проект «${p.name}» исчезнет из лаунчера. Папка на диске не удаляется.',
+                          ),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+                            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Удалить')),
+                          ],
+                        ),
+                      );
+                      if (ok == true && context.mounted) {
+                        await removeLynxLocalProject(p.path);
+                        await _loadLocalProjects(force: true);
+                      }
+                    }
+                  },
+                  itemBuilder: (ctx) => const [
+                    PopupMenuItem(value: 'open', child: Text('Открыть')),
+                    PopupMenuItem(value: 'download', child: Text('Скачать .lynxproject')),
+                    PopupMenuItem(value: 'delete', child: Text('Удалить из списка')),
+                  ],
                 ),
               ],
             ),
@@ -911,23 +1052,24 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       child: CustomScrollView(
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(22, 16, 22, 0),
-            sliver: SliverToBoxAdapter(child: _heroHeader(context, auth, cs, shell)),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                'Проекты',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+              ),
+            ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(22, 22, 22, 32),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _eyebrow('Workspace', cs),
-                const SizedBox(height: 6),
-                Text(
-                  'Новый проект',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
-                      ),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 4),
+                const LynxBuiltGamesPanel(),
+                const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, c) {
               final wide = c.maxWidth >= 560;
@@ -975,16 +1117,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             },
           ),
           const SizedBox(height: 12),
-          _infoPanel(context, isAuth: auth.isAuthenticated),
           if (!kIsWeb) ...[
-            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _openProjectFolder(context),
                     icon: const Icon(Icons.folder_open_outlined, size: 20),
-                    label: const Text('Открыть папку проекта'),
+                    label: const Text('Открыть папку'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -1161,10 +1301,12 @@ class _LocalProjectEntry {
   final String path;
   final String name;
   final DateTime updatedAt;
+  final String? engineVersion;
 
   const _LocalProjectEntry({
     required this.path,
     required this.name,
     required this.updatedAt,
+    this.engineVersion,
   });
 }

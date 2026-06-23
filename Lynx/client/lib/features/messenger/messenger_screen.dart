@@ -71,6 +71,8 @@ class _MessengerScreenState extends State<MessengerScreen>
   bool _searching = false;
   String? _error;
   Timer? _pollTimer;
+  int _pollBackoffSeconds = 12;
+  DateTime? _rateLimitedUntil;
   final Set<String> _messageIds = {};
   final Map<String, String> _outgoingTextByPayloadKey = {};
 
@@ -109,10 +111,21 @@ class _MessengerScreenState extends State<MessengerScreen>
   void _startPoll() {
     _stopPoll();
     _pollTimer = Timer.periodic(
-      const Duration(seconds: 4),
+      Duration(seconds: _pollBackoffSeconds.clamp(12, 60)),
       (_) => _pollNewMessages(),
     );
   }
+
+  void _onRateLimited(DioException e) {
+    final retry = int.tryParse(e.response?.headers.value('retry-after') ?? '') ?? 30;
+    _rateLimitedUntil = DateTime.now().add(Duration(seconds: retry));
+    _pollBackoffSeconds = retry.clamp(12, 90);
+    _stopPoll();
+    _startPoll();
+  }
+
+  bool get _isRateLimited =>
+      _rateLimitedUntil != null && DateTime.now().isBefore(_rateLimitedUntil!);
 
   String _toHttpsBase(String baseUrl) {
     if (!baseUrl.startsWith('http://')) return baseUrl;
@@ -252,7 +265,7 @@ class _MessengerScreenState extends State<MessengerScreen>
 
   Future<void> _pollNewMessages() async {
     final p = _peer;
-    if (p == null || !mounted || _loadingMsg) return;
+    if (p == null || !mounted || _loadingMsg || _isRateLimited) return;
     final after = _latestMessageTime();
     if (after == null) return;
     try {
@@ -278,7 +291,11 @@ class _MessengerScreenState extends State<MessengerScreen>
         }
         _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       });
-    } catch (_) {}
+    } catch (e) {
+      if (e is DioException && e.response?.statusCode == 429) {
+        _onRateLimited(e);
+      }
+    }
   }
 
   Future<void> _loadFriends() async {
@@ -312,10 +329,21 @@ class _MessengerScreenState extends State<MessengerScreen>
         _loadingFriends = false;
       });
       unawaited(_loadRecentPreview());
-    } catch (e) {
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 429) _onRateLimited(e);
       setState(() {
         _loadingFriends = false;
-        _error = 'Не удалось загрузить друзей ($e)';
+        _error = code == 429
+            ? 'Слишком много запросов. Подождите ${_pollBackoffSeconds}с и нажмите обновить.'
+            : 'Не удалось загрузить друзей.';
+        if (code == 429 && _friends.isNotEmpty) _error = null;
+      });
+      if (code != 429) return;
+    } catch (_) {
+      setState(() {
+        _loadingFriends = false;
+        if (_friends.isEmpty) _error = 'Не удалось загрузить друзей.';
       });
     }
   }
@@ -347,6 +375,8 @@ class _MessengerScreenState extends State<MessengerScreen>
           ..clear()
           ..addAll(unread);
       });
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 429) _onRateLimited(e);
     } catch (_) {}
   }
 
@@ -806,8 +836,12 @@ class _MessengerScreenState extends State<MessengerScreen>
               child: TextField(
                 controller: _text,
                 decoration: const InputDecoration(
-                  hintText: 'Сообщение…',
+                  hintText: 'Напишите сообщение…',
                   isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 ),
                 onSubmitted: (_) => _send(),
               ),
@@ -861,12 +895,6 @@ class _MessengerScreenState extends State<MessengerScreen>
                 Text(
                   '@${peer.nickname}',
                   style: Theme.of(ctx).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                const Text('Профиль собеседника'),
-                const SizedBox(height: 6),
-                const Text(
-                  'Публичные/приватные проекты: будут показаны после добавления отдельного API.',
                 ),
               ],
             ),

@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import '../../auth/providers/auth_provider.dart';
 import '../collab/script_studio_presence.dart';
+import '../runtime/lynx_blueprint_service.dart';
 import '../project_manager.dart';
 
 class ScriptEditor extends StatefulWidget {
@@ -265,6 +266,37 @@ class _ScriptEditorState extends State<ScriptEditor> {
     }
   }
 
+  Future<void> _reloadFromDisk() async {
+    final manager = _mgr!;
+    final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
+    final file = File('${manager.rootPath}/${asset.path}');
+    if (!await file.exists()) return;
+    final content = await file.readAsString();
+    final c = _controller;
+    if (c == null || !mounted) return;
+    _suppressDirty = true;
+    c.removeListener(_onTextChanged);
+    c.dispose();
+    final ctr = CodeController(text: content, language: lua);
+    ctr.addListener(_onTextChanged);
+    _controller = ctr;
+    _originalContent = content;
+    _suppressDirty = false;
+    _dirty = false;
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openBlueprint() async {
+    final manager = _mgr!;
+    final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
+    await openBlueprintEditorForScript(
+      context,
+      manager,
+      asset,
+      onSaved: _reloadFromDisk,
+    );
+  }
+
   @override
   void dispose() {
     _findController.dispose();
@@ -486,6 +518,12 @@ class _ScriptEditorState extends State<ScriptEditor> {
                 label: Text(
                   cid != null ? 'Сохранить и в облако' : 'Сохранить в assets',
                 ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: manager.isCloudReadOnly ? null : _openBlueprint,
+                icon: const Icon(Icons.hub_outlined, size: 18),
+                label: const Text('Blueprint'),
               ),
               if (_dirty) ...[
                 const SizedBox(width: 12),

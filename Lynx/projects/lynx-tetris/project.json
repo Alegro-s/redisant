@@ -1,0 +1,36 @@
+{
+  "settingsVersion": 1,
+  "projectId": "00000000-0000-4000-8000-000000000011",
+  "displayName": "Lynx Tetris",
+  "gameTemplate": "tetris",
+  "startupSceneId": "main",
+  "designWidth": 480,
+  "designHeight": 640,
+  "pixelPerfect": true,
+  "defaultGravityY": 0,
+  "pixelsPerUnit": 1,
+  "physicsLayers": ["default"],
+  "inputMap": {
+    "move_left": ["A", "Left"],
+    "move_right": ["D", "Right"],
+    "soft_drop": ["S", "Down"],
+    "rotate": ["W", "Up", "Space"],
+    "hard_drop": ["Enter"]
+  },
+  "tilesets": [],
+  "audioMasterVolume": 0.8,
+  "audioBusVolumes": {},
+  "projectMode": "2d",
+  "lynxPlugins": {
+    "apiVersion": 1,
+    "enabled": []
+  },
+  "cloudPublish": {
+    "enabled": true,
+    "tier": "free_to_play",
+    "title": "Lynx Tetris",
+    "tags": ["puzzle", "arcade", "tetris"]
+  },
+  "webRuntime": "lynx_cart_runtime",
+  "minLynxCoreVersion": "0.15.0"
+}

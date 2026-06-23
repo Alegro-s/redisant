@@ -1,0 +1,59 @@
+# ChairUp Coach — NEAT rules v1 (Wave 2+)
+version: 1
+defaults:
+  micro_target: 8
+  sedentary_steps_threshold_45min: 80
+  cooldown_minutes: 45
+
+rules:
+  - id: sedentary_nudge
+    priority: 10
+    when:
+      all:
+        - chair_mode: true
+        - steps_last_45min: { lt: 80 }
+        - micro_done_today: { lt: 8 }
+        - dnd: false
+    then:
+      action: notify
+      channel: watch_first
+      template: micro_break_soft
+      message_ru: "2 минуты — размяни ноги. Это считается."
+    cooldown_minutes: 45
+
+  - id: afternoon_catchup
+    priority: 20
+    when:
+      all:
+        - hour: { gte: 15 }
+        - micro_done_today: { lt: 4 }
+        - dnd: false
+    then:
+      action: notify
+      channel: phone
+      template: micro_catchup
+      message_ru: "4 из 8 — ещё не поздно. Одна кнопка."
+
+  - id: protein_evening
+    priority: 30
+    when:
+      all:
+        - hour: { gte: 19 }
+        - protein_ratio: { lt: 0.6 }
+    then:
+      action: notify
+      channel: phone
+      template: protein_reminder
+      message_ru: "Белок отстаёт — творог/яйца и день закрыт."
+    cooldown_minutes: 180
+
+  - id: celebrate_micro_complete
+    priority: 5
+    when:
+      all:
+        - micro_done_today: { gte: 8 }
+        - celebrated_today: false
+    then:
+      action: in_app
+      template: celebration
+      message_ru: "8/8. Завтра волна может дать +1 к шагам — ты готов."

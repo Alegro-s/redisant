@@ -1,7 +1,41 @@
 import 'dart:math' as math;
 
+import '../../plugins/lynx_plugin_manifest.dart';
+import '../runtime/lynx_web_runtime.dart';
+import '../runtime/lynx_windows_3d_runtime.dart';
+
 const int kSceneFormatVersion = 3;
 
+class LynxCloudPublish {
+  const LynxCloudPublish({
+    this.enabled = false,
+    this.tier = 'free_to_play',
+    this.title = '',
+    this.tags = const [],
+  });
+
+  final bool enabled;
+  final String tier;
+  final String title;
+  final List<String> tags;
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'tier': tier,
+        'title': title,
+        'tags': tags,
+      };
+
+  factory LynxCloudPublish.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const LynxCloudPublish();
+    return LynxCloudPublish(
+      enabled: json['enabled'] as bool? ?? false,
+      tier: json['tier'] as String? ?? 'free_to_play',
+      title: json['title'] as String? ?? '',
+      tags: (json['tags'] as List?)?.cast<String>() ?? const [],
+    );
+  }
+}
 
 class GameProject {
   final String projectId;
@@ -9,6 +43,8 @@ class GameProject {
   final String displayName;
   final String gameTemplate;
   final String startupSceneId;
+  /// Autoload-сцены (синглтоны), подмешиваются при каждом Play.
+  final List<String> autoloadSceneIds;
   final double designWidth;
   final double designHeight;
   final bool pixelPerfect;
@@ -20,7 +56,15 @@ class GameProject {
   final double audioMasterVolume;
   final Map<String, double> audioBusVolumes;
   final String? minNexusEngineVersion;
+  /// Минимальная semver Lynx Core внутри `engine.dll` (волна 11d).
+  final String? minLynxCoreVersion;
   final String? studioEngineBoundVersion;
+  final LynxWebRuntime webRuntime;
+  /// Windows Player: Canvas 3D или D3D12 Core viewport (Q3).
+  final LynxWindows3dRuntime windows3dRuntime;
+  final LynxProjectMode projectMode;
+  final LynxProjectPlugins lynxPlugins;
+  final LynxCloudPublish? cloudPublish;
 
   GameProject({
     required this.projectId,
@@ -28,6 +72,7 @@ class GameProject {
     required this.displayName,
     this.gameTemplate = 'empty',
     this.startupSceneId = 'main',
+    List<String>? autoloadSceneIds,
     this.designWidth = 1280,
     this.designHeight = 720,
     this.pixelPerfect = false,
@@ -39,11 +84,19 @@ class GameProject {
     this.audioMasterVolume = 1.0,
     Map<String, double>? audioBusVolumes,
     this.minNexusEngineVersion,
+    this.minLynxCoreVersion,
     this.studioEngineBoundVersion,
-  })  : physicsLayers = physicsLayers ?? const ['default', 'ui'],
+    this.webRuntime = LynxWebRuntime.webSceneEngine,
+    this.windows3dRuntime = LynxWindows3dRuntime.canvasPreview,
+    this.projectMode = LynxProjectMode.d2,
+    LynxProjectPlugins? lynxPlugins,
+    this.cloudPublish,
+  })  : autoloadSceneIds = autoloadSceneIds ?? const [],
+        physicsLayers = physicsLayers ?? const ['default', 'ui'],
         inputMap = inputMap ?? const {},
         tilesets = tilesets ?? const [],
-        audioBusVolumes = audioBusVolumes ?? <String, double>{};
+        audioBusVolumes = audioBusVolumes ?? <String, double>{},
+        lynxPlugins = lynxPlugins ?? const LynxProjectPlugins();
 
   Map<String, dynamic> toJson() => {
         'settingsVersion': settingsVersion,
@@ -51,6 +104,7 @@ class GameProject {
         'displayName': displayName,
         'gameTemplate': gameTemplate,
         'startupSceneId': startupSceneId,
+        if (autoloadSceneIds.isNotEmpty) 'autoloadSceneIds': autoloadSceneIds,
         'designWidth': designWidth,
         'designHeight': designHeight,
         'pixelPerfect': pixelPerfect,
@@ -62,7 +116,14 @@ class GameProject {
         'audioMasterVolume': audioMasterVolume,
         'audioBusVolumes': audioBusVolumes,
         if (minNexusEngineVersion != null) 'minNexusEngineVersion': minNexusEngineVersion,
+        if (minLynxCoreVersion != null) 'minLynxCoreVersion': minLynxCoreVersion,
         if (studioEngineBoundVersion != null) 'studioEngineBoundVersion': studioEngineBoundVersion,
+        if (webRuntime != LynxWebRuntime.webSceneEngine) 'webRuntime': webRuntime.jsonValue,
+        if (windows3dRuntime != LynxWindows3dRuntime.canvasPreview)
+          'windows3dRuntime': windows3dRuntime.jsonValue,
+        'projectMode': projectMode.jsonValue,
+        'lynxPlugins': lynxPlugins.toJson(),
+        if (cloudPublish != null) 'cloudPublish': cloudPublish!.toJson(),
       };
 
   factory GameProject.fromJson(Map<String, dynamic> json) {
@@ -72,6 +133,7 @@ class GameProject {
       displayName: json['displayName'] as String? ?? 'Untitled',
       gameTemplate: json['gameTemplate'] as String? ?? 'empty',
       startupSceneId: json['startupSceneId'] as String? ?? 'main',
+      autoloadSceneIds: (json['autoloadSceneIds'] as List?)?.cast<String>() ?? const [],
       designWidth: (json['designWidth'] as num?)?.toDouble() ?? 1280,
       designHeight: (json['designHeight'] as num?)?.toDouble() ?? 720,
       pixelPerfect: json['pixelPerfect'] as bool? ?? false,
@@ -89,7 +151,18 @@ class GameProject {
           ) ??
           <String, double>{},
       minNexusEngineVersion: json['minNexusEngineVersion'] as String?,
+      minLynxCoreVersion: json['minLynxCoreVersion'] as String?,
       studioEngineBoundVersion: json['studioEngineBoundVersion'] as String?,
+      webRuntime: LynxWebRuntimeJson.fromJson(json['webRuntime'] as String?),
+      windows3dRuntime:
+          LynxWindows3dRuntimeJson.fromJson(json['windows3dRuntime'] as String?),
+      projectMode: LynxProjectMode.fromJson(json['projectMode'] as String?),
+      lynxPlugins: LynxProjectPlugins.fromJson(
+        json['lynxPlugins'] as Map<String, dynamic>?,
+      ),
+      cloudPublish: LynxCloudPublish.fromJson(
+        json['cloudPublish'] as Map<String, dynamic>?,
+      ),
     );
   }
 
@@ -97,6 +170,7 @@ class GameProject {
     String? displayName,
     String? gameTemplate,
     String? startupSceneId,
+    List<String>? autoloadSceneIds,
     double? designWidth,
     double? designHeight,
     bool? pixelPerfect,
@@ -108,7 +182,13 @@ class GameProject {
     double? audioMasterVolume,
     Map<String, double>? audioBusVolumes,
     String? minNexusEngineVersion,
+    String? minLynxCoreVersion,
     String? studioEngineBoundVersion,
+    LynxWebRuntime? webRuntime,
+    LynxWindows3dRuntime? windows3dRuntime,
+    LynxProjectMode? projectMode,
+    LynxProjectPlugins? lynxPlugins,
+    LynxCloudPublish? cloudPublish,
   }) {
     return GameProject(
       projectId: projectId,
@@ -116,6 +196,7 @@ class GameProject {
       displayName: displayName ?? this.displayName,
       gameTemplate: gameTemplate ?? this.gameTemplate,
       startupSceneId: startupSceneId ?? this.startupSceneId,
+      autoloadSceneIds: autoloadSceneIds ?? this.autoloadSceneIds,
       designWidth: designWidth ?? this.designWidth,
       designHeight: designHeight ?? this.designHeight,
       pixelPerfect: pixelPerfect ?? this.pixelPerfect,
@@ -127,7 +208,13 @@ class GameProject {
       audioMasterVolume: audioMasterVolume ?? this.audioMasterVolume,
       audioBusVolumes: audioBusVolumes ?? this.audioBusVolumes,
       minNexusEngineVersion: minNexusEngineVersion ?? this.minNexusEngineVersion,
+      minLynxCoreVersion: minLynxCoreVersion ?? this.minLynxCoreVersion,
       studioEngineBoundVersion: studioEngineBoundVersion ?? this.studioEngineBoundVersion,
+      webRuntime: webRuntime ?? this.webRuntime,
+      windows3dRuntime: windows3dRuntime ?? this.windows3dRuntime,
+      projectMode: projectMode ?? this.projectMode,
+      lynxPlugins: lynxPlugins ?? this.lynxPlugins,
+      cloudPublish: cloudPublish ?? this.cloudPublish,
     );
   }
 
@@ -150,32 +237,49 @@ class ProjectTileset {
   final String id;
   final String texturePath;
   final int columns;
+  final double tileWidth;
+  final double tileHeight;
 
   const ProjectTileset({
     required this.id,
     required this.texturePath,
     this.columns = 16,
+    this.tileWidth = 32,
+    this.tileHeight = 32,
   });
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'texturePath': texturePath,
         'columns': columns,
+        'tileWidth': tileWidth,
+        'tileHeight': tileHeight,
       };
 
   factory ProjectTileset.fromJson(Map<String, dynamic> json) {
+    final tw = (json['tileWidth'] as num?)?.toDouble() ?? 32;
     return ProjectTileset(
       id: json['id'] as String? ?? 'default',
-      texturePath: json['texturePath'] as String? ?? '',
+      texturePath: (json['texturePath'] as String? ?? '').replaceAll('\\', '/'),
       columns: (json['columns'] as num?)?.toInt() ?? 16,
+      tileWidth: tw,
+      tileHeight: (json['tileHeight'] as num?)?.toDouble() ?? tw,
     );
   }
 
-  ProjectTileset copyWith({String? id, String? texturePath, int? columns}) {
+  ProjectTileset copyWith({
+    String? id,
+    String? texturePath,
+    int? columns,
+    double? tileWidth,
+    double? tileHeight,
+  }) {
     return ProjectTileset(
       id: id ?? this.id,
       texturePath: texturePath ?? this.texturePath,
       columns: columns ?? this.columns,
+      tileWidth: tileWidth ?? this.tileWidth,
+      tileHeight: tileHeight ?? this.tileHeight,
     );
   }
 }
@@ -427,6 +531,7 @@ PrefabDefinition buildPrefabDefinitionFromSceneSubtree({
 
 class SceneLayer {
   static const String defaultLayerId = 'layer_default';
+  static const String uiLayerId = 'layer_ui';
 
   final String id;
   final String name;
@@ -642,6 +747,8 @@ class RoomZoneData {
   final double cameraMinY;
   final double cameraMaxX;
   final double cameraMaxY;
+  /// ID сцены (`scenes/*.json`), связанной с этой комнатой — отдельный холст.
+  final String? targetSceneId;
 
   const RoomZoneData({
     required this.id,
@@ -653,6 +760,7 @@ class RoomZoneData {
     this.cameraMinY = 0,
     this.cameraMaxX = 0,
     this.cameraMaxY = 0,
+    this.targetSceneId,
   });
 
   Map<String, dynamic> toRustJson() => {
@@ -665,6 +773,8 @@ class RoomZoneData {
         'camera_min_y': cameraMinY,
         'camera_max_x': cameraMaxX,
         'camera_max_y': cameraMaxY,
+        if (targetSceneId != null && targetSceneId!.isNotEmpty)
+          'target_scene_id': targetSceneId,
       };
 
   factory RoomZoneData.fromJson(Map<String, dynamic> json) {
@@ -678,6 +788,7 @@ class RoomZoneData {
       cameraMinY: (json['camera_min_y'] as num?)?.toDouble() ?? (json['cameraMinY'] as num?)?.toDouble() ?? 0,
       cameraMaxX: (json['camera_max_x'] as num?)?.toDouble() ?? (json['cameraMaxX'] as num?)?.toDouble() ?? 0,
       cameraMaxY: (json['camera_max_y'] as num?)?.toDouble() ?? (json['cameraMaxY'] as num?)?.toDouble() ?? 0,
+      targetSceneId: json['target_scene_id'] as String? ?? json['targetSceneId'] as String?,
     );
   }
 
@@ -691,6 +802,8 @@ class RoomZoneData {
     double? cameraMinY,
     double? cameraMaxX,
     double? cameraMaxY,
+    String? targetSceneId,
+    bool clearTargetSceneId = false,
   }) {
     return RoomZoneData(
       id: id ?? this.id,
@@ -702,6 +815,7 @@ class RoomZoneData {
       cameraMinY: cameraMinY ?? this.cameraMinY,
       cameraMaxX: cameraMaxX ?? this.cameraMaxX,
       cameraMaxY: cameraMaxY ?? this.cameraMaxY,
+      targetSceneId: clearTargetSceneId ? null : (targetSceneId ?? this.targetSceneId),
     );
   }
 }
@@ -1057,6 +1171,7 @@ class Scene {
   int revision;
   int? cloudRevision;
   CollaborationSession? collaboration;
+  Map<String, dynamic> extensions;
 
   Scene({
     required this.id,
@@ -1073,7 +1188,9 @@ class Scene {
     this.revision = 0,
     this.cloudRevision,
     this.collaboration,
+    Map<String, dynamic>? extensions,
   })  : layers = layers ?? Scene.defaultLayers(),
+        extensions = extensions ?? <String, dynamic>{},
         camera = camera ?? const SceneCamera(),
         physics = physics ?? const ScenePhysicsSettings();
 
@@ -1082,6 +1199,11 @@ class Scene {
           id: SceneLayer.defaultLayerId,
           name: 'Default',
           sortOrder: 0,
+        ),
+        const SceneLayer(
+          id: SceneLayer.uiLayerId,
+          name: 'UI',
+          sortOrder: 1000,
         ),
       ];
 
@@ -1133,6 +1255,7 @@ class Scene {
         'revision': revision,
         if (cloudRevision != null) 'cloudRevision': cloudRevision,
         if (collaboration != null) 'collaboration': collaboration!.toJson(),
+        if (extensions.isNotEmpty) 'extensions': extensions,
       };
 
   factory Scene.fromJson(Map<String, dynamic> json) {
@@ -1161,12 +1284,26 @@ class Scene {
     final rmRaw = json['rooms'] as List? ?? [];
     final rooms = rmRaw.map((e) => RoomZoneData.fromJson(Map<String, dynamic>.from(e as Map))).toList();
 
+    SceneCamera camera;
+    if (json['camera'] is Map) {
+      camera = SceneCamera.fromJson(json['camera'] as Map<String, dynamic>);
+    } else if (json['cameras'] is List && (json['cameras'] as List).isNotEmpty) {
+      final c0 = Map<String, dynamic>.from((json['cameras'] as List).first as Map);
+      camera = SceneCamera(
+        x: (c0['x'] as num?)?.toDouble() ?? 0,
+        y: (c0['y'] as num?)?.toDouble() ?? 0,
+        zoom: (c0['zoom'] as num?)?.toDouble() ?? 1,
+      );
+    } else {
+      camera = SceneCamera.fromJson(null);
+    }
+
     return Scene(
       id: json['id'] ?? '',
       name: json['name'] ?? 'Untitled',
       objects: objects,
       layers: layers,
-      camera: SceneCamera.fromJson(json['camera'] as Map<String, dynamic>?),
+      camera: camera,
       backgroundColorArgb: (json['backgroundColorArgb'] as num?)?.toInt() ?? 0xFF212121,
       physics: ScenePhysicsSettings.fromJson(json['physics'] as Map<String, dynamic>?),
       tilemaps: tilemaps,
@@ -1177,6 +1314,9 @@ class Scene {
       cloudRevision: (json['cloudRevision'] as num?)?.toInt(),
       collaboration: json['collaboration'] != null
           ? CollaborationSession.fromJson(json['collaboration'] as Map<String, dynamic>)
+          : null,
+      extensions: json['extensions'] is Map
+          ? Map<String, dynamic>.from(json['extensions'] as Map)
           : null,
     );
   }

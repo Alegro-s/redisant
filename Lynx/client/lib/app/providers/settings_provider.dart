@@ -9,19 +9,19 @@ const List<Map<String, dynamic>> availableModules = [
     'id': 'home',
     'title': 'Lynx Hub',
     'subtitle': 'Сводка, быстрые действия и обзор экосистемы.',
-    'icon': Icons.home_work_outlined,
+    'icon': Icons.home_outlined,
   },
   {
     'id': 'projects',
     'title': 'Проекты',
     'subtitle': 'Облачные и локальные проекты, артефакты сборок.',
-    'icon': Icons.folder,
+    'icon': Icons.folder_outlined,
   },
   {
     'id': 'messenger',
     'title': 'Мессенджер',
     'subtitle': 'Личные и групповые чаты внутри Lynx.',
-    'icon': Icons.chat,
+    'icon': Icons.chat_bubble_outline,
   },
   {
     'id': 'news',
@@ -32,8 +32,14 @@ const List<Map<String, dynamic>> availableModules = [
   {
     'id': 'store',
     'title': 'Lynx Cloud',
-    'subtitle': 'Каталог сборок и облачных сервисов.',
-    'icon': Icons.cloud_outlined,
+    'subtitle': 'Совместная работа, облачные сборки и публикация игр.',
+    'icon': Icons.storefront_outlined,
+  },
+  {
+    'id': 'arcade',
+    'title': 'Аркада',
+    'subtitle': 'Free-to-play каталог игр Lynx Cloud.',
+    'icon': Icons.sports_esports_outlined,
   },
 ];
 
@@ -52,14 +58,22 @@ class SettingsProvider extends ChangeNotifier {
   static const String _editorExeKey = 'nexus_editor_executable';
   static const String _newsFeedUrlKey = 'nexus_news_feed_url';
   static const String _storeCatalogUrlKey = 'nexus_store_catalog_url';
+  static const String _hubContentUrlKey = 'nexus_hub_content_url';
+  static const String _liveOpsConfigUrlKey = 'nexus_live_ops_config_url';
+  static const String _leaderboardApiUrlKey = 'nexus_leaderboard_api_url';
+  static const String _marketplaceApiBaseKey = 'nexus_marketplace_api_base';
 
   AppTheme _currentTheme = AppTheme.purple;
-  Set<String> _enabledModules = {'home', 'projects', 'messenger', 'news', 'store'};
+  Set<String> _enabledModules = {'home', 'projects', 'messenger', 'news', 'store', 'arcade'};
   List<String> _modulesOrder = [];
   bool _launchEditorSeparate = false;
   String _nexusEditorExecutable = '';
   String _newsFeedUrl = '';
   String _storeCatalogUrl = '';
+  String _hubContentUrl = '';
+  String _liveOpsConfigUrl = '';
+  String _leaderboardApiUrl = '';
+  String _marketplaceApiBase = '';
 
   AppTheme get currentTheme => _currentTheme;
   Set<String> get enabledModules => _enabledModules;
@@ -68,6 +82,10 @@ class SettingsProvider extends ChangeNotifier {
   String get nexusEditorExecutablePath => _nexusEditorExecutable;
   String get newsFeedUrl => _newsFeedUrl;
   String get storeCatalogUrl => _storeCatalogUrl;
+  String get hubContentUrl => _hubContentUrl;
+  String get liveOpsConfigUrl => _liveOpsConfigUrl;
+  String get leaderboardApiUrl => _leaderboardApiUrl;
+  String get marketplaceApiBase => _marketplaceApiBase;
 
   SettingsProvider() {
     _loadSettings();
@@ -83,7 +101,7 @@ class SettingsProvider extends ChangeNotifier {
       _enabledModules = modulesString.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet();
     }
     if (_enabledModules.isEmpty) {
-      _enabledModules = {'home', 'projects', 'messenger', 'news', 'store'};
+      _enabledModules = {'home', 'projects', 'messenger', 'news', 'store', 'arcade'};
     }
     _enabledModules.removeWhere(kReservedShellModuleIds.contains);
     final validIds = availableModules.map((m) => m['id'] as String).toSet();
@@ -111,6 +129,10 @@ class SettingsProvider extends ChangeNotifier {
     _nexusEditorExecutable = prefs.getString(_editorExeKey) ?? '';
     _newsFeedUrl = prefs.getString(_newsFeedUrlKey) ?? '';
     _storeCatalogUrl = prefs.getString(_storeCatalogUrlKey) ?? '';
+    _hubContentUrl = prefs.getString(_hubContentUrlKey) ?? '';
+    _liveOpsConfigUrl = prefs.getString(_liveOpsConfigUrlKey) ?? '';
+    _leaderboardApiUrl = prefs.getString(_leaderboardApiUrlKey) ?? '';
+    _marketplaceApiBase = prefs.getString(_marketplaceApiBaseKey) ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) => notifyListeners());
   }
@@ -236,6 +258,34 @@ class SettingsProvider extends ChangeNotifier {
     _storeCatalogUrl = url.trim();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_storeCatalogUrlKey, _storeCatalogUrl);
+    notifyListeners();
+  }
+
+  Future<void> setHubContentUrl(String url) async {
+    _hubContentUrl = url.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_hubContentUrlKey, _hubContentUrl);
+    notifyListeners();
+  }
+
+  Future<void> setLiveOpsConfigUrl(String url) async {
+    _liveOpsConfigUrl = url.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_liveOpsConfigUrlKey, _liveOpsConfigUrl);
+    notifyListeners();
+  }
+
+  Future<void> setLeaderboardApiUrl(String url) async {
+    _leaderboardApiUrl = url.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_leaderboardApiUrlKey, _leaderboardApiUrl);
+    notifyListeners();
+  }
+
+  Future<void> setMarketplaceApiBase(String url) async {
+    _marketplaceApiBase = url.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_marketplaceApiBaseKey, _marketplaceApiBase);
     notifyListeners();
   }
 

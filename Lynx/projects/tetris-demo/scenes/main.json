@@ -1,0 +1,65 @@
+{
+  "formatVersion": 3,
+  "id": "main",
+  "name": "Tetris",
+  "backgroundColorArgb": 4279900698,
+  "createdAt": "2026-06-01T00:00:00.000Z",
+  "modifiedAt": "2026-06-01T00:00:00.000Z",
+  "camera": {
+    "x": 240,
+    "y": 320,
+    "zoom": 1
+  },
+  "objects": [
+    {
+      "id": "board_frame",
+      "name": "BoardFrame",
+      "x": 240,
+      "y": 320,
+      "width": 240,
+      "height": 480,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "z": 0,
+      "active": false,
+      "visible": false,
+      "locked": true,
+      "layerId": "default",
+      "assetId": "assets_sprites_board_frame.png",
+      "scriptId": null,
+      "properties": {}
+    },
+    {
+      "id": "tetris_game",
+      "name": "TetrisLogic",
+      "x": 240,
+      "y": 320,
+      "width": 8,
+      "height": 8,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "z": 10,
+      "active": true,
+      "visible": false,
+      "locked": true,
+      "layerId": "default",
+      "assetId": "",
+      "scriptId": "assets_scripts_tetris.lua",
+      "properties": {
+        "logicGridGame": true
+      }
+    }
+  ],
+  "tilemaps": [],
+  "rooms": [],
+  "layers": [
+    {
+      "id": "default",
+      "name": "Default",
+      "visible": true,
+      "locked": false
+    }
+  ]
+}

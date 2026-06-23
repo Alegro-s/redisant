@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../../plugins/lynx_plugin_host.dart';
 import '../models/engine_models.dart';
 import '../runtime/tilemap_grid.dart';
 
@@ -24,6 +26,11 @@ class SceneProvider extends ChangeNotifier {
 
   bool showRoomZones = false;
 
+  bool showSceneGrid = true;
+
+  /// Волна 9c: оверлей collision на тайлмапе в редакторе.
+  bool showTileCollisionPreview = true;
+
   void _bumpTileEditorRevision() {
     tileEditorRevision++;
   }
@@ -43,6 +50,7 @@ class SceneProvider extends ChangeNotifier {
   }
 
   void setCurrentScene(Scene scene) {
+    LynxPluginHost.instance.applySceneExtensions(scene);
     _currentScene = scene;
     _selectedObjectId = null;
     lastEditorPointerLocal = null;
@@ -61,6 +69,16 @@ class SceneProvider extends ChangeNotifier {
   bool get canUndo => _undoStack.isNotEmpty;
 
   bool get canRedo => _redoStack.isNotEmpty;
+
+  void setSceneExtension(String pluginId, Map<String, dynamic> block) {
+    if (_currentScene == null) return;
+    pushUndoSnapshot();
+    final ext = Map<String, dynamic>.from(_currentScene!.extensions);
+    ext[pluginId] = block;
+    _currentScene!.extensions = ext;
+    _currentScene!.bumpRevision();
+    notifyListeners();
+  }
 
   void pushUndoSnapshot() {
     if (_currentScene == null) return;
@@ -275,6 +293,19 @@ class SceneProvider extends ChangeNotifier {
   void setShowRoomZones(bool v) {
     if (showRoomZones == v) return;
     showRoomZones = v;
+    notifyListeners();
+  }
+
+  void setShowSceneGrid(bool v) {
+    if (showSceneGrid == v) return;
+    showSceneGrid = v;
+    notifyListeners();
+  }
+
+  void setShowTileCollisionPreview(bool v) {
+    if (showTileCollisionPreview == v) return;
+    showTileCollisionPreview = v;
+    _bumpTileEditorRevision();
     notifyListeners();
   }
 

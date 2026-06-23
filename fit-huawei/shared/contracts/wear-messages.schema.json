@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chairup.local/schemas/wear-messages.v1.json",
+  "title": "ChairUp Wear Messages v1",
+  "description": "Phone (EMUI) <-> Watch (HarmonyOS) via Wear Engine",
+  "type": "object",
+  "required": ["v", "type", "ts"],
+  "properties": {
+    "v": { "const": 1 },
+    "type": {
+      "type": "string",
+      "enum": [
+        "STATE_PUSH",
+        "MICRO_DONE",
+        "START_MICRO",
+        "CANCEL_MICRO",
+        "STRENGTH_TICK",
+        "PING"
+      ]
+    },
+    "ts": { "type": "integer", "description": "Unix ms" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "STATE_PUSH" } } },
+      "then": {
+        "properties": {
+          "dailyScore": { "type": "number", "minimum": 0, "maximum": 100 },
+          "microDone": { "type": "integer", "minimum": 0, "maximum": 8 },
+          "microTarget": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "nextSlotInMin": { "type": "integer", "minimum": 0 },
+          "chairMode": { "type": "boolean" }
+        },
+        "required": ["dailyScore", "microDone", "microTarget", "chairMode"]
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "MICRO_DONE" } } },
+      "then": {
+        "properties": {
+          "slotIndex": { "type": "integer", "minimum": 0, "maximum": 11 },
+          "durationSec": { "type": "integer", "minimum": 1, "maximum": 600 },
+          "hrAvg": { "type": "integer", "minimum": 40, "maximum": 220 }
+        },
+        "required": ["slotIndex", "durationSec"]
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "START_MICRO" } } },
+      "then": {
+        "properties": {
+          "slotIndex": { "type": "integer" },
+          "targetSec": { "type": "integer", "default": 120 },
+          "hint": { "type": "string", "maxLength": 40 }
+        },
+        "required": ["slotIndex"]
+      }
+    }
+  ]
+}

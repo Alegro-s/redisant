@@ -5,107 +5,180 @@
         x:DataType="vm:AuthGateViewModel"
         Icon="/Assets/roza-icon.png"
         Title="Roza AI"
-        Width="480" Height="580"
-        MinWidth="440" MinHeight="540"
+        Width="440" Height="620"
+        MinWidth="400" MinHeight="560"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
-        Background="#F8F9FA"
-        FontFamily="Segoe UI Variable, Segoe UI, Roboto">
+        Background="#0E1118"
+        FontFamily="Segoe UI Variable, Segoe UI, Roboto, Inter">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://RozaCompanion/Themes/GeminiDark.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
     <Window.Styles>
+        <Style Selector="TextBlock.RzLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="Margin" Value="2,0,0,4" />
+        </Style>
         <Style Selector="TextBox.RzField">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="Foreground" Value="#202124" />
-            <Setter Property="CaretBrush" Value="#202124" />
-            <Setter Property="BorderBrush" Value="#DADCE0" />
+            <Setter Property="Background" Value="{DynamicResource RzElevated}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource RzBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="12,10" />
             <Setter Property="FontSize" Value="14" />
         </Style>
-        <Style Selector="TextBox.RzField:focus /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#FFFFFF" />
-        </Style>
-        <Style Selector="TextBox.RzField:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#FFFFFF" />
+        <Style Selector="TextBox.RzField:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource RozaAccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
         </Style>
         <Style Selector="Button.RzPrimary">
-            <Setter Property="Background" Value="#1A73E8" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Background" Value="{DynamicResource RozaAccentBrush}" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="14,11" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
         </Style>
-        <Style Selector="Button.RzGhost">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="Foreground" Value="#1A73E8" />
-            <Setter Property="BorderBrush" Value="#DADCE0" />
+        <Style Selector="Button.RzPrimary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource RozaAccentHoverBrush}" />
+        </Style>
+        <Style Selector="Button.RzSecondary">
+            <Setter Property="Background" Value="{DynamicResource FillSoft}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource RzBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="999" />
-            <Setter Property="Padding" Value="12,9" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="12,10" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.RzLink">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource RzBlue}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
         </Style>
     </Window.Styles>
 
     <Panel>
         <Panel.Background>
             <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                <GradientStop Color="#F8F9FA" Offset="0" />
-                <GradientStop Color="#E8F0FE" Offset="0.55" />
-                <GradientStop Color="#F3E8FD" Offset="1" />
+                <GradientStop Color="#0E1118" Offset="0" />
+                <GradientStop Color="#1A1528" Offset="0.5" />
+                <GradientStop Color="#121820" Offset="1" />
             </LinearGradientBrush>
         </Panel.Background>
 
-        <Border MaxWidth="380"
-                Margin="24"
-                Padding="28,26"
-                CornerRadius="20"
-                Background="White"
-                BorderBrush="#DADCE0"
+        <Border MaxWidth="400"
+                Margin="20"
+                Padding="24,22"
+                CornerRadius="16"
+                Background="{DynamicResource Card}"
+                BorderBrush="{DynamicResource Hairline}"
                 BorderThickness="1"
                 HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-            <StackPanel Spacing="16">
-                <StackPanel HorizontalAlignment="Center" Spacing="10">
-                    <Border Width="72" Height="72" CornerRadius="18" Background="#2a1520" BorderBrush="#e879a9" BorderThickness="2" ClipToBounds="True">
-                        <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="8" />
+                VerticalAlignment="Center"
+                BoxShadow="0 8 32 0 #50000000">
+            <StackPanel Spacing="14">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <Border Width="64" Height="64"
+                            CornerRadius="16"
+                            Background="#2A1520"
+                            BorderBrush="{DynamicResource RozaAccentBrush}"
+                            BorderThickness="2"
+                            ClipToBounds="True">
+                        <Image Source="/Assets/roza-icon.png" Stretch="Uniform" Margin="10" />
                     </Border>
-                    <TextBlock Text="Roza AI" FontSize="22" FontWeight="SemiBold" Foreground="#202124" HorizontalAlignment="Center" />
-                    <TextBlock Text="Консультант" FontSize="12" Foreground="#5F6368" HorizontalAlignment="Center" />
+                    <TextBlock Text="Roza AI"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Нативный ассистент"
+                               FontSize="12"
+                               Foreground="{DynamicResource RzMuted}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="код · страницы · приложения · агент"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextMuted}"
+                               HorizontalAlignment="Center"
+                               TextAlignment="Center" />
                 </StackPanel>
 
-                <TextBlock Text="{Binding StatusHint}"
-                           TextWrapping="Wrap"
-                           TextAlignment="Center"
-                           FontSize="13"
-                           Foreground="#5F6368"
-                           LineHeight="18" />
+                <Border Padding="10,8"
+                        CornerRadius="10"
+                        Background="{DynamicResource FillSoft}"
+                        BorderBrush="{DynamicResource Hairline}"
+                        BorderThickness="1">
+                    <TextBlock Text="{Binding StatusHint}"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextMuted}"
+                               LineHeight="16" />
+                </Border>
 
-                <TextBox Classes="RzField"
-                         PlaceholderText="Email или логин"
-                         Text="{Binding Login}" />
-                <TextBox Classes="RzField"
-                         PlaceholderText="Пароль"
-                         Text="{Binding Password}"
-                         PasswordChar="•" />
+                <StackPanel Spacing="4">
+                    <TextBlock Classes="RzLabel" Text="Email или логин" />
+                    <TextBox Classes="RzField"
+                             PlaceholderText="name@example.com"
+                             Text="{Binding Login}" />
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Classes="RzLabel" Text="Пароль" />
+                    <TextBox Classes="RzField"
+                             PlaceholderText="Введите пароль"
+                             Text="{Binding Password}"
+                             PasswordChar="•" />
+                </StackPanel>
 
                 <TextBlock Text="{Binding ErrorText}"
-                           Foreground="#D93025"
+                           Foreground="#F28B82"
                            TextWrapping="Wrap"
-                           FontSize="12" />
+                           FontSize="12"
+                           MinHeight="16" />
 
                 <Button Classes="RzPrimary"
-                        Content="Войти"
+                        Content="Войти в аккаунт"
                         Command="{Binding SignInCommand}"
                         IsEnabled="{Binding !IsBusy}"
                         HorizontalAlignment="Stretch" />
 
-                <Button Classes="RzGhost"
+                <Button Classes="RzSecondary"
+                        Content="Продолжить локально (без облака)"
+                        Command="{Binding ContinueLocalCommand}"
+                        IsEnabled="{Binding !IsBusy}"
+                        HorizontalAlignment="Stretch"
+                        ToolTip.Tip="Чат на вашем ПК через python -m roza web, без Liza AI в облаке" />
+
+                <Button Classes="RzLink"
                         Content="Создать аккаунт на сайте"
                         Command="{Binding OpenRegisterInBrowserCommand}"
                         HorizontalAlignment="Stretch" />
+
+                <TextBlock Text="Liza AI — облако для документов и анализа. Roza AI — на этом ПК."
+                           FontSize="10"
+                           Foreground="{DynamicResource TextMuted}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           LineHeight="14"
+                           Margin="0,4,0,0" />
             </StackPanel>
         </Border>
     </Panel>

@@ -1,0 +1,50 @@
+[package]
+name = "lynx-core"
+version = "1.0.0"
+edition = "2021"
+description = "Lynx proprietary game engine core (PAL + RHI, own code)."
+publish = false
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "lynx-m1-demo"
+path = "src/bin/lynx_m1_demo.rs"
+required-features = ["pal_win_d3d12"]
+
+[[bin]]
+name = "lynx-m2-demo"
+path = "src/bin/lynx_m2_demo.rs"
+required-features = ["pal_win_d3d12"]
+
+[[bin]]
+name = "lynx-m3-demo"
+path = "src/bin/lynx_m3_demo.rs"
+required-features = ["pal_win_d3d12"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D12",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_Graphics_Gdi",
+  "Win32_Security",
+  "Win32_System_LibraryLoader",
+  "Win32_System_SystemServices",
+  "Win32_System_Threading",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[features]
+default = ["serde"]
+serde = ["dep:serde", "dep:serde_json"]
+pal_win_d3d12 = []
+pal_wasm = []

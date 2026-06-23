@@ -1,0 +1,22 @@
+{
+  "colliderKind": "aabb",
+  "colliderWidth": 28,
+  "colliderHeight": 28,
+  "sheetAnimation": {
+    "fps": 8,
+    "frames": [
+      {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      }
+    ]
+  }
+}

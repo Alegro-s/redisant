@@ -7,9 +7,11 @@ import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../project_manager.dart';
+import '../runtime/sprite_doc_codec.dart';
 import 'sprite_palette_presets.dart';
 
 enum _PixelTool { pencil, eraser, fill, eyedropper }
@@ -361,6 +363,36 @@ class _SpriteEditorState extends State<SpriteEditor> {
     final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
     final root = manager.rootPath;
     if (root == null) return;
+    final docFile = File(
+      '$root/${SpriteDocCodec.docPathForAsset(asset.path)}',
+    );
+    final doc = await SpriteDocCodec.load(docFile);
+    if (doc != null && doc.frames.isNotEmpty) {
+      setState(() {
+        _gridW = doc.gridW;
+        _gridH = doc.gridH;
+        _frames = [
+          for (final fr in doc.frames)
+            [
+              for (final layer in fr.layers)
+                _SpriteLayer(
+                  name: layer.name,
+                  visible: layer.visible,
+                  pixels: spriteDocPixelsToColors(layer.pixelsArgb),
+                ),
+            ],
+        ];
+        _frameIndex = doc.activeFrame.clamp(0, _frames.length - 1);
+        _activeLayerIndex = doc.activeLayer.clamp(
+          0,
+          _currentFrameLayers.isEmpty ? 0 : _currentFrameLayers.length - 1,
+        );
+        if (doc.frameDelaysMs.isNotEmpty) {
+          _animDelayMs = doc.frameDelaysMs[_frameIndex.clamp(0, doc.frameDelaysMs.length - 1)];
+        }
+      });
+      return;
+    }
     final file = File('$root/${asset.path}');
     if (!await file.exists()) return;
     final bytes = await file.readAsBytes();
@@ -471,6 +503,33 @@ class _SpriteEditorState extends State<SpriteEditor> {
     final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
     final f = File('${manager.rootPath}/${asset.path}');
     await f.writeAsBytes(pngBytes);
+    final doc = SpriteDocFile(
+      gridW: _gridW,
+      gridH: _gridH,
+      activeFrame: _frameIndex,
+      activeLayer: _activeLayerIndex,
+      frameDelaysMs: List.generate(
+        _frames.length,
+        (i) => _animDelayMs,
+      ),
+      frames: [
+        for (final fr in _frames)
+          SpriteDocFrame(
+            layers: [
+              for (final layer in fr)
+                SpriteDocLayer(
+                  name: layer.name,
+                  visible: layer.visible,
+                  pixelsArgb: spriteColorsToDocPixels(layer.pixels),
+                ),
+            ],
+          ),
+      ],
+    );
+    await SpriteDocCodec.save(
+      File('${manager.rootPath}/${SpriteDocCodec.docPathForAsset(asset.path)}'),
+      doc,
+    );
     await manager.reloadSpriteAsset(widget.assetId);
     setState(() => _dirty = false);
     var cloudOk = false;
@@ -573,9 +632,10 @@ class _SpriteEditorState extends State<SpriteEditor> {
   }
 
   void _strokeAtLocal(Offset local, double side) {
-    final cell = side / _gridW;
-    final cx = (local.dx / cell).floor();
-    final cy = (local.dy / cell).floor();
+    final cellW = side / _gridW;
+    final cellH = side / _gridH;
+    final cx = (local.dx / cellW).floor().clamp(0, _gridW - 1);
+    final cy = (local.dy / cellH).floor().clamp(0, _gridH - 1);
     _applyTool(cx, cy);
   }
 
@@ -613,7 +673,45 @@ class _SpriteEditorState extends State<SpriteEditor> {
     final palette = colorsForSpritePalettePreset(_palettePreset);
     final managerWatch = context.watch<ProjectManager>();
     final cid = managerWatch.cloudAssetIdForProjectAssetId(widget.assetId);
-    return Column(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final mod = HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed;
+        if (mod && event.logicalKey == LogicalKeyboardKey.keyZ) {
+          _undo();
+          return KeyEventResult.handled;
+        }
+        if (mod && event.logicalKey == LogicalKeyboardKey.keyY) {
+          _redo();
+          return KeyEventResult.handled;
+        }
+        if (mod && event.logicalKey == LogicalKeyboardKey.keyS) {
+          if (_dirty) _saveSprite();
+          return KeyEventResult.handled;
+        }
+        switch (event.logicalKey) {
+          case LogicalKeyboardKey.keyB:
+            setState(() => _tool = _PixelTool.pencil);
+            return KeyEventResult.handled;
+          case LogicalKeyboardKey.keyE:
+            setState(() => _tool = _PixelTool.eraser);
+            return KeyEventResult.handled;
+          case LogicalKeyboardKey.keyG:
+            setState(() => _tool = _PixelTool.fill);
+            return KeyEventResult.handled;
+          case LogicalKeyboardKey.keyI:
+            setState(() => _tool = _PixelTool.eyedropper);
+            return KeyEventResult.handled;
+          case LogicalKeyboardKey.keyP:
+            _toggleAnimPlay();
+            return KeyEventResult.handled;
+          default:
+            return KeyEventResult.ignored;
+        }
+      },
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (cid != null)
@@ -917,6 +1015,7 @@ class _SpriteEditorState extends State<SpriteEditor> {
           ),
         ),
       ],
+    ),
     );
   }
 }

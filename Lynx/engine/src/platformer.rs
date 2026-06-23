@@ -245,6 +245,8 @@ pub struct GamepadState {
     pub face_b: bool,
     pub dpad_left: bool,
     pub dpad_right: bool,
+    pub dpad_up: bool,
+    pub dpad_down: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default)]

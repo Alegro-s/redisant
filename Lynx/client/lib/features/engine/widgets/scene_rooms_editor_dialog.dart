@@ -19,6 +19,8 @@ Future<void> showSceneRoomsEditorDialog({
       initialRooms: List<RoomZoneData>.from(scene.rooms),
       designWidth: designW,
       designHeight: designH,
+      sceneIds: manager.scenes.map((s) => s.id).toList(),
+      sceneNames: {for (final s in manager.scenes) s.id: s.name},
       onApply: (next) {
         sceneProvider.replaceSceneRooms(next);
         manager.scheduleSceneSave();
@@ -32,12 +34,16 @@ class _RoomsEditorDialog extends StatefulWidget {
     required this.initialRooms,
     required this.designWidth,
     required this.designHeight,
+    required this.sceneIds,
+    required this.sceneNames,
     required this.onApply,
   });
 
   final List<RoomZoneData> initialRooms;
   final double designWidth;
   final double designHeight;
+  final List<String> sceneIds;
+  final Map<String, String> sceneNames;
   final void Function(List<RoomZoneData> rooms) onApply;
 
   @override
@@ -63,21 +69,42 @@ class _RoomsEditorDialogState extends State<_RoomsEditorDialog> {
     final cminyC = TextEditingController(text: _fmt(current.cameraMinY));
     final cmaxxC = TextEditingController(text: _fmt(current.cameraMaxX));
     final cmaxyC = TextEditingController(text: _fmt(current.cameraMaxY));
+    var targetScene = current.targetSceneId;
 
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Зона комнаты'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: idC,
-                decoration: const InputDecoration(labelText: 'id'),
-              ),
-              TextField(
-                controller: xC,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Зона комнаты'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: idC,
+                  decoration: const InputDecoration(labelText: 'id'),
+                ),
+                if (widget.sceneIds.length > 1) ...[
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String?>(
+                    value: targetScene,
+                    decoration: const InputDecoration(
+                      labelText: 'Сцена-холст',
+                      helperText: 'Отдельный JSON в scenes/ для этой комнаты',
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('— текущая —')),
+                      for (final sid in widget.sceneIds)
+                        DropdownMenuItem(
+                          value: sid,
+                          child: Text(widget.sceneNames[sid] ?? sid),
+                        ),
+                    ],
+                    onChanged: (v) => setLocal(() => targetScene = v),
+                  ),
+                ],
+                TextField(
+                  controller: xC,
                 decoration: const InputDecoration(labelText: 'x (левый край)'),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
@@ -129,6 +156,7 @@ class _RoomsEditorDialogState extends State<_RoomsEditorDialog> {
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('OK')),
         ],
       ),
+    ),
     );
 
     RoomZoneData? out;
@@ -143,6 +171,7 @@ class _RoomsEditorDialogState extends State<_RoomsEditorDialog> {
         cameraMinY: double.tryParse(cminyC.text.replaceAll(',', '.')) ?? current.cameraMinY,
         cameraMaxX: double.tryParse(cmaxxC.text.replaceAll(',', '.')) ?? current.cameraMaxX,
         cameraMaxY: double.tryParse(cmaxyC.text.replaceAll(',', '.')) ?? current.cameraMaxY,
+        targetSceneId: targetScene,
       );
     }
     idC.dispose();
@@ -238,7 +267,8 @@ class _RoomsEditorDialogState extends State<_RoomsEditorDialog> {
                             dense: true,
                             title: Text(r.id, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
-                              '${_fmt(r.x)}, ${_fmt(r.y)} · ${_fmt(r.w)}×${_fmt(r.h)}',
+                              '${_fmt(r.x)}, ${_fmt(r.y)} · ${_fmt(r.w)}×${_fmt(r.h)}'
+                              '${r.targetSceneId != null ? ' → ${widget.sceneNames[r.targetSceneId] ?? r.targetSceneId}' : ''}',
                               style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
                             ),
                             trailing: Row(

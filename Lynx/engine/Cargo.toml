@@ -1,12 +1,17 @@
 [package]
 name = "engine"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+default = []
+legacy_lua = ["dep:mlua"]
+
 [dependencies]
+lynx-core = { path = "../lynx-core", default-features = true, features = ["serde", "pal_win_d3d12"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-mlua = { version = "0.11.6", default-features = false, features = ["lua54", "vendored"] }
+mlua = { version = "0.11.6", optional = true, default-features = false, features = ["lua54", "vendored"] }

@@ -1,3 +1,6 @@
+param(
+  [string]$Entry = "lib/main.dart"
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -44,13 +47,13 @@ if (-not (Get-Command cargo-ndk -ErrorAction SilentlyContinue)) {
   & cargo install cargo-ndk --locked
 }
 
-Write-Host "[engine] cargo ndk build → jniLibs (arm64-v8a)..."
+Write-Host "[engine] cargo ndk build -> jniLibs (arm64-v8a)..."
 Set-Location $EngineRoot
 & cargo ndk -t arm64-v8a -P 24 -o $JniLibs build --release
 
-Write-Host "[engine] flutter build apk --release..."
+Write-Host "[engine] flutter build apk --release (-t $Entry)..."
 Set-Location $ClientRoot
 & flutter pub get
-& flutter build apk --release
+& flutter build apk -t $Entry --release
 
 Write-Host "[engine] готово: $ClientRoot\build\app\outputs\flutter-apk\app-release.apk"

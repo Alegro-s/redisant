@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MateShell" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryDark">@color/taskbar</item>
+        <item name="android:statusBarColor">@color/taskbar</item>
+        <item name="android:navigationBarColor">@color/taskbar</item>
+        <item name="android:windowBackground">@color/desktop_bg</item>
+    </style>
+</resources>

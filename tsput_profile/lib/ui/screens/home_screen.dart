@@ -7,6 +7,7 @@ import '../../core/providers/grades_provider.dart';
 import '../../core/providers/labs_provider.dart';
 import '../../core/providers/schedule_provider.dart';
 import '../../core/providers/student_provider.dart';
+import '../widgets/app_motion.dart';
 import '../widgets/app_settings_sheet.dart';
 import '../widgets/profile_card.dart';
 import '../widgets/schedule_card.dart';
@@ -35,8 +36,8 @@ class HomeScreen extends StatelessWidget {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: AppIntroColumn(
+            spacing: 20,
             children: [
               ProfileCard(
                 onSettingsPressed: () => showAppSettingsSheet(context),
@@ -50,21 +51,23 @@ class HomeScreen extends StatelessWidget {
                   ]);
                 },
               ),
-              const SizedBox(height: 20),
               const StatsSwitcher(),
-              const SizedBox(height: 20),
               const _HomeMoodleLabsCard(),
-              const SizedBox(height: 22),
-              Text(
-                'Расписание на сегодня',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.grey[900],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Расписание на сегодня',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.grey[900],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const ScheduleList(),
+                ],
               ),
-              const SizedBox(height: 14),
-              const ScheduleList(),
             ],
           ),
         ),

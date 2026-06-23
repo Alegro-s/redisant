@@ -10,6 +10,8 @@ import 'package:path_provider/path_provider.dart';
 import 'collab/collab_presence.dart';
 import 'collab/scene_collab_crdt.dart';
 import 'collab/script_studio_presence.dart';
+import '../plugins/lynx_plugin_contract.dart';
+import '../plugins/lynx_plugin_host.dart';
 import 'models/engine_models.dart';
 import 'providers/scene_provider.dart';
 
@@ -423,6 +425,16 @@ class ProjectManager extends ChangeNotifier {
     }
   }
 
+  /// Meta спрайта по id ассета (волна 5a AnimationPlayer).
+  Future<SpriteAssetMeta?> readSpriteMetaForAssetId(String assetId) async {
+    for (final a in assets) {
+      if (a.id == assetId) {
+        return _readSpriteMeta(a.path) ?? a.spriteMeta;
+      }
+    }
+    return null;
+  }
+
   Future<void> _loadProjectFile() async {
     if (_rootPath == null) return;
     final file = File(path.join(_rootPath!, 'project.json'));
@@ -464,7 +476,35 @@ class ProjectManager extends ChangeNotifier {
     _projectSettings = settings;
     final file = File(path.join(_rootPath!, 'project.json'));
     await file.writeAsString(jsonEncode(settings.toJson()));
+    await _openPluginHost();
+    final scene = _sceneProvider?.currentScene;
+    if (scene != null) {
+      LynxPluginHost.instance.applySceneExtensions(scene);
+      _sceneProvider?.notifyListeners();
+    }
     notifyListeners();
+  }
+
+  bool isAssetPathDisabled(String relativePath) {
+    final norm = relativePath.replaceAll('\\', '/');
+    return _projectSettings?.lynxPlugins.disabledAssetPaths.contains(norm) ?? false;
+  }
+
+  Future<void> setAssetPathEnabled(String relativePath, bool enabled) async {
+    final settings = _projectSettings;
+    if (settings == null || _rootPath == null || _cloudReadOnly) return;
+    final norm = relativePath.replaceAll('\\', '/');
+    final disabled = List<String>.from(settings.lynxPlugins.disabledAssetPaths);
+    if (enabled) {
+      disabled.remove(norm);
+    } else if (!disabled.contains(norm)) {
+      disabled.add(norm);
+    }
+    await saveProjectSettings(
+      settings.copyWith(
+        lynxPlugins: settings.lynxPlugins.copyWith(disabledAssetPaths: disabled),
+      ),
+    );
   }
 
   void scheduleSceneSave() {
@@ -545,6 +585,7 @@ class ProjectManager extends ChangeNotifier {
   }
 
   Future<bool> loadProject(String projectPath) async {
+    await LynxPluginHost.instance.closeProject();
     disposeSceneCollaboration();
     disposeStudioCollaboration();
     _hierarchyCollapsedBySceneId.clear();
@@ -559,9 +600,23 @@ class ProjectManager extends ChangeNotifier {
     await _reindexAssetFolders();
     await _loadPrefabs();
     await _loadScenes();
+    await _openPluginHost();
     _buildTree();
     notifyListeners();
     return true;
+  }
+
+  Future<void> _openPluginHost() async {
+    final settings = _projectSettings;
+    if (_rootPath == null || settings == null) return;
+    await LynxPluginHost.instance.openProject(
+      LynxPluginProjectContext(
+        projectRoot: _rootPath,
+        projectMode: settings.projectMode,
+        plugins: settings.lynxPlugins,
+        displayName: settings.displayName,
+      ),
+    );
   }
 
   Future<void> _loadPrefabs() async {
@@ -594,16 +649,18 @@ class ProjectManager extends ChangeNotifier {
     for (final entity in entities) {
       if (entity is File) {
         final baseName = path.basename(entity.path);
-        if (baseName.endsWith('.meta.json')) continue;
+        if (baseName.endsWith('.meta.json') || baseName.endsWith('.lynxdoc.json')) continue;
         final relativePath = path.relative(entity.path, from: _rootPath);
         final ext = path.extension(entity.path).toLowerCase();
         String type;
         if (ext == '.png' || ext == '.jpg' || ext == '.jpeg') {
           type = 'sprite';
-        } else if (ext == '.lua') {
+        } else if (ext == '.lua' || ext == '.lynxscript') {
           type = 'script';
         } else if (ext == '.mp3' || ext == '.wav') {
           type = 'sound';
+        } else if (ext == '.glb' || ext == '.gltf') {
+          type = 'model';
         } else {
           continue;
         }
@@ -950,6 +1007,123 @@ class ProjectManager extends ChangeNotifier {
     _buildTree();
     notifyListeners();
     return asset;
+  }
+
+  Future<ProjectAsset?> createLynxScriptAsset(
+    String name,
+    String lynxScriptContent, {
+    Map<String, dynamic>? graphJson,
+  }) async {
+    if (_cloudReadOnly) return null;
+    if (_rootPath == null) return null;
+    final safe = name.replaceAll(RegExp(r'[^\w\-]+'), '_');
+    final fileName = safe.endsWith('.lynxscript') ? safe : '$safe.lynxscript';
+    final rel = path.join('assets', 'scripts', fileName);
+    final filePath = path.join(_rootPath!, rel);
+    final file = File(filePath);
+    await file.create(recursive: true);
+    await file.writeAsString(lynxScriptContent);
+    if (graphJson != null) {
+      final graphRel = '$rel.graph.json';
+      await File(path.join(_rootPath!, graphRel)).writeAsString(
+        const JsonEncoder.withIndent('  ').convert(graphJson),
+      );
+    }
+    final asset = ProjectAsset(
+      id: rel.replaceAll('/', '_').replaceAll('\\', '_'),
+      name: fileName,
+      type: 'script',
+      path: rel,
+      createdAt: DateTime.now(),
+      modifiedAt: DateTime.now(),
+      data: lynxScriptContent,
+    );
+    final existing = _assets.indexWhere((a) => a.id == asset.id);
+    if (existing >= 0) {
+      _assets[existing] = asset;
+    } else {
+      _assets.add(asset);
+    }
+    _buildTree();
+    notifyListeners();
+    return asset;
+  }
+
+  Future<ProjectAsset?> importSoundFromFile(String sourcePath, {String? displayName}) async {
+    if (_cloudReadOnly) return null;
+    if (_rootPath == null) return null;
+    final src = File(sourcePath);
+    if (!await src.exists()) return null;
+    final base = displayName ?? path.basename(sourcePath);
+    var fileName = base;
+    if (!RegExp(r'\.(wav|mp3|ogg|m4a)$', caseSensitive: false).hasMatch(fileName)) {
+      fileName = '$fileName.wav';
+    }
+    final rel = path.join('assets', 'sounds', fileName);
+    final dest = File(path.join(_rootPath!, rel));
+    await dest.parent.create(recursive: true);
+    await src.copy(dest.path);
+    final asset = ProjectAsset(
+      id: rel.replaceAll('/', '_').replaceAll('\\', '_'),
+      name: fileName,
+      type: 'sound',
+      path: rel,
+      createdAt: DateTime.now(),
+      modifiedAt: DateTime.now(),
+    );
+    final existing = _assets.indexWhere((a) => a.id == asset.id);
+    if (existing >= 0) {
+      _assets[existing] = asset;
+    } else {
+      _assets.add(asset);
+    }
+    _buildTree();
+    notifyListeners();
+    return asset;
+  }
+
+  Future<String?> replaceSoundAssetFile(String assetId, String sourcePath) async {
+    if (_cloudReadOnly) return 'Только чтение';
+    if (_rootPath == null) return 'Нет проекта';
+    final idx = _assets.indexWhere((a) => a.id == assetId);
+    if (idx < 0) return 'Ассет не найден';
+    final a = _assets[idx];
+    if (a.type != 'sound') return 'Не звуковой ассет';
+    final src = File(sourcePath);
+    if (!await src.exists()) return 'Файл не найден';
+    final dest = File(path.join(_rootPath!, a.path));
+    await dest.parent.create(recursive: true);
+    await src.copy(dest.path);
+    _assets[idx] = ProjectAsset(
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      path: a.path,
+      createdAt: a.createdAt,
+      modifiedAt: DateTime.now(),
+    );
+    if (canPushCloudAsset) {
+      final bytes = await dest.readAsBytes();
+      await syncLocalAssetBytesToCloud(assetId, bytes);
+    }
+    notifyListeners();
+    return null;
+  }
+
+  void updateScriptAssetContent(String assetId, String content) {
+    final idx = _assets.indexWhere((a) => a.id == assetId);
+    if (idx < 0) return;
+    final prev = _assets[idx];
+    _assets[idx] = ProjectAsset(
+      id: prev.id,
+      name: prev.name,
+      type: prev.type,
+      path: prev.path,
+      createdAt: prev.createdAt,
+      modifiedAt: DateTime.now(),
+      data: content,
+    );
+    notifyListeners();
   }
 
   Future<Scene> createScene(String name) async {

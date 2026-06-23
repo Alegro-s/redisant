@@ -1,0 +1,53 @@
+{
+  "settingsVersion": 1,
+  "projectId": "00000000-0000-4000-8000-000000000001",
+  "displayName": "Platformer Demo 3D (Wave 1)",
+  "gameTemplate": "platformer",
+  "startupSceneId": "main",
+  "designWidth": 960,
+  "designHeight": 540,
+  "pixelPerfect": false,
+  "defaultGravityY": 980,
+  "pixelsPerUnit": 1,
+  "physicsLayers": [
+    "default",
+    "player",
+    "enemy"
+  ],
+  "inputMap": {
+    "move_left": [
+      "A",
+      "Left"
+    ],
+    "move_right": [
+      "D",
+      "Right"
+    ],
+    "jump": [
+      "Space"
+    ]
+  },
+  "tilesets": [
+    {
+      "id": "platform",
+      "texturePath": "assets/tilesets/platform.png",
+      "columns": 4,
+      "tileWidth": 32,
+      "tileHeight": 32
+    }
+  ],
+  "audioMasterVolume": 1.0,
+  "audioBusVolumes": {},
+  "projectMode": "3d",
+  "lynxPlugins": {
+    "apiVersion": 1,
+    "enabled": [
+      "lynx.3d"
+    ],
+    "config": {
+      "lynx.3d": {
+        "defaultCamera": "perspective"
+      }
+    }
+  }
+}

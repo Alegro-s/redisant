@@ -12,7 +12,24 @@ import '../../core/providers/portfolio_provider.dart';
 import '../../core/providers/student_provider.dart';
 import '../../data/portfolio_pedagogy_sections.dart';
 import '../widgets/portfolio_category_sheet.dart';
+import '../widgets/app_motion.dart';
 import 'labs_screen.dart';
+
+class ShowcaseHeroSlide {
+  const ShowcaseHeroSlide({
+    required this.tag,
+    required this.title,
+    required this.subtitle,
+    required this.colors,
+    this.actionUrl,
+  });
+
+  final String tag;
+  final String title;
+  final String subtitle;
+  final List<Color> colors;
+  final String? actionUrl;
+}
 
 String _loyaltyCardDigits(String seed) {
   var h = 2166136261;
@@ -47,6 +64,27 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
   final GlobalKey _portfolioKey = GlobalKey();
   String? _linkedEmail;
   int _heroIndex = 0;
+
+  List<ShowcaseHeroSlide> get _heroSlides => const [
+        ShowcaseHeroSlide(
+          tag: 'Стипендии',
+          title: 'Льготы и выплаты',
+          subtitle: 'Матпомощь, категории и сроки',
+          colors: [Color(0xFF3A2520), AppConstants.terracottaDark, AppConstants.terracotta],
+        ),
+        ShowcaseHeroSlide(
+          tag: 'Университет',
+          title: 'ТГПУ рядом с вами',
+          subtitle: 'Обучение, расписание, сервисы',
+          colors: [AppConstants.blockBlack, AppConstants.blockBlackElevated, Color(0xFF2C2C2C)],
+        ),
+        ShowcaseHeroSlide(
+          tag: 'Карьера',
+          title: 'Наука и проекты',
+          subtitle: 'Практики, ВКР, мероприятия',
+          colors: [Color(0xFF1E2D28), Color(0xFF2A4038), Color(0xFF355A4F)],
+        ),
+      ];
 
   @override
   void initState() {
@@ -275,178 +313,163 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
     );
   }
 
-  List<(String, String, String, List<Color>)> get _heroSlides => [
-        (
-          'Стипендии',
-          'Льготы и выплаты',
-          'Матпомощь, категории и сроки',
-          [const Color(0xFF3A2520), AppConstants.terracottaDark, AppConstants.terracotta],
-        ),
-        (
-          'Университет',
-          'ТГПУ рядом с вами',
-          'Обучение, расписание, сервисы',
-          [AppConstants.blockBlack, AppConstants.blockBlackElevated, const Color(0xFF2C2C2C)],
-        ),
-        (
-          'Карьера',
-          'Наука и проекты',
-          'Практики, ВКР, мероприятия',
-          [const Color(0xFF1E2D28), const Color(0xFF2A4038), const Color(0xFF355A4F)],
-        ),
-      ];
-
   Widget _buildHeroAndOverlapSheet(BuildContext context) {
     final slides = _heroSlides;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 12, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    AppConstants.appName,
-                    style: const TextStyle(
-                      color: AppConstants.blockBlack,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.6,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: _openSearch,
-                  icon: const Icon(PhosphorIconsRegular.magnifyingGlass, color: AppConstants.blockBlack, size: 26),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: SizedBox(
-            height: 236,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  PageView.builder(
-                    controller: _heroPage,
-                    onPageChanged: (i) => setState(() => _heroIndex = i),
-                    itemCount: slides.length,
-                    itemBuilder: (context, i) {
-                      final s = slides[i];
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: s.$4,
-                          ),
-                        ),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Positioned(
-                              right: -24,
-                              bottom: -16,
-                              child: Icon(
-                                PhosphorIconsRegular.graduationCap,
-                                size: 120,
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(22, 28, 22, 40),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                                    ),
-                                    child: Text(
-                                      s.$1,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 11,
-                                        letterSpacing: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    s.$2,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                      height: 1.15,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    s.$3,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.88),
-                                      fontSize: 14,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: AppConstants.blockBlack,
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                    ),
-                                    onPressed: () => _openUrl(AppConstants.portalRegisterUrl),
-                                    child: const Text('Подробнее'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 14,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        slides.length,
-                        (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 220),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: _heroIndex == i ? 22 : 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: _heroIndex == i ? Colors.white : Colors.white.withValues(alpha: 0.45),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+        AppIntroColumn(
+          spacing: 12,
+          children: [
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 12, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AppConstants.appName,
+                        style: const TextStyle(
+                          color: AppConstants.blockBlack,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.6,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    IconButton(
+                      onPressed: _openSearch,
+                      icon: const Icon(PhosphorIconsRegular.magnifyingGlass, color: AppConstants.blockBlack, size: 26),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                height: 236,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      PageView.builder(
+                        controller: _heroPage,
+                        onPageChanged: (i) => setState(() => _heroIndex = i),
+                        itemCount: slides.length,
+                        itemBuilder: (context, i) {
+                          final s = slides[i];
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: s.colors,
+                              ),
+                            ),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Positioned(
+                                  right: -24,
+                                  bottom: -16,
+                                  child: Icon(
+                                    PhosphorIconsRegular.graduationCap,
+                                    size: 120,
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(22, 28, 22, 40),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                        ),
+                                        child: Text(
+                                          s.tag,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11,
+                                            letterSpacing: 0.6,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        s.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.15,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        s.subtitle,
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.88),
+                                          fontSize: 14,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      FilledButton(
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: AppConstants.blockBlack,
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                        ),
+                                        onPressed: () => _openUrl(s.actionUrl ?? AppConstants.portalRegisterUrl),
+                                        child: const Text('Подробнее'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 14,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            slides.length,
+                            (i) => AnimatedContainer(
+                              duration: AppMotion.chipDuration,
+                              curve: AppMotion.curve,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _heroIndex == i ? 22 : 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: _heroIndex == i ? Colors.white : Colors.white.withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         Transform.translate(
           offset: const Offset(0, -32),
@@ -457,8 +480,8 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: AppIntroColumn(
+                spacing: 16,
                 children: [
                   Row(
                     children: [
@@ -491,16 +514,12 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
                   _buildBentoGrid(context),
-                  const SizedBox(height: 20),
                   KeyedSubtree(
                     key: _loyaltyKey,
                     child: _buildLoyaltySection(context),
                   ),
-                  const SizedBox(height: 16),
                   _buildPastelShortcutRow(context),
-                  const SizedBox(height: 20),
                   KeyedSubtree(
                     key: _portfolioKey,
                     child: _buildPortfolioSection(context),
@@ -989,12 +1008,7 @@ class _PortfolioCategoryBlock extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: tint,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border(
-                                left: const BorderSide(color: AppConstants.terracotta, width: 3),
-                                top: BorderSide(color: AppConstants.borderSubtle),
-                                right: BorderSide(color: AppConstants.borderSubtle),
-                                bottom: BorderSide(color: AppConstants.borderSubtle),
-                              ),
+                              border: Border.all(color: AppConstants.borderSubtle),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.06),

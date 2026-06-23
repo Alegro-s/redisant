@@ -42,6 +42,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
       AUTH_PUBLIC_URL: http://waypoint-auth-api:8090
+      LYNX_HUB_ADMIN_TOKEN: ${LYNX_HUB_ADMIN_TOKEN:-}
     ports:
       - '127.0.0.1:8082:8082'
     volumes:

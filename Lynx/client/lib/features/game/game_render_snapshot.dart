@@ -2,6 +2,7 @@ class GameRenderSnapshot {
   final List<Map<String, dynamic>> entities;
   final List<Map<String, dynamic>> tilemaps;
   final List<Map<String, dynamic>> rooms;
+  final Map<String, Map<String, dynamic>> logicGrids;
   final double cameraX;
   final double cameraY;
   final double zoom;
@@ -12,6 +13,7 @@ class GameRenderSnapshot {
     required this.entities,
     required this.tilemaps,
     required this.rooms,
+    this.logicGrids = const {},
     required this.cameraX,
     required this.cameraY,
     required this.zoom,
@@ -30,6 +32,7 @@ class GameRenderSnapshot {
       entities: const [],
       tilemaps: const [],
       rooms: const [],
+      logicGrids: const {},
       cameraX: cameraX,
       cameraY: cameraY,
       zoom: zoom,
@@ -67,10 +70,21 @@ class GameRenderSnapshot {
           )
         : <Map<String, dynamic>>[];
 
+    final rawGrids = sceneData['logic_grids'];
+    final logicGrids = <String, Map<String, dynamic>>{};
+    if (rawGrids is Map) {
+      rawGrids.forEach((key, value) {
+        if (value is Map) {
+          logicGrids[key.toString()] = Map<String, dynamic>.from(value);
+        }
+      });
+    }
+
     return GameRenderSnapshot(
       entities: entities,
       tilemaps: tilemaps,
       rooms: rooms,
+      logicGrids: logicGrids,
       cameraX: cameraX,
       cameraY: cameraY,
       zoom: zoom,

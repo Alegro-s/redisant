@@ -345,5 +345,12 @@ def chat_completion(
     if b == "llama_cpp":
         return _llama_cpp_complete(settings, messages, stream=stream, on_delta=on_delta, timeout=timeout)
     if b == "hf_local":
+        from roza.hf_local_llm import hf_local_deps_available
+
+        if not hf_local_deps_available():
+            raise RuntimeError(
+                "Локальная модель на сервере не настроена. "
+                "Попробуйте позже или откройте приложение Roza для Windows."
+            )
         return hf_local_complete(settings, messages, stream=stream, on_delta=on_delta, timeout=timeout)
     raise ValueError(f"Неизвестный llm.backend: {b}")

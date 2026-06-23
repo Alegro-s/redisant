@@ -1,0 +1,78 @@
+{
+  "formatVersion": 3,
+  "id": "menu",
+  "name": "Menu",
+  "objects": [
+    {
+      "id": "menu_play_ui",
+      "name": "PlayButton",
+      "type": "empty",
+      "x": 640,
+      "y": 420,
+      "z": 0,
+      "active": true,
+      "visible": true,
+      "width": 200,
+      "height": 48,
+      "layerId": "layer_ui",
+      "properties": {
+        "lynxUi": {
+          "type": "button",
+          "text": "\u0418\u0433\u0440\u0430\u0442\u044c (UI)",
+          "action": "load_scene:main"
+        }
+      }
+    },
+    {
+      "id": "menu_ctrl",
+      "name": "MenuController",
+      "type": "empty",
+      "x": 640,
+      "y": 360,
+      "z": 0,
+      "active": true,
+      "visible": true,
+      "properties": {
+        "script": {
+          "code": "-- \u0412\u043e\u043b\u043d\u0430 2: Enter / Space \u2192 \u0443\u0440\u043e\u0432\u0435\u043d\u044c\nif action_confirm then\n  load_scene(\"main\")\nend\n"
+        }
+      }
+    },
+    {
+      "id": "title",
+      "name": "Title",
+      "type": "sprite",
+      "x": 640,
+      "y": 280,
+      "z": 0,
+      "active": true,
+      "visible": true,
+      "properties": {
+        "static": true,
+        "tint": 4283417591
+      }
+    }
+  ],
+  "layers": [
+    {
+      "id": "default",
+      "name": "Default",
+      "sortOrder": 0
+    }
+  ],
+  "camera": {
+    "x": 640,
+    "y": 360,
+    "zoom": 1,
+    "followInstanceId": null
+  },
+  "backgroundColorArgb": 4278190080,
+  "physics": {
+    "gravityY": 980
+  },
+  "tilemaps": [],
+  "rooms": [],
+  "createdAt": "2026-06-02T22:25:12.000Z",
+  "modifiedAt": "2026-06-02T22:25:12.000Z",
+  "revision": 1
+}

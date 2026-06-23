@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../../../app/widgets/lynx_logo.dart';
+import '../../../app/widgets/lynx_external_links.dart';
 
 enum _LoginPhase { credentials, chooseChannel, enterCode }
 
@@ -301,31 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.hexagon_outlined, size: 36, color: cs.primary),
-                          const SizedBox(height: 8),
-                          Text(
-                            'LYNX',
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 2,
-                              color: cs.onSurface,
-                            ).copyWith(inherit: false),
-                          ),
-                          Text(
-                            'workspace',
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 11,
-                              color: cs.onSurfaceVariant,
-                              letterSpacing: 0.8,
-                            ).copyWith(inherit: false),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Center(child: LynxLogo(size: isCompact ? 44 : 48)),
                     const SizedBox(height: 20),
                     Material(
                       color: Theme.of(context).cardTheme.color ?? cs.surface,
@@ -352,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       spacing: 2,
                       children: [
                         TextButton(
-                          onPressed: () => context.push('/legal?tab=privacy'),
+                          onPressed: () => openLynxLegal(context, tab: 'privacy'),
                           child: const Text('Конфиденциальность'),
                         ),
                         Padding(
@@ -360,7 +338,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text('·', style: TextStyle(color: cs.onSurfaceVariant)),
                         ),
                         TextButton(
-                          onPressed: () => context.push('/legal?tab=terms'),
+                          onPressed: () => openLynxLegal(context, tab: 'terms'),
                           child: const Text('Условия'),
                         ),
                       ],

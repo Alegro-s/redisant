@@ -36,7 +36,7 @@ public sealed class CompanionLocalPrefs
     [JsonPropertyName("yandex_tokens_json")]
     public string YandexTokensJson { get; set; } = "";
 
-    /// <summary>0 — тёмная, 1 — светлая, 2 — как в системе (как в Waypoint Desktop).</summary>
+    /// <summary>0 — тёмная, 1 — светлая, 2 — как в системе.</summary>
     [JsonPropertyName("ui_theme")]
     public int UiTheme { get; set; } = 1;
 
@@ -51,6 +51,10 @@ public sealed class CompanionLocalPrefs
 
     [JsonPropertyName("account_url")]
     public string AccountUrl { get; set; } = "https://waypointclub.ru/roza/account";
+
+    /// <summary>Чат только с локальным python -m roza web, без облачного аккаунта.</summary>
+    [JsonPropertyName("local_only_mode")]
+    public bool LocalOnlyMode { get; set; }
 
     /// <summary>free | pro</summary>
     [JsonPropertyName("subscription_plan")]

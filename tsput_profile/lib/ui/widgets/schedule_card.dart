@@ -7,6 +7,7 @@ import '../../core/constants.dart';
 import '../../core/providers/schedule_provider.dart';
 import '../../data/models/schedule.dart';
 import 'schedule_detail_sheet.dart';
+import 'app_motion.dart';
 
 class ScheduleList extends StatelessWidget {
   const ScheduleList({super.key});
@@ -49,7 +50,9 @@ class ScheduleList extends StatelessWidget {
       );
     }
 
-    return Column(
+    return AppRevealList(
+      listKey: todaySchedule.map((e) => e.id).join(','),
+      spacing: 12,
       children: todaySchedule.map((item) => _buildScheduleCard(context, item)).toList(),
     );
   }
@@ -66,11 +69,9 @@ class ScheduleList extends StatelessWidget {
   Widget _buildScheduleCard(BuildContext context, Schedule item) {
     final timeFormat = DateFormat('HH:mm');
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
           onTap: () => showScheduleDetailSheet(context, item),
           borderRadius: BorderRadius.circular(16),
           child: Container(
@@ -168,7 +169,6 @@ class ScheduleList extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 

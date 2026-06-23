@@ -11,6 +11,7 @@ import '../auth/models/user.dart';
 import '../auth/providers/auth_provider.dart';
 import '../projects/providers/project_provider.dart';
 import '../../app/providers/settings_provider.dart';
+import '../../app/widgets/lynx_external_links.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -436,38 +437,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 constraints: BoxConstraints(maxWidth: maxContent),
                 child: Column(
                   children: [
-                Center(
-                  child: GestureDetector(
-                    onTap: _pickImage,
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: cs.primaryContainer,
-                          backgroundImage: _newAvatar != null
-                              ? FileImage(_newAvatar!)
-                              : () {
-                                  final url = user?.avatarUrl;
-                                  return (url != null && url.isNotEmpty) ? NetworkImage(url) : null;
-                                }(),
-                          child: user?.avatarUrl == null && _newAvatar == null
-                              ? Icon(Icons.person_rounded, size: 50, color: cs.primary)
-                              : null,
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            radius: 16,
-                            backgroundColor: cs.primary,
-                            child: const Icon(Icons.edit_rounded, size: 16, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                _ProfileHeroBanner(
+                  user: user,
+                  avatarFile: _newAvatar,
+                  onPickAvatar: _pickImage,
+                  onEdit: () {
+                    if (_formKey.currentState?.validate() ?? false) {
+                      _saveProfile();
+                    }
+                  },
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 _profileSection(
                   context,
                   title: 'Аккаунт',
@@ -681,14 +661,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         leading: Icon(Icons.privacy_tip_outlined, color: cs.primary),
                         title: const Text('Политика конфиденциальности'),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => context.push('/legal?tab=privacy'),
+                        onTap: () => openLynxLegal(context, tab: 'privacy'),
                       ),
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Icon(Icons.article_outlined, color: cs.primary),
                         title: const Text('Условия использования'),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => context.push('/legal?tab=terms'),
+                        onTap: () => openLynxLegal(context, tab: 'terms'),
                       ),
                     ],
                   ),
@@ -699,6 +679,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ProfileHeroBanner extends StatelessWidget {
+  const _ProfileHeroBanner({
+    required this.user,
+    required this.avatarFile,
+    required this.onPickAvatar,
+    required this.onEdit,
+  });
+
+  final User? user;
+  final File? avatarFile;
+  final VoidCallback onPickAvatar;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final nick = user?.nickname ?? 'user';
+    final name = (user?.fullName.isNotEmpty ?? false) ? user!.fullName : nick;
+    ImageProvider? avatarImage;
+    if (avatarFile != null) {
+      avatarImage = FileImage(avatarFile!);
+    } else {
+      final url = user?.avatarUrl;
+      if (url != null && url.isNotEmpty) avatarImage = NetworkImage(url);
+    }
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 96,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  cs.primary.withValues(alpha: 0.55),
+                  cs.surfaceContainerHighest,
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Transform.translate(
+                  offset: const Offset(0, -28),
+                  child: GestureDetector(
+                    onTap: onPickAvatar,
+                    child: CircleAvatar(
+                      radius: 36,
+                      backgroundColor: cs.primaryContainer,
+                      backgroundImage: avatarImage,
+                      child: avatarImage == null
+                          ? Icon(Icons.person_rounded, size: 36, color: cs.primary)
+                          : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        Text('@$nick', style: TextStyle(color: cs.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                ),
+                FilledButton.tonal(
+                  onPressed: onEdit,
+                  child: const Text('Сохранить'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

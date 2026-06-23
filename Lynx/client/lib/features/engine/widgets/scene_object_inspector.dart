@@ -4,8 +4,18 @@ import 'package:provider/provider.dart';
 import '../models/engine_models.dart';
 import '../project_manager.dart';
 import '../providers/scene_provider.dart';
+import 'animation_player_panel.dart';
+import 'behavior_tree_editor_dialog.dart';
+import 'lynx_blueprint_editor_dialog.dart';
+import '../runtime/lynx_blueprint_service.dart';
+import '../runtime/lynx_graph_compiler.dart';
+import '../runtime/lynx_graph_model.dart';
 import '../runtime/prefab_baseline_utils.dart';
 import '../runtime/scene_hierarchy_utils.dart';
+import '../runtime/scene_ui_codec.dart';
+import 'ui_layout_preview_panel.dart';
+import '../../plugins/lynx_plugin_host.dart';
+import '../../plugins/lynx_3d/lynx_3d_object_inspector.dart';
 
 class SceneObjectInspector extends StatefulWidget {
   final SceneObject object;
@@ -387,7 +397,7 @@ class _SceneObjectInspectorState extends State<SceneObjectInspector> {
                 key: ValueKey('${o.id}_script_$scriptValue'),
                 initialValue: scriptValue,
                 decoration: const InputDecoration(
-                  labelText: 'Скрипт Lua',
+                  labelText: 'Скрипт (Lua / LynxScript)',
                   isDense: true,
                 ),
                 items: [
@@ -401,6 +411,56 @@ class _SceneObjectInspectorState extends State<SceneObjectInspector> {
                     : (v) {
                         _patchSceneObject(o.copyWith(scriptId: v));
                       },
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: manager.isCloudReadOnly
+                    ? null
+                    : () async {
+                        final prop = o.properties['lynxGraph'];
+                        LynxGraphDocument? initial;
+                        if (prop is Map) {
+                          initial = tryParseLynxGraphJson(Map<String, dynamic>.from(prop));
+                        }
+                        if (initial == null && o.scriptId != null) {
+                          for (final a in manager.assets) {
+                            if (a.id == o.scriptId) {
+                              initial = await loadGraphSidecar(manager, a);
+                              break;
+                            }
+                          }
+                        }
+                        if (!context.mounted) return;
+                        final result = await showLynxBlueprintEditor(
+                          context,
+                          initial: initial ?? LynxGraphDocument.defaultPlayerController(),
+                        );
+                        if (result == null || !context.mounted) return;
+                        try {
+                          final scriptText = compileLynxGraphToScript(result);
+                          final asset = await manager.createLynxScriptAsset(
+                            '${o.name}_blueprint',
+                            scriptText,
+                            graphJson: result.toJson(),
+                          );
+                          if (asset != null) {
+                            _patchSceneObject(
+                              o.copyWith(
+                                scriptId: asset.id,
+                                properties: {...o.properties, 'lynxGraph': result.toJson()},
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Blueprint: $e')),
+                            );
+                          }
+                        }
+                      },
+                icon: const Icon(Icons.hub_outlined, size: 18),
+                label: const Text('Blueprint (LynxGraph)'),
               ),
               const SizedBox(height: 12),
               Text('Transform', style: TextStyle(color: cs.primary, fontSize: 12)),
@@ -610,6 +670,78 @@ class _SceneObjectInspectorState extends State<SceneObjectInspector> {
                     ? null
                     : (v) => _patchSceneObject(o.copyWith(properties: _withStatic(o, v))),
               ),
+              const SizedBox(height: 12),
+              Text('Редактор Pro', style: TextStyle(color: cs.primary, fontSize: 12)),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: manager.isCloudReadOnly
+                        ? null
+                        : () => showAnimationPlayerPanel(
+                              context,
+                              object: o,
+                              onApply: _patchSceneObject,
+                            ),
+                    icon: const Icon(Icons.animation_outlined, size: 18),
+                    label: const Text('AnimationPlayer'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: manager.isCloudReadOnly
+                        ? null
+                        : () async {
+                            final bt = o.properties['rustBehaviorTree'];
+                            final result = await showBehaviorTreeEditor(
+                              context,
+                              initial: bt is Map ? Map<String, dynamic>.from(bt) : null,
+                            );
+                            if (result != null) {
+                              _patchSceneObject(
+                                o.copyWith(
+                                  properties: {...o.properties, 'rustBehaviorTree': result},
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.account_tree_outlined, size: 18),
+                    label: const Text('Behavior Tree'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: manager.isCloudReadOnly
+                        ? null
+                        : () {
+                            _patchSceneObject(
+                              o.copyWith(
+                                layerId: SceneLayer.uiLayerId,
+                                properties: defaultUiButtonAnchoredProperties(
+                                  'Play',
+                                  'load_scene:main',
+                                ),
+                                width: o.width <= 0 ? 180 : o.width,
+                                height: o.height <= 0 ? 44 : o.height,
+                              ),
+                            );
+                          },
+                    icon: const Icon(Icons.widgets_outlined, size: 18),
+                    label: const Text('UI кнопка (anchor)'),
+                  ),
+                  if (o.layerId == SceneLayer.uiLayerId ||
+                      o.properties['lynxUi'] is Map) ...[
+                    const SizedBox(height: 8),
+                    UiLayoutPreviewPanel(
+                      object: o,
+                      baseDesignW: (manager.projectSettings?.designWidth ?? 1280).toDouble(),
+                      baseDesignH: (manager.projectSettings?.designHeight ?? 720).toDouble(),
+                    ),
+                  ],
+                ],
+              ),
+              if (LynxPluginHost.instance.is3dActive) ...[
+                const SizedBox(height: 12),
+                Lynx3dObjectInspectorSection(object: o),
+              ],
               const SizedBox(height: 8),
               Text(
                 'id: ${o.id}',

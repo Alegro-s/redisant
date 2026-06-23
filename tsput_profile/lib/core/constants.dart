@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'integration_runtime.dart';
 
 class AppConstants {
-  static const String appName = 'ТГПУ профиль';
+  static const String appName = 'ТОЛСТОВСКИЙ PROFILE';
+  static const String appSubtitle = 'Вход в личный профиль студента университета';
+  static const String appVersion = '1.1.2';
+  static const String appBuild = '3';
+  static const String adminWebUrl = 'http://127.0.0.1:8093';
 
   static String get integrationBaseUrl => IntegrationRuntime.baseUrl;
 
@@ -24,6 +28,8 @@ class AppConstants {
   static const String examsEndpoint = '/api/exams';
   static const String portfolioEndpoint = '/api/portfolio';
   static const String moodleLabsEndpoint = '/api/moodle/labs';
+  static const String adminScheduleEndpoint = '/api/admin/schedule';
+  static const String defaultAdminToken = 'tsput-admin-dev';
   static const Color surfaceWhite = Color(0xFFFFFFFF);
   static const Color surfaceMuted = Color(0xFFF5F5F4);
   static const Color blockBlack = Color(0xFF121212);

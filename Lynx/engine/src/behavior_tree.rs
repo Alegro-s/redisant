@@ -55,6 +55,44 @@ pub enum BtStatus {
 pub struct BtState {
     pub stack: Vec<usize>,
     pub wait_remaining: f32,
+    /// Активный узел для Play overlay (волна 10a).
+    pub debug_path: String,
+    pub debug_node_type: String,
+    pub debug_running: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct BtDebugEntry {
+    pub entity_id: usize,
+    pub entity_name: String,
+    pub path: String,
+    pub node_type: String,
+    pub running: bool,
+}
+
+fn node_type_name(node: &BtNode) -> &'static str {
+    match node {
+        BtNode::Sequence { .. } => "sequence",
+        BtNode::Selector { .. } => "selector",
+        BtNode::Inverter { .. } => "inverter",
+        BtNode::LeafPatrol { .. } => "leaf_patrol",
+        BtNode::LeafWait { .. } => "leaf_wait",
+        BtNode::LeafChaseX { .. } => "leaf_chase_x",
+        BtNode::LeafSetVelocity { .. } => "leaf_set_velocity",
+        BtNode::LeafIdle => "leaf_idle",
+    }
+}
+
+fn mark_running(e: &mut Entity, path: &str, node: &BtNode) {
+    e.bt_state.debug_path = path.to_string();
+    e.bt_state.debug_node_type = node_type_name(node).to_string();
+    e.bt_state.debug_running = true;
+}
+
+fn clear_debug(e: &mut Entity) {
+    e.bt_state.debug_path.clear();
+    e.bt_state.debug_node_type.clear();
+    e.bt_state.debug_running = false;
 }
 
 fn flip(s: BtStatus) -> BtStatus {
@@ -135,7 +173,15 @@ pub fn tick_r(
     depth: usize,
     dt: f32,
     invert: bool,
+    path: &str,
 ) -> BtStatus {
+    let ty = node_type_name(node);
+    let my_path = if path.is_empty() {
+        ty.to_string()
+    } else {
+        format!("{path}/{ty}")
+    };
+
     let mut status = match node {
         BtNode::Sequence { children } => {
             if children.is_empty() {
@@ -147,7 +193,8 @@ pub fn tick_r(
                     e.bt_state.stack[depth] = 0;
                     BtStatus::Success
                 } else {
-                    match tick_r(&children[i], e, snap, depth + 1, dt, false) {
+                    let child_path = format!("{my_path}[{i}]");
+                    match tick_r(&children[i], e, snap, depth + 1, dt, false, &child_path) {
                         BtStatus::Failure => {
                             e.bt_state.stack[depth] = 0;
                             BtStatus::Failure
@@ -160,7 +207,8 @@ pub fn tick_r(
                                 BtStatus::Success
                             } else {
                                 let ni = e.bt_state.stack[depth];
-                                tick_r(&children[ni], e, snap, depth + 1, dt, false)
+                                let next_path = format!("{my_path}[{ni}]");
+                                tick_r(&children[ni], e, snap, depth + 1, dt, false, &next_path)
                             }
                         }
                     }
@@ -176,7 +224,8 @@ pub fn tick_r(
                 let mut result = BtStatus::Failure;
                 for idx in start..children.len() {
                     e.bt_state.stack[depth] = idx;
-                    match tick_r(&children[idx], e, snap, depth + 1, dt, false) {
+                    let child_path = format!("{my_path}[{idx}]");
+                    match tick_r(&children[idx], e, snap, depth + 1, dt, false, &child_path) {
                         BtStatus::Failure => continue,
                         BtStatus::Running => {
                             result = BtStatus::Running;
@@ -195,7 +244,10 @@ pub fn tick_r(
                 result
             }
         }
-        BtNode::Inverter { child } => tick_r(child, e, snap, depth, dt, true),
+        BtNode::Inverter { child } => {
+            let child_path = format!("{my_path}/inv");
+            tick_r(child, e, snap, depth, dt, true, &child_path)
+        }
         BtNode::LeafPatrol { min_x, max_x, speed } => {
             apply_patrol(e, *min_x, *max_x, *speed);
             BtStatus::Running
@@ -241,7 +293,38 @@ pub fn tick_r(
     if invert {
         status = flip(status);
     }
+    if status == BtStatus::Running && is_leaf_node(node) {
+        mark_running(e, &my_path, node);
+    } else if depth == 0 && status != BtStatus::Running {
+        clear_debug(e);
+    }
     status
+}
+
+fn is_leaf_node(node: &BtNode) -> bool {
+    matches!(
+        node,
+        BtNode::LeafPatrol { .. }
+            | BtNode::LeafWait { .. }
+            | BtNode::LeafChaseX { .. }
+            | BtNode::LeafSetVelocity { .. }
+            | BtNode::LeafIdle
+    )
+}
+
+pub fn collect_bt_debug(scene: &crate::Scene) -> Vec<BtDebugEntry> {
+    scene
+        .entities
+        .iter()
+        .filter(|e| e.behavior_tree.is_some())
+        .map(|e| BtDebugEntry {
+            entity_id: e.id,
+            entity_name: e.name.clone(),
+            path: e.bt_state.debug_path.clone(),
+            node_type: e.bt_state.debug_node_type.clone(),
+            running: e.bt_state.debug_running,
+        })
+        .collect()
 }
 
 pub fn tick_behavior_trees(scene: &mut crate::Scene, dt: f32) {
@@ -250,10 +333,70 @@ pub fn tick_behavior_trees(scene: &mut crate::Scene, dt: f32) {
         .iter()
         .map(|e| (e.id, e.transform.pos.x, e.name.clone()))
         .collect();
+
+    let break_sub = scene.bt_break_subpath.clone();
+    let step_once = scene.bt_step_armed;
+    if step_once {
+        scene.bt_step_armed = false;
+    }
+    let run_bt = !scene.paused || step_once;
+
+    if !run_bt {
+        return;
+    }
+
     for e in &mut scene.entities {
         let Some(bt) = e.behavior_tree.clone() else {
             continue;
         };
-        let _ = tick_r(&bt.root, e, &snap, 0, dt, false);
+        if let Some(ref sub) = break_sub {
+            if !sub.is_empty()
+                && e.bt_state.debug_running
+                && e.bt_state.debug_path.contains(sub)
+            {
+                scene.paused = true;
+                continue;
+            }
+        }
+        let _ = tick_r(&bt.root, e, &snap, 0, dt, false, "root");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Entity, Vec2};
+
+    #[test]
+    fn patrol_sets_debug_path() {
+        let bt = BehaviorTree {
+            root: BtNode::Sequence {
+                children: vec![BtNode::LeafPatrol {
+                    min_x: 0.0,
+                    max_x: 100.0,
+                    speed: 50.0,
+                }],
+            },
+        };
+        let mut e = Entity::new(2, "enemy", Vec2::new(50.0, 0.0), crate::Color::WHITE);
+        e.physics = Some(crate::PhysicsBody {
+            velocity: Vec2::ZERO,
+            mass: 1.0,
+            is_static: false,
+            use_gravity: true,
+            bounciness: 0.0,
+            shape: crate::ColliderShape::Aabb,
+            collision_layer: 1,
+            collision_mask: u32::MAX,
+            is_trigger: false,
+            one_way: false,
+        });
+        e.behavior_tree = Some(bt);
+        let snap = vec![(2, 50.0, "enemy".into())];
+        let root = e.behavior_tree.as_ref().unwrap().root.clone();
+        let st = tick_r(&root, &mut e, &snap, 0, 0.016, false, "root");
+        assert_eq!(st, BtStatus::Running);
+        assert!(e.bt_state.debug_path.contains("leaf_patrol"));
+        assert!(e.bt_state.debug_running);
     }
 }

@@ -1,5 +1,13 @@
+mod animation;
+mod batch_sync;
 mod behavior_tree;
+mod input_frame;
+mod lynxscript_bridge;
 mod platformer;
+mod plugins;
+mod runtime;
+mod tic_api;
+mod tic_lua_runtime;
 mod unity_like;
 
 pub use behavior_tree::{BehaviorTree, BtNode, BtState, EntitySnap};
@@ -8,8 +16,10 @@ pub use platformer::{
     PlatformerMotor, RoomZone, TileChunk, TilemapLayer, TILE_EMPTY, TILE_ONE_WAY, TILE_SLOPE_45_L,
     TILE_SLOPE_45_R, TILE_SOLID,
 };
+pub use plugins::{PluginCapability, PluginRegistry, LYNX_3D_PLUGIN_ID};
 pub use unity_like::{AudioMixerState, AudioSource2D, Camera2D, EntityAnimator};
 
+#[cfg(feature = "legacy_lua")]
 use mlua::Lua;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -141,7 +151,7 @@ pub struct LogicGrid {
 }
 
 impl LogicGrid {
-    fn ensure_size(w: u32, h: u32) -> Self {
+    pub fn ensure_size(w: u32, h: u32) -> Self {
         let n = (w.saturating_mul(h)) as usize;
         Self {
             w,
@@ -211,11 +221,7 @@ pub struct TexRect {
     pub h: f32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct SpriteAnim {
-    pub frames: Vec<TexRect>,
-    pub fps: f32,
-}
+pub use animation::{AnimKeyEvent, SpriteAnim};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub struct VisualOffset2D {
@@ -302,6 +308,11 @@ pub struct Entity {
     pub behavior_tree: Option<behavior_tree::BehaviorTree>,
     #[serde(skip, default)]
     pub bt_state: behavior_tree::BtState,
+    /// Локальные часы для `sprite.animation`, если нет `animator`.
+    #[serde(skip, default)]
+    pub playback_time: f32,
+    #[serde(skip, default)]
+    pub last_anim_frame: Option<usize>,
 }
 impl Entity {
     pub fn new(id: usize, name: &str, pos: Vec2, color: Color) -> Self {
@@ -327,6 +338,8 @@ impl Entity {
             animation_clips: HashMap::new(),
             behavior_tree: None,
             bt_state: behavior_tree::BtState::default(),
+            playback_time: 0.0,
+            last_anim_frame: None,
         }
     }
     pub fn color(&self) -> Color { hex_to_color(self.sprite.color_hex) }
@@ -348,6 +361,11 @@ pub struct KeyState {
     pub s: bool,
     pub d: bool,
     pub space: bool,
+    pub left: bool,
+    pub right: bool,
+    pub up: bool,
+    pub down: bool,
+    pub enter: bool,
 }
 impl KeyState {
     pub fn set_key(&mut self, key: char, pressed: bool) {
@@ -357,6 +375,22 @@ impl KeyState {
             's' | 'S' => self.s = pressed,
             'd' | 'D' => self.d = pressed,
             ' ' => self.space = pressed,
+            _ => {}
+        }
+    }
+
+    pub fn set_named(&mut self, name: &str, pressed: bool) {
+        match name.trim().to_uppercase().as_str() {
+            "LEFT" | "ARROWLEFT" => self.left = pressed,
+            "RIGHT" | "ARROWRIGHT" => self.right = pressed,
+            "UP" | "ARROWUP" => self.up = pressed,
+            "DOWN" | "ARROWDOWN" => self.down = pressed,
+            "RETURN" | "ENTER" => self.enter = pressed,
+            "W" => self.w = pressed,
+            "A" => self.a = pressed,
+            "S" => self.s = pressed,
+            "D" => self.d = pressed,
+            "SPACE" | "SPACEBAR" => self.space = pressed,
             _ => {}
         }
     }
@@ -402,6 +436,12 @@ pub struct Scene {
     pub rooms: Vec<platformer::RoomZone>,
     #[serde(default)]
     pub logic_grids: HashMap<String, LogicGrid>,
+    /// Данные плагинов (ключ = plugin id, напр. `lynx.3d`). См. PLUGIN_SYSTEM.md.
+    #[serde(default)]
+    pub extensions: HashMap<String, serde_json::Value>,
+    /// Id включённых плагинов из `project.json` → `lynxPlugins.enabled`.
+    #[serde(default)]
+    pub enabled_plugins: Vec<String>,
     #[serde(skip, default = "default_key_state_arc")]
     pub key_state: Arc<Mutex<KeyState>>,
     #[serde(skip, default = "default_gamepad_arc")]
@@ -414,6 +454,64 @@ pub struct Scene {
     pub debug_log: Arc<Mutex<Vec<String>>>,
     #[serde(skip, default = "default_trigger_pairs_prev")]
     pub trigger_pairs_prev: HashSet<(usize, usize)>,
+    /// Идентификатор сцены (волна 2 SceneManager).
+    #[serde(default)]
+    pub scene_id: String,
+    #[serde(default = "default_time_scale")]
+    pub time_scale: f32,
+    #[serde(skip, default)]
+    pub paused: bool,
+    /// Подстрока пути BT для breakpoint (волна 10b).
+    #[serde(skip, default)]
+    pub bt_break_subpath: Option<String>,
+    #[serde(skip, default)]
+    pub bt_step_armed: bool,
+    /// action → список клавиш (`move_left` → `["A","Left"]`).
+    #[serde(default, deserialize_with = "deserialize_input_map")]
+    pub input_map: HashMap<String, Vec<String>>,
+    #[serde(skip, default = "runtime::default_scene_runtime")]
+    pub scene_runtime: Arc<Mutex<lynx_core::scene::SceneRuntime>>,
+    #[serde(skip, default = "runtime::default_signal_queue")]
+    pub signal_queue: Arc<Mutex<Vec<runtime::SignalEvent>>>,
+    /// Wave 15: fixed 1/60 simulation accumulator (seconds).
+    #[serde(skip, default)]
+    pub sim_accumulator: f32,
+    #[serde(skip, default)]
+    pub keys_prev: KeyState,
+    #[serde(skip, default)]
+    pub gp_prev: platformer::GamepadState,
+    #[serde(skip, default)]
+    pub actions_prev: HashMap<String, bool>,
+}
+
+fn default_time_scale() -> f32 {
+    1.0
+}
+
+fn deserialize_input_map<'de, D>(deserializer: D) -> Result<HashMap<String, Vec<String>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw: HashMap<String, serde_json::Value> = HashMap::deserialize(deserializer)?;
+    Ok(normalize_input_map(raw))
+}
+
+fn normalize_input_map(raw: HashMap<String, serde_json::Value>) -> HashMap<String, Vec<String>> {
+    let mut out = HashMap::new();
+    for (action, value) in raw {
+        let keys: Vec<String> = match value {
+            serde_json::Value::String(s) => vec![s],
+            serde_json::Value::Array(arr) => arr
+                .into_iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect(),
+            _ => continue,
+        };
+        if !keys.is_empty() {
+            out.insert(action, keys);
+        }
+    }
+    out
 }
 
 fn default_trigger_pairs_prev() -> HashSet<(usize, usize)> {
@@ -431,12 +529,26 @@ impl Scene {
             tilemaps: Vec::new(),
             rooms: Vec::new(),
             logic_grids: HashMap::new(),
+            extensions: HashMap::new(),
+            enabled_plugins: Vec::new(),
             key_state: Arc::new(Mutex::new(KeyState::default())),
             gamepad: default_gamepad_arc(),
             platformer_latch: default_platformer_latch_arc(),
             sound_queue: default_string_queue_arc(),
             debug_log: default_string_queue_arc(),
             trigger_pairs_prev: HashSet::new(),
+            scene_id: String::new(),
+            time_scale: 1.0,
+            paused: false,
+            bt_break_subpath: None,
+            bt_step_armed: false,
+            input_map: HashMap::new(),
+            scene_runtime: runtime::default_scene_runtime(),
+            signal_queue: runtime::default_signal_queue(),
+            sim_accumulator: 0.0,
+            keys_prev: KeyState::default(),
+            gp_prev: platformer::GamepadState::default(),
+            actions_prev: HashMap::new(),
         }
     }
     pub fn add_entity(&mut self, name: &str, pos: Vec2, color: Color) -> usize {
@@ -669,40 +781,48 @@ impl Scene {
     }
 
     pub fn update_scripts(&mut self, dt: f32) {
-        let Scene {
-            entities,
-            logic_grids,
-            key_state,
-            gamepad,
-            audio_mixer,
-            sound_queue,
-            debug_log,
-            ..
-        } = self;
-        let ks = *key_state.lock().unwrap();
-        let gp = *gamepad.lock().unwrap();
-        let master_vol = audio_mixer.master_volume;
-        let bus_volumes = audio_mixer.bus_volumes.clone();
-        let sound_q = sound_queue.clone();
-        let log_q = debug_log.clone();
-        for i in 0..entities.len() {
-            let Some(script) = entities[i].script.clone() else {
+        let ks = *self.key_state.lock().unwrap();
+        let gp = *self.gamepad.lock().unwrap();
+        let actions = runtime::resolve_input_actions(&ks, &self.input_map);
+        let frame = input_frame::InputFrame {
+            keys: ks,
+            keys_prev: self.keys_prev,
+            gp,
+            gp_prev: self.gp_prev,
+        };
+        let actions_prev = self.actions_prev.clone();
+        let hooks = runtime::LuaRuntimeHooks::from_scene(self);
+        let master_vol = self.audio_mixer.master_volume;
+        let bus_volumes = self.audio_mixer.bus_volumes.clone();
+        let sound_q = self.sound_queue.clone();
+        let log_q = self.debug_log.clone();
+        let n = self.entities.len();
+        for i in 0..n {
+            let Some(script) = self.entities[i].script.clone() else {
                 continue;
             };
-            let entity = &mut entities[i];
+            let entity = &mut self.entities[i];
             run_entity_lua(
                 entity,
-                logic_grids,
+                &mut self.logic_grids,
                 &script,
                 dt,
                 ks,
                 gp,
+                &actions,
+                &actions_prev,
+                &frame,
+                &hooks,
                 master_vol,
                 &bus_volumes,
                 sound_q.clone(),
                 log_q.clone(),
             );
         }
+        runtime::dispatch_scene_signals(self, &log_q);
+        self.keys_prev = ks;
+        self.gp_prev = gp;
+        self.actions_prev = actions;
     }
     pub fn step_animators(&mut self, dt: f32) {
         for e in &mut self.entities {
@@ -781,18 +901,40 @@ impl Scene {
     }
 
     pub fn update(&mut self, dt: f32) {
+        if self.paused {
+            return;
+        }
+        const FIXED_DT: f32 = 1.0 / 60.0;
+        const MAX_STEPS: u32 = 5;
+        self.sim_accumulator += dt * self.time_scale.max(0.0);
+        let mut steps = 0u32;
+        while self.sim_accumulator >= FIXED_DT && steps < MAX_STEPS {
+            self.sim_accumulator -= FIXED_DT;
+            self.update_fixed_step(FIXED_DT);
+            steps += 1;
+        }
+    }
+
+    fn update_fixed_step(&mut self, dt: f32) {
         self.update_scripts(dt);
         behavior_tree::tick_behavior_trees(self, dt);
         platformer::step_patrol_ai(self, dt);
         platformer::step_platformer_motors(self, dt);
         platformer::step_anim_state_machines(self, dt);
         self.step_animators(dt);
+        animation::apply_sprite_animation_uv(&mut self.entities, dt);
+        animation::dispatch_anim_key_events(&mut self.entities, &self.signal_queue);
         self.propagate_transform_hierarchy();
         self.update_physics(dt);
         platformer::resolve_tilemaps(self);
         self.process_trigger_events();
         self.update_cameras_follow(dt);
         platformer::clamp_camera_to_active_room(self);
+        let extensions = self.extensions.clone();
+        let enabled = self.enabled_plugins.clone();
+        let mut reg = PluginRegistry::with_builtin_stubs();
+        reg.set_enabled_ids(&enabled);
+        reg.run_post_update_hooks(self, &extensions);
     }
 
     pub fn drain_sounds_json(&self) -> String {
@@ -815,11 +957,38 @@ fn run_entity_lua(
     dt: f32,
     ks: KeyState,
     gp: platformer::GamepadState,
+    actions: &HashMap<String, bool>,
+    actions_prev: &HashMap<String, bool>,
+    frame: &input_frame::InputFrame,
+    hooks: &runtime::LuaRuntimeHooks,
     master_vol: f32,
     bus_volumes: &HashMap<String, f32>,
     sound_q: Arc<Mutex<Vec<String>>>,
     log_q: Arc<Mutex<Vec<String>>>,
 ) {
+    if lynxscript_bridge::run_entity_script(entity, &script.code, dt, &ks, &gp, actions) {
+        return;
+    }
+    #[cfg(not(feature = "legacy_lua"))]
+    return;
+    #[cfg(feature = "legacy_lua")]
+    {
+    if tic_lua_runtime::wants_persistent(&script.code) {
+        tic_lua_runtime::run_persistent_frame(
+            entity,
+            logic_grids,
+            &script.code,
+            dt,
+            ks,
+            gp,
+            frame,
+            hooks,
+            actions,
+            sound_q,
+            log_q,
+        );
+        return;
+    }
     let grids_ptr: *mut HashMap<String, LogicGrid> = logic_grids;
     let lua = Lua::new();
     let globals = lua.globals();
@@ -833,12 +1002,38 @@ fn run_entity_lua(
     globals.set("key_s", ks.s).unwrap();
     globals.set("key_d", ks.d).unwrap();
     globals.set("key_space", ks.space).unwrap();
+    globals.set("key_left", ks.left).unwrap();
+    globals.set("key_right", ks.right).unwrap();
+    globals.set("key_up", ks.up).unwrap();
+    globals.set("key_down", ks.down).unwrap();
+    globals.set("key_enter", ks.enter).unwrap();
+    runtime::register_lua_runtime(&lua, hooks, actions);
+    runtime::register_lua_emit_signal(&lua, eid, &hooks.signal_queue);
     globals.set("gp_lx", gp.stick_lx).unwrap();
     globals.set("gp_ly", gp.stick_ly).unwrap();
     globals.set("gp_a", gp.face_a).unwrap();
     globals.set("gp_b", gp.face_b).unwrap();
     globals.set("gp_dleft", gp.dpad_left).unwrap();
     globals.set("gp_dright", gp.dpad_right).unwrap();
+    globals.set("gp_dup", gp.dpad_up).unwrap();
+    globals.set("gp_ddown", gp.dpad_down).unwrap();
+    let frame_copy = *frame;
+    let actions_prev_copy = actions_prev.clone();
+    let actions_copy = actions.clone();
+    let btn_pressed = lua
+        .create_function(move |_, name: String| Ok(frame_copy.btn_pressed(&name)))
+        .unwrap();
+    globals.set("btn_pressed", btn_pressed).unwrap();
+    let action_pressed = lua
+        .create_function(move |_, name: String| {
+            Ok(input_frame::InputFrame::action_pressed(
+                &actions_copy,
+                &actions_prev_copy,
+                &name,
+            ))
+        })
+        .unwrap();
+    globals.set("action_pressed", action_pressed).unwrap();
     globals.set("on_ground", entity.on_ground).unwrap();
     if let Some(phys) = &entity.physics {
         globals.set("vx", phys.velocity.x).unwrap();
@@ -983,6 +1178,8 @@ fn run_entity_lua(
         .unwrap();
     globals.set("grid_fill", grid_fill).unwrap();
 
+    tic_api::register_tic_lua_globals(&lua, grids_ptr, frame_copy, sound_q.clone());
+
     if let Err(e) = lua.load(&script.code).exec() {
         let mut g = log_q.lock().unwrap();
         g.push(format!("lua error e{}: {}", eid, e));
@@ -1003,6 +1200,7 @@ fn run_entity_lua(
         if let Ok(vy) = globals.get::<f32>("new_vy") {
             phys.velocity.y = vy;
         }
+    }
     }
 }
 
@@ -1098,16 +1296,19 @@ fn dispatch_trigger_pair(
     };
     if ea.physics.as_ref().map(|p| p.is_trigger).unwrap_or(false) {
         if let Some(s) = ea.script.as_ref() {
+            #[cfg(feature = "legacy_lua")]
             run_lua_trigger_callback(ea.id, &s.code, fn_name, eb.id as i64, log_q);
         }
     }
     if eb.physics.as_ref().map(|p| p.is_trigger).unwrap_or(false) {
         if let Some(s) = eb.script.as_ref() {
+            #[cfg(feature = "legacy_lua")]
             run_lua_trigger_callback(eb.id, &s.code, fn_name, ea.id as i64, log_q);
         }
     }
 }
 
+#[cfg(feature = "legacy_lua")]
 fn run_lua_trigger_callback(
     self_id: usize,
     code: &str,
@@ -1115,6 +1316,9 @@ fn run_lua_trigger_callback(
     other_id: i64,
     log_q: &Arc<Mutex<Vec<String>>>,
 ) {
+    if lynx_core::script::is_lynxscript(code) {
+        return;
+    }
     let lua = Lua::new();
     let globals = lua.globals();
     let _ = globals.set("id", self_id as i64);
@@ -1292,6 +1496,12 @@ pub extern "C" fn scene_from_json(json: *const std::os::raw::c_char) -> *mut c_v
                 scene.platformer_latch = default_platformer_latch_arc();
                 scene.sound_queue = default_string_queue_arc();
                 scene.debug_log = default_string_queue_arc();
+                scene.scene_runtime = runtime::default_scene_runtime();
+                scene.signal_queue = runtime::default_signal_queue();
+                scene.keys_prev = *scene.key_state.lock().unwrap();
+                scene.gp_prev = *scene.gamepad.lock().unwrap();
+                scene.actions_prev =
+                    runtime::resolve_input_actions(&scene.keys_prev, &scene.input_map);
                 Box::into_raw(Box::new(scene)) as *mut c_void
             }
             Err(_) => ptr::null_mut(),
@@ -1347,6 +1557,8 @@ pub extern "C" fn scene_set_gamepad(ptr: *mut c_void, lx: f32, ly: f32, buttons:
         g.face_b = buttons & 2 != 0;
         g.dpad_left = buttons & 4 != 0;
         g.dpad_right = buttons & 8 != 0;
+        g.dpad_up = buttons & 16 != 0;
+        g.dpad_down = buttons & 32 != 0;
     }
 }
 #[unsafe(no_mangle)]
@@ -1365,7 +1577,154 @@ pub extern "C" fn scene_drain_debug_log(ptr: *mut c_void) -> *mut std::os::raw::
         CString::new(json).unwrap().into_raw()
     }
 }
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_drain_bt_debug_json(ptr: *const c_void) -> *mut std::os::raw::c_char {
+    if ptr.is_null() {
+        return ptr::null_mut();
+    }
+    unsafe {
+        let scene = &*(ptr as *const Scene);
+        let entries = behavior_tree::collect_bt_debug(&scene);
+        let json = serde_json::to_string(&entries).unwrap_or_else(|_| "[]".into());
+        CString::new(json).ok().map(|s| s.into_raw()).unwrap_or(ptr::null_mut())
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_set_bt_breakpoint(ptr: *mut c_void, subpath: *const std::os::raw::c_char) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let scene = &mut *(ptr as *mut Scene);
+        if subpath.is_null() {
+            scene.bt_break_subpath = None;
+            return;
+        }
+        let s = std::ffi::CStr::from_ptr(subpath).to_str().unwrap_or("").trim();
+        if s.is_empty() {
+            scene.bt_break_subpath = None;
+        } else {
+            scene.bt_break_subpath = Some(s.to_string());
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_bt_debug_step(ptr: *mut c_void) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let scene = &mut *(ptr as *mut Scene);
+        scene.bt_step_armed = true;
+        scene.paused = false;
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_set_paused(ptr: *mut c_void, paused: bool) {
+    unsafe {
+        let scene = &mut *(ptr as *mut Scene);
+        scene.paused = paused;
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_set_time_scale(ptr: *mut c_void, scale: f32) {
+    unsafe {
+        let scene = &mut *(ptr as *mut Scene);
+        scene.time_scale = scale.max(0.0);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_load(ptr: *mut c_void, scene_id: *const std::os::raw::c_char) -> u8 {
+    if ptr.is_null() || scene_id.is_null() {
+        return 0;
+    }
+    unsafe {
+        let scene = &mut *(ptr as *mut Scene);
+        let id = std::ffi::CStr::from_ptr(scene_id).to_str().unwrap_or("");
+        if id.is_empty() {
+            return 0;
+        }
+        scene.scene_runtime.lock().unwrap().load_scene(id);
+        1
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_take_pending_load(ptr: *mut c_void) -> *mut std::os::raw::c_char {
+    unsafe {
+        let scene = &mut *(ptr as *mut Scene);
+        let next = scene.scene_runtime.lock().unwrap().take_pending_load();
+        match next {
+            Some(id) => CString::new(id).ok().map(|s| s.into_raw()).unwrap_or(ptr::null_mut()),
+            None => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_set_named_key(
+    ptr: *mut c_void,
+    name: *const std::os::raw::c_char,
+    pressed: bool,
+) {
+    unsafe {
+        let scene = &mut *(ptr as *mut Scene);
+        let name = std::ffi::CStr::from_ptr(name).to_str().unwrap_or("");
+        let mut key_state = scene.key_state.lock().unwrap();
+        key_state.set_named(name, pressed);
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn core_free_string(ptr: *mut std::os::raw::c_char) {
     if !ptr.is_null() { unsafe { drop(CString::from_raw(ptr)); } }
+}
+
+// --- Lynx Core M2+: FFI symbols exported from `lynx-core` rlib (no duplicate wrappers) ---
+
+pub use lynx_core::ffi::LynxScriptEntityState;
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_lynx3d_object_count(scene_ptr: *const c_void) -> u32 {
+    if scene_ptr.is_null() {
+        return 0;
+    }
+    unsafe {
+        let scene = &*(scene_ptr as *const Scene);
+        let Some(ext) = scene.extensions.get(plugins::LYNX_3D_PLUGIN_ID) else {
+            return 0;
+        };
+        lynx_core::scene3d::parse_extension(ext)
+            .map(|s| {
+                if s.active {
+                    s.objects.len() as u32
+                } else {
+                    0
+                }
+            })
+            .unwrap_or(0)
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn scene_fill_batch2d(
+    scene_ptr: *const c_void,
+    batch_ptr: *mut c_void,
+    viewport_w: f32,
+    viewport_h: f32,
+) -> u32 {
+    if scene_ptr.is_null() || batch_ptr.is_null() {
+        return 0;
+    }
+    unsafe {
+        let scene = &*(scene_ptr as *const Scene);
+        let batch = &mut *(batch_ptr as *mut lynx_core::render::SpriteBatch2D);
+        batch_sync::scene_fill_batch2d(scene, batch, viewport_w, viewport_h)
+    }
 }

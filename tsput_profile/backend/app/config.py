@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
@@ -28,5 +27,9 @@ class Settings(BaseSettings):
     student_card_group: str = ""
     student_card_email: str = ""
 
+    api_admin_token: str = "tsput-admin-dev"
+
+    supabase_url: str = "https://znltxknyweldbtqkrfih.supabase.co"
+    supabase_anon_key: str = "sb_publishable_M97MwcXitQ9Y6J-lH7QjEg_rmUVUy-P"
 
 settings = Settings()

@@ -3,7 +3,10 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
@@ -16,9 +19,13 @@ import '../providers/scene_provider.dart';
 import '../runtime/collider_from_sprite_meta.dart';
 import 'room_zones_paint.dart';
 import 'scene_canvas_options_bar.dart';
+import 'scene_scenes_tab_bar.dart';
+import 'engine_scene_viewport_controller.dart';
 import 'tilemap_editor_toolbar.dart';
 
 const double kSceneEditorGridStep = 40;
+const double kSceneCanvasWidth = 4096;
+const double kSceneCanvasHeight = 4096;
 
 double _snapToStep(double v, double step) =>
     (v / step).roundToDouble() * step;
@@ -31,7 +38,9 @@ SpriteAssetMeta? _metaForObject(SceneObject o, List<ProjectAsset> assets) {
 }
 
 class SceneEditor extends StatefulWidget {
-  const SceneEditor({super.key});
+  const SceneEditor({super.key, this.viewportController});
+
+  final EngineSceneViewportController? viewportController;
 
   @override
   State<SceneEditor> createState() => _SceneEditorState();
@@ -41,17 +50,85 @@ class _SceneEditorState extends State<SceneEditor> {
   String? _draggedObjectId;
   Offset? _dragOffset;
   bool _isDragging = false;
+  bool _canvasPanning = false;
+  Offset? _canvasPanAnchor;
+  final TransformationController _viewportTransform = TransformationController();
   bool _tileStrokeUndoPushed = false;
   DateTime _lastPresenceSent = DateTime.fromMillisecondsSinceEpoch(0);
   final Map<String, ui.Image> _editorTilesetImages = {};
   final Set<String> _editorTilesetLoading = {};
 
+  Offset? _lastZoomFocal;
+  Size _viewportSize = Size.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.viewportController?.addListener(_applyViewportCommand);
+    _viewportTransform.addListener(_onViewportTransformChanged);
+  }
+
+  void _onViewportTransformChanged() {
+    widget.viewportController?.reportViewport(_viewportTransform.value, _viewportSize);
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(covariant SceneEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewportController != widget.viewportController) {
+      oldWidget.viewportController?.removeListener(_applyViewportCommand);
+      widget.viewportController?.addListener(_applyViewportCommand);
+    }
+  }
+
+  void _applyViewportCommand() {
+    final ctrl = widget.viewportController;
+    if (ctrl == null) return;
+    final focus = ctrl.consumeFocusScenePoint();
+    if (focus != null && _viewportSize.width > 1) {
+      final m = Matrix4.identity()
+        ..translate(
+          _viewportSize.width * 0.5 - focus.dx,
+          _viewportSize.height * 0.5 - focus.dy,
+        );
+      _viewportTransform.value = m;
+      ctrl.reportViewport(m, _viewportSize);
+      return;
+    }
+    if (ctrl.consumeReset()) {
+      _viewportTransform.value = Matrix4.identity();
+      return;
+    }
+    final factor = ctrl.consumeZoomFactor();
+    if (factor == 1.0) return;
+    final focal = _lastZoomFocal ??
+        Offset(_viewportSize.width / 2, _viewportSize.height / 2);
+    final m = Matrix4.copy(_viewportTransform.value);
+    m.translate(focal.dx, focal.dy);
+    m.scale(factor);
+    m.translate(-focal.dx, -focal.dy);
+    _viewportTransform.value = m;
+  }
+
   @override
   void dispose() {
+    widget.viewportController?.removeListener(_applyViewportCommand);
+    _viewportTransform.dispose();
     for (final im in _editorTilesetImages.values) {
       im.dispose();
     }
     super.dispose();
+  }
+
+  Offset _scenePointFromViewport(Offset viewportLocal) {
+    final matrix = Matrix4.inverted(_viewportTransform.value);
+    return MatrixUtils.transformPoint(matrix, viewportLocal);
+  }
+
+  void _panCanvasBy(Offset delta) {
+    final m = Matrix4.copy(_viewportTransform.value)..translate(delta.dx, delta.dy);
+    _viewportTransform.value = m;
   }
 
   void _ensureEditorTilesetImages(Scene scene, ProjectManager manager) {
@@ -161,192 +238,249 @@ class _SceneEditorState extends State<SceneEditor> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SceneScenesTabBar(),
             const TilemapEditorToolbar(),
             const SceneCanvasOptionsBar(),
             Expanded(
-              child: MouseRegion(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  _viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+                  return MouseRegion(
                 cursor: sceneProvider.tileEditMode
                     ? SystemMouseCursors.cell
-                    : SystemMouseCursors.basic,
-                onHover: (e) => _throttledPresence(
-                    context, sceneProvider, manager, e.localPosition),
-                child: DragTarget<String>(
-                  onWillAccept: (data) => !sceneProvider.tileEditMode,
-                  onAcceptWithDetails: (details) {
-                    if (sceneProvider.tileEditMode) return;
-                    final assetId = details.data;
-
-                    final asset = assets.where((a) => a.id == assetId).toList();
-                    if (asset.isEmpty) return;
-                    if (asset.first.type != 'sprite') return;
-
-                    final local = sceneProvider.lastEditorPointerLocal ??
-                        const Offset(200, 200);
-                    final st = sceneProvider.objectSnapStep;
-                    final pos = Offset(
-                      _snapToStep(local.dx, st),
-                      _snapToStep(local.dy, st),
-                    );
-
-                    final objId = 'obj_${DateTime.now().millisecondsSinceEpoch}';
-                    final spriteObj = SceneObject(
-                      id: objId,
-                      name: asset.first.name,
-                      assetId: asset.first.id,
-                      x: pos.dx,
-                      y: pos.dy,
-                      layerId: SceneLayer.defaultLayerId,
-                    );
-
-                    sceneProvider.addObject(spriteObj);
-                    sceneProvider.selectObject(spriteObj.id);
-                    manager.scheduleSceneSave();
+                    : _canvasPanning
+                        ? SystemMouseCursors.grabbing
+                        : SystemMouseCursors.grab,
+                onHover: (e) {
+                  _lastZoomFocal = e.localPosition;
+                  _throttledPresence(
+                    context, sceneProvider, manager, _scenePointFromViewport(e.localPosition));
+                },
+                child: Listener(
+                  onPointerSignal: (event) {
+                    if (event is PointerScrollEvent) {
+                      if (event.kind == PointerDeviceKind.trackpad ||
+                          HardwareKeyboard.instance.isControlPressed) {
+                        final scaleDelta = 1 - event.scrollDelta.dy * 0.002;
+                        final focal = event.localPosition;
+                        final m = Matrix4.copy(_viewportTransform.value);
+                        m.translate(focal.dx, focal.dy);
+                        m.scale(scaleDelta.clamp(0.85, 1.15));
+                        m.translate(-focal.dx, -focal.dy);
+                        _viewportTransform.value = m;
+                      } else {
+                        _panCanvasBy(-event.scrollDelta);
+                      }
+                    }
                   },
-                  builder: (context, candidateData, rejectedData) {
-                    return GestureDetector(
-                      onPanDown: (details) {
-                        if (sceneProvider.tileEditMode) {
-                          if (!_tileStrokeUndoPushed) {
-                            sceneProvider.pushUndoSnapshot();
-                            _tileStrokeUndoPushed = true;
-                          }
-                          sceneProvider.paintTileAtEditor(
-                            details.localPosition.dx,
-                            details.localPosition.dy,
-                          );
-                          Provider.of<ProjectManager>(context, listen: false)
-                              .scheduleSceneSave();
-                          return;
-                        }
-                        _throttledPresence(
-                            context, sceneProvider, manager, details.localPosition);
-                        final localPos = details.localPosition;
-                        SceneObject? hit;
-                        for (final object in paintOrder.reversed) {
-                          if (!object.active || !object.visible) continue;
-                          final w = object.width * object.scaleX;
-                          final h = object.height * object.scaleY;
-                          final rect = Rect.fromCenter(
-                            center: Offset(object.x, object.y),
-                            width: w,
-                            height: h,
-                          );
-                          if (rect.contains(localPos)) {
-                            hit = object;
-                            break;
-                          }
-                        }
-                        sceneProvider.selectObject(hit?.id);
-                        if (hit == null) {
-                          setState(() {
-                            _draggedObjectId = null;
-                            _dragOffset = null;
-                            _isDragging = false;
-                          });
-                          return;
-                        }
-                        if (hit.locked) {
-                          setState(() {
-                            _draggedObjectId = null;
-                            _dragOffset = null;
-                            _isDragging = false;
-                          });
-                          return;
-                        }
-                        setState(() {
-                          _draggedObjectId = hit!.id;
-                          _dragOffset = Offset(
-                            hit.x - localPos.dx,
-                            hit.y - localPos.dy,
-                          );
-                          _isDragging = true;
-                        });
-                        sceneProvider.pushUndoSnapshot();
+                  child: InteractiveViewer(
+                    transformationController: _viewportTransform,
+                    minScale: 0.15,
+                    maxScale: 4,
+                    panEnabled: false,
+                    scaleEnabled: false,
+                    boundaryMargin: const EdgeInsets.all(480),
+                    child: DragTarget<String>(
+                      onWillAccept: (data) => !sceneProvider.tileEditMode,
+                      onAcceptWithDetails: (details) {
+                        if (sceneProvider.tileEditMode) return;
+                        final assetId = details.data;
+
+                        final asset = assets.where((a) => a.id == assetId).toList();
+                        if (asset.isEmpty) return;
+                        if (asset.first.type != 'sprite') return;
+
+                        final local = sceneProvider.lastEditorPointerLocal ??
+                            const Offset(200, 200);
+                        final st = sceneProvider.objectSnapStep;
+                        final pos = Offset(
+                          _snapToStep(local.dx, st),
+                          _snapToStep(local.dy, st),
+                        );
+
+                        final objId = 'obj_${DateTime.now().millisecondsSinceEpoch}';
+                        final spriteObj = SceneObject(
+                          id: objId,
+                          name: asset.first.name,
+                          assetId: asset.first.id,
+                          x: pos.dx,
+                          y: pos.dy,
+                          layerId: SceneLayer.defaultLayerId,
+                        );
+
+                        sceneProvider.addObject(spriteObj);
+                        sceneProvider.selectObject(spriteObj.id);
+                        manager.scheduleSceneSave();
                       },
-                      onPanUpdate: (details) {
-                        if (sceneProvider.tileEditMode) {
-                          sceneProvider.paintTileAtEditor(
-                            details.localPosition.dx,
-                            details.localPosition.dy,
-                          );
-                          Provider.of<ProjectManager>(context, listen: false)
-                              .scheduleSceneSave();
-                          return;
-                        }
-                        if (_draggedObjectId != null && _isDragging) {
-                          final raw = details.localPosition +
-                              (_dragOffset ?? Offset.zero);
-                          final st = sceneProvider.objectSnapStep;
-                          sceneProvider.updateObjectPosition(
-                            _draggedObjectId!,
-                            _snapToStep(raw.dx, st),
-                            _snapToStep(raw.dy, st),
-                          );
-                          _throttledPresence(context, sceneProvider,
-                              manager, details.localPosition);
-                          Provider.of<ProjectManager>(context,
-                                  listen: false)
-                              .scheduleSceneSave();
-                        }
-                      },
-                      onPanCancel: () {
-                        if (sceneProvider.tileEditMode) {
-                          _tileStrokeUndoPushed = false;
-                        }
-                      },
-                      onPanEnd: (details) {
-                        if (sceneProvider.tileEditMode) {
-                          _tileStrokeUndoPushed = false;
-                          Provider.of<ProjectManager>(context, listen: false)
-                              .scheduleSceneSave();
-                          return;
-                        }
-                        final id = _draggedObjectId;
-                        final curScene = sceneProvider.currentScene;
-                        if (id != null && curScene != null) {
-                          final st = sceneProvider.objectSnapStep;
-                          for (final o in curScene.objects) {
-                            if (o.id == id) {
-                              sceneProvider.updateObjectPosition(
-                                id,
-                                _snapToStep(o.x, st),
-                                _snapToStep(o.y, st),
-                              );
-                              break;
+                      builder: (context, candidateData, rejectedData) {
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onPanDown: (details) {
+                            final scenePos = details.localPosition;
+                            sceneProvider.setLastEditorPointerLocal(scenePos);
+                            if (sceneProvider.tileEditMode) {
+                              if (!_tileStrokeUndoPushed) {
+                                sceneProvider.pushUndoSnapshot();
+                                _tileStrokeUndoPushed = true;
+                              }
+                              sceneProvider.paintTileAtEditor(scenePos.dx, scenePos.dy);
+                              Provider.of<ProjectManager>(context, listen: false)
+                                  .scheduleSceneSave();
+                              return;
                             }
-                          }
-                        }
-                        Provider.of<ProjectManager>(context, listen: false)
-                            .scheduleSceneSave();
-                        setState(() {
-                          _draggedObjectId = null;
-                          _dragOffset = null;
-                          _isDragging = false;
-                        });
-                      },
-                      child: RepaintBoundary(
-                        child: Container(
-                          color: Colors.transparent,
-                          child: CustomPaint(
-                            size: Size.infinite,
-                            painter: ScenePainter(
-                              scene: scene,
-                              paintOrder: paintOrder,
-                              assets: assets,
-                              selectedObjectId: selectedId,
-                              tileEditorRevision: sceneProvider.tileEditorRevision,
-                              showRoomZones: sceneProvider.showRoomZones,
-                              collabRemoteByUser: manager.collabRemotePointers,
-                              collabPresenceRevision: manager.collabPresenceRevision,
-                              tilesetCatalog: tilesetCatalogJson,
-                              tilemapTextures: _editorTilesetImages,
+                            _throttledPresence(
+                                context, sceneProvider, manager, scenePos);
+                            SceneObject? hit;
+                            for (final object in paintOrder.reversed) {
+                              if (!object.active || !object.visible) continue;
+                              final w = object.width * object.scaleX;
+                              final h = object.height * object.scaleY;
+                              final rect = Rect.fromCenter(
+                                center: Offset(object.x, object.y),
+                                width: w,
+                                height: h,
+                              );
+                              if (rect.contains(scenePos)) {
+                                hit = object;
+                                break;
+                              }
+                            }
+                            sceneProvider.selectObject(hit?.id);
+                            if (hit == null || hit.locked) {
+                              setState(() {
+                                _draggedObjectId = null;
+                                _dragOffset = null;
+                                _isDragging = false;
+                                _canvasPanning = hit == null;
+                                _canvasPanAnchor = details.localPosition;
+                              });
+                              return;
+                            }
+                            setState(() {
+                              _draggedObjectId = hit!.id;
+                              _dragOffset = Offset(
+                                hit.x - scenePos.dx,
+                                hit.y - scenePos.dy,
+                              );
+                              _isDragging = true;
+                              _canvasPanning = false;
+                              _canvasPanAnchor = null;
+                            });
+                            sceneProvider.pushUndoSnapshot();
+                          },
+                          onPanUpdate: (details) {
+                            final scenePos = details.localPosition;
+                            sceneProvider.setLastEditorPointerLocal(scenePos);
+                            if (sceneProvider.tileEditMode) {
+                              sceneProvider.paintTileAtEditor(scenePos.dx, scenePos.dy);
+                              Provider.of<ProjectManager>(context, listen: false)
+                                  .scheduleSceneSave();
+                              return;
+                            }
+                            if (_canvasPanning && _canvasPanAnchor != null) {
+                              final delta = details.localPosition - _canvasPanAnchor!;
+                              _canvasPanAnchor = details.localPosition;
+                              _panCanvasBy(delta);
+                              return;
+                            }
+                            if (_draggedObjectId != null && _isDragging) {
+                              final raw = scenePos + (_dragOffset ?? Offset.zero);
+                              final st = sceneProvider.objectSnapStep;
+                              sceneProvider.updateObjectPosition(
+                                _draggedObjectId!,
+                                _snapToStep(raw.dx, st),
+                                _snapToStep(raw.dy, st),
+                              );
+                              _throttledPresence(
+                                  context, sceneProvider, manager, scenePos);
+                              Provider.of<ProjectManager>(context, listen: false)
+                                  .scheduleSceneSave();
+                            }
+                          },
+                          onPanCancel: () {
+                            if (sceneProvider.tileEditMode) {
+                              _tileStrokeUndoPushed = false;
+                            }
+                            setState(() {
+                              _canvasPanning = false;
+                              _canvasPanAnchor = null;
+                            });
+                          },
+                          onPanEnd: (details) {
+                            if (sceneProvider.tileEditMode) {
+                              _tileStrokeUndoPushed = false;
+                              Provider.of<ProjectManager>(context, listen: false)
+                                  .scheduleSceneSave();
+                              setState(() {
+                                _canvasPanning = false;
+                                _canvasPanAnchor = null;
+                              });
+                              return;
+                            }
+                            final id = _draggedObjectId;
+                            final curScene = sceneProvider.currentScene;
+                            if (id != null && curScene != null) {
+                              final st = sceneProvider.objectSnapStep;
+                              for (final o in curScene.objects) {
+                                if (o.id == id) {
+                                  sceneProvider.updateObjectPosition(
+                                    id,
+                                    _snapToStep(o.x, st),
+                                    _snapToStep(o.y, st),
+                                  );
+                                  break;
+                                }
+                              }
+                            }
+                            Provider.of<ProjectManager>(context, listen: false)
+                                .scheduleSceneSave();
+                            setState(() {
+                              _draggedObjectId = null;
+                              _dragOffset = null;
+                              _isDragging = false;
+                              _canvasPanning = false;
+                              _canvasPanAnchor = null;
+                            });
+                          },
+                          onSecondaryTapDown: (details) {
+                            setState(() {
+                              _canvasPanning = true;
+                              _canvasPanAnchor = details.localPosition;
+                            });
+                          },
+                          child: RepaintBoundary(
+                            child: SizedBox(
+                              width: kSceneCanvasWidth,
+                              height: kSceneCanvasHeight,
+                              child: CustomPaint(
+                                painter: ScenePainter(
+                                  scene: scene,
+                                  paintOrder: paintOrder,
+                                  assets: assets,
+                                  selectedObjectId: selectedId,
+                                  tileEditorRevision: sceneProvider.tileEditorRevision,
+                                  showRoomZones: sceneProvider.showRoomZones,
+                                  showSceneGrid: sceneProvider.showSceneGrid,
+                                  gridStep: sceneProvider.objectSnapStep > 0
+                                      ? sceneProvider.objectSnapStep
+                                      : kSceneEditorGridStep,
+                                  showTileCollisionPreview:
+                                      sceneProvider.showTileCollisionPreview,
+                                  collabRemoteByUser: manager.collabRemotePointers,
+                                  collabPresenceRevision: manager.collabPresenceRevision,
+                                  tilesetCatalog: tilesetCatalogJson,
+                                  tilemapTextures: _editorTilesetImages,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ),
                 ),
+              );
+                },
               ),
             ),
           ],
@@ -363,6 +497,9 @@ class ScenePainter extends CustomPainter {
   final String? selectedObjectId;
   final int tileEditorRevision;
   final bool showRoomZones;
+  final bool showSceneGrid;
+  final double gridStep;
+  final bool showTileCollisionPreview;
   final Map<String, CollabRemotePointer> collabRemoteByUser;
   final int collabPresenceRevision;
   final List<Map<String, dynamic>> tilesetCatalog;
@@ -375,6 +512,9 @@ class ScenePainter extends CustomPainter {
     this.selectedObjectId,
     this.tileEditorRevision = 0,
     this.showRoomZones = false,
+    this.showSceneGrid = true,
+    this.gridStep = kSceneEditorGridStep,
+    this.showTileCollisionPreview = true,
     this.collabRemoteByUser = const {},
     this.collabPresenceRevision = 0,
     this.tilesetCatalog = const [],
@@ -399,17 +539,34 @@ class ScenePainter extends CustomPainter {
       textureImages: tilemapTextures,
       worldToScreen: (wx, wy) => Offset(wx, wy),
       zoom: 1.0,
-      collisionTintInEditor: true,
+      collisionTintInEditor: showTileCollisionPreview,
     );
 
-    final gridPaint = Paint()
-      ..color = Colors.white12
+    final gridPaintMinor = Paint()
+      ..color = Colors.white.withValues(alpha: 0.06)
       ..strokeWidth = 0.5;
-    for (double x = 0; x < size.width; x += kSceneEditorGridStep) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 0; y < size.height; y += kSceneEditorGridStep) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    final gridPaintMajor = Paint()
+      ..color = Colors.white.withValues(alpha: 0.14)
+      ..strokeWidth = 0.8;
+    if (showSceneGrid) {
+      final step = gridStep.clamp(1.0, 256.0);
+      var lineIndex = 0;
+      for (double x = 0; x < size.width; x += step) {
+        final paint = lineIndex % 5 == 0 ? gridPaintMajor : gridPaintMinor;
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+        lineIndex++;
+      }
+      lineIndex = 0;
+      for (double y = 0; y < size.height; y += step) {
+        final paint = lineIndex % 5 == 0 ? gridPaintMajor : gridPaintMinor;
+        canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+        lineIndex++;
+      }
+      final origin = Paint()
+        ..color = const Color(0xFFE11D48).withValues(alpha: 0.55)
+        ..strokeWidth = 1.2;
+      canvas.drawLine(Offset.zero, Offset(size.width.clamp(0, 120), 0), origin);
+      canvas.drawLine(Offset.zero, Offset(0, size.height.clamp(0, 120)), origin);
     }
 
     if (showRoomZones && scene.rooms.isNotEmpty) {
@@ -560,6 +717,9 @@ class ScenePainter extends CustomPainter {
         oldDelegate.selectedObjectId != selectedObjectId ||
         oldDelegate.tileEditorRevision != tileEditorRevision ||
         oldDelegate.showRoomZones != showRoomZones ||
+        oldDelegate.showSceneGrid != showSceneGrid ||
+        oldDelegate.gridStep != gridStep ||
+        oldDelegate.showTileCollisionPreview != showTileCollisionPreview ||
         oldDelegate.collabPresenceRevision != collabPresenceRevision ||
         oldDelegate.tilesetCatalog != tilesetCatalog ||
         oldDelegate.tilemapTextures != tilemapTextures;

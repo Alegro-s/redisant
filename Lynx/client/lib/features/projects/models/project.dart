@@ -7,6 +7,7 @@ class Project {
   final String? rootFolder;
   final String? shareSlug;
   final String? myRole;
+  final String? lynxEngineVersion;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +20,7 @@ class Project {
     this.rootFolder,
     this.shareSlug,
     this.myRole,
+    this.lynxEngineVersion,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -35,6 +37,7 @@ class Project {
       rootFolder: json['root_folder']?.toString(),
       shareSlug: json['share_slug']?.toString(),
       myRole: json['my_role']?.toString(),
+      lynxEngineVersion: json['lynx_engine_version']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ?? DateTime.now(),
     );

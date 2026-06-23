@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'nexus_shell_theme.dart';
+import 'lynx_hub_palette.dart';
 
 class NexusTheme {
   NexusTheme._();
@@ -54,7 +55,7 @@ class NexusTheme {
   }
 
   static TextStyle _interLabel(double size, FontWeight w, [Color? color]) =>
-      GoogleFonts.inter(
+      GoogleFonts.montserrat(
         fontSize: size,
         fontWeight: w,
         color: color,
@@ -132,11 +133,11 @@ class NexusTheme {
 
   static const Color _accentDark = Color(0xFFC084FC);
   static const Color _lavenderSoft = Color(0xFFD8B4FE);
-  static const Color _accentLight = Color(0xFF5C6BA3);
+  static const Color _accentLight = Color(0xFF18181B);
 
   static ThemeData darkPurple() {
-    const scaffold = Color(0xFF0D1117);
-    const surface = Color(0xFF161B22);
+    const scaffold = LynxHubPalette.bg;
+    const surface = LynxHubPalette.surface;
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -161,7 +162,7 @@ class NexusTheme {
       ),
     );
     final textTheme = _stableTextTheme(
-      GoogleFonts.interTextTheme(base.textTheme).apply(
+      GoogleFonts.montserratTextTheme(base.textTheme).apply(
         bodyColor: const Color(0xFFD4D4D8),
         displayColor: const Color(0xFFFAFAFA),
       ),
@@ -177,7 +178,7 @@ class NexusTheme {
         backgroundColor: surface,
         foregroundColor: textTheme.titleLarge?.color,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.jetBrainsMono(
+        titleTextStyle: GoogleFonts.montserrat(
           fontSize: 15,
           fontWeight: FontWeight.w600,
           color: textTheme.titleLarge?.color,
@@ -269,7 +270,7 @@ class NexusTheme {
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFF3F3F46),
         contentTextStyle: standaloneTextStyle(
-          GoogleFonts.inter(fontSize: 14, color: Colors.white),
+          GoogleFonts.montserrat(fontSize: 14, color: Colors.white),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -293,22 +294,22 @@ class NexusTheme {
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: _accentDark,
       ),
-      extensions: const [NexusShellTheme.dark],
+      extensions: const [NexusShellTheme.hubPurple],
     );
   }
 
   static ThemeData lightClean() {
-    const scaffold = Color(0xFFF9FAFB);
+    const scaffold = Color(0xFFFAFAFA);
     const surface = Color(0xFFFFFFFF);
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.light(
-        primary: _accentLight,
+        primary: Color(0xFF18181B),
         onPrimary: Colors.white,
-        primaryContainer: Color(0xFFE8EBF4),
-        onPrimaryContainer: Color(0xFF2F364F),
-        secondary: Color(0xFF6B7899),
+        primaryContainer: Color(0xFFE4E4E7),
+        onPrimaryContainer: Color(0xFF18181B),
+        secondary: Color(0xFF52525B),
         onSecondary: Colors.white,
         surface: surface,
         onSurface: Color(0xFF18181B),
@@ -324,7 +325,7 @@ class NexusTheme {
       ),
     );
     final textTheme = _stableTextTheme(
-      GoogleFonts.interTextTheme(base.textTheme).apply(
+      GoogleFonts.montserratTextTheme(base.textTheme).apply(
         bodyColor: const Color(0xFF3F3F46),
         displayColor: const Color(0xFF18181B),
       ),
@@ -340,7 +341,7 @@ class NexusTheme {
         backgroundColor: surface,
         foregroundColor: textTheme.titleLarge?.color,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.jetBrainsMono(
+        titleTextStyle: GoogleFonts.montserrat(
           fontSize: 15,
           fontWeight: FontWeight.w600,
           color: textTheme.titleLarge?.color,
@@ -432,7 +433,7 @@ class NexusTheme {
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFF27272A),
         contentTextStyle: standaloneTextStyle(
-          GoogleFonts.inter(fontSize: 14, color: Colors.white),
+          GoogleFonts.montserrat(fontSize: 14, color: Colors.white),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -448,8 +449,10 @@ class NexusTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFFF4F4F5),
-        selectedColor: _accentLight.withValues(alpha: 0.2),
-        labelStyle: _interLabel(13, FontWeight.w400),
+        selectedColor: _accentLight,
+        secondarySelectedColor: Colors.white,
+        labelStyle: _interLabel(13, FontWeight.w500),
+        secondaryLabelStyle: _interLabel(13, FontWeight.w600).copyWith(color: Colors.white),
         side: const BorderSide(color: Color(0xFFD4D4D8)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -461,21 +464,21 @@ class NexusTheme {
   }
 
   static ThemeData darkSlate() {
-    const accent = Color(0xFF3794FF);
-    const surface = Color(0xFF252526);
+    const accent = Color(0xFFE4E4E7);
+    const surface = Color(0xFF2D2D30);
     const scaffold = Color(0xFF1E1E1E);
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.dark(
         primary: accent,
-        onPrimary: Colors.white,
-        primaryContainer: Color(0xFF094771),
-        onPrimaryContainer: Color(0xFFBAE6FD),
-        secondary: Color(0xFF89D4FF),
+        onPrimary: Color(0xFF18181B),
+        primaryContainer: Color(0xFF3F3F46),
+        onPrimaryContainer: Color(0xFFFAFAFA),
+        secondary: Color(0xFFA1A1AA),
         surface: surface,
-        onSurface: Color(0xFFE4E4E7),
-        surfaceContainerHighest: Color(0xFF323232),
+        onSurface: Color(0xFFFAFAFA),
+        surfaceContainerHighest: Color(0xFF383838),
         onSurfaceVariant: Color(0xFFA1A1AA),
         outline: Color(0xFF52525B),
         error: Color(0xFFF87171),
@@ -483,7 +486,7 @@ class NexusTheme {
       ),
     );
     final textTheme = _stableTextTheme(
-      GoogleFonts.interTextTheme(base.textTheme).apply(
+      GoogleFonts.montserratTextTheme(base.textTheme).apply(
         bodyColor: const Color(0xFFD4D4D8),
         displayColor: const Color(0xFFFAFAFA),
       ),
@@ -499,7 +502,7 @@ class NexusTheme {
         backgroundColor: surface,
         foregroundColor: textTheme.titleLarge?.color,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.jetBrainsMono(
+        titleTextStyle: GoogleFonts.montserrat(
           fontSize: 15,
           fontWeight: FontWeight.w600,
           color: textTheme.titleLarge?.color,

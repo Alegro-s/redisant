@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Lynx Studio" Language="1033" Version="$(var.ProductVersion)"
+           Manufacturer="Lynx Engine" UpgradeCode="7C9E2A10-5B4F-4D8E-9A1C-000000000001">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine"
+             Description="Lynx Game Studio: Editor + Player + Rust engine" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Lynx Studio is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="MainFeature" Title="Lynx Studio" Level="1">
+      <ComponentGroupRef Id="LynxHarvest" />
+      <ComponentRef Id="EditorShortcut" />
+      <ComponentRef Id="PlayerShortcut" />
+    </Feature>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="Lynx Studio" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Lynx Studio" />
+      </Directory>
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <Component Id="EditorShortcut" Directory="ApplicationProgramsFolder" Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890">
+      <Shortcut Id="EditorStartMenu" Name="Lynx Editor"
+                Target="[INSTALLDIR]LynxEditor\client.exe" WorkingDirectory="INSTALLDIR" />
+      <Shortcut Id="EditorDesktop" Directory="DesktopFolder" Name="Lynx Editor"
+                Target="[INSTALLDIR]LynxEditor\client.exe" WorkingDirectory="INSTALLDIR" />
+      <RemoveFolder Id="CleanupPrograms" Directory="ApplicationProgramsFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\LynxStudio" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="PlayerShortcut" Directory="ApplicationProgramsFolder" Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
+      <Shortcut Id="PlayerStartMenu" Name="Lynx Player"
+                Target="[INSTALLDIR]LynxPlayer\client.exe" WorkingDirectory="INSTALLDIR" />
+      <RegistryValue Root="HKCU" Key="Software\LynxStudio\Player" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+  </Product>
+</Wix>

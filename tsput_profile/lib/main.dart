@@ -3,7 +3,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:tsput_profile/ui/auth/login_screen.dart';
-import 'package:tsput_profile/ui/splash/entry_splash_screen.dart';
 import 'package:tsput_profile/ui/screens/home_screen.dart';
 import 'package:tsput_profile/ui/screens/showcase_screen.dart';
 import 'package:tsput_profile/ui/screens/profile_screen.dart';
@@ -17,16 +16,17 @@ import 'core/providers/events_provider.dart';
 import 'core/providers/grades_provider.dart';
 import 'core/providers/exams_provider.dart';
 import 'core/providers/portfolio_provider.dart';
+import 'core/in_app_notification_tracker.dart';
 import 'core/providers/labs_provider.dart';
+import 'ui/widgets/app_motion.dart';
+import 'ui/widgets/in_app_notice_sheet.dart';
 import 'core/providers/main_nav_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await initializeDateFormatting('ru_RU', null);
-
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -47,63 +47,53 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MainNavProvider()),
       ],
       child: MaterialApp(
-        title: 'ТГПУ профиль',
+        title: AppConstants.appName,
         debugShowCheckedModeBanner: false,
         theme: AppThemes.lightTheme,
-        localizationsDelegates: [
+        localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [
-          const Locale('ru', 'RU'),
-        ],
-        home: EntrySplashScreen(child: AuthWrapper()),
+        supportedLocales: const [Locale('ru', 'RU')],
+        home: const AuthWrapper(),
       ),
     );
   }
 }
 
 class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
 
-    if (authProvider.isAuthenticated) {
+    if (auth.initializing) {
+      return const Scaffold(
+        backgroundColor: AppConstants.surfaceWhite,
+        body: Center(child: CircularProgressIndicator(color: AppConstants.blockBlack)),
+      );
+    }
+
+    if (auth.isAuthenticated) {
       return FutureBuilder(
         future: _loadAllData(context),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(
-              backgroundColor: AppConstants.backgroundColor,
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: AppConstants.primaryColor),
-                    SizedBox(height: 16),
-                    Text(
-                      'Загрузка данных...',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            return const Scaffold(
+              backgroundColor: AppConstants.surfaceWhite,
+              body: Center(child: CircularProgressIndicator(color: AppConstants.blockBlack)),
             );
           }
-          return MainNavigation();
-        },
-      );
-    } else {
-      return LoginScreen(
-        onLoginSuccess: () {
-          context.read<AuthProvider>().setAuthenticated(true);
+          return const MainNavigation();
         },
       );
     }
+
+    return LoginScreen(
+      onLoginSuccess: () => context.read<AuthProvider>().setAuthenticated(true),
+    );
   }
 
   Future<void> _loadAllData(BuildContext context) async {
@@ -118,15 +108,48 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-class MainNavigation extends StatelessWidget {
+class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
-  static final List<Widget> _screens = [
-    const HomeScreen(),
-    const ScheduleScreen(),
-    const ShowcaseScreen(),
-    const ProfileScreen(),
-  ];
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
+  static const _screenCount = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkDataNotifications());
+  }
+
+  Future<void> _checkDataNotifications() async {
+    if (!mounted) return;
+    final schedule = context.read<ScheduleProvider>().schedule;
+    final labs = context.read<LabsProvider>().labs;
+    if (schedule.isEmpty && labs.isEmpty) return;
+
+    final changes = await InAppNotificationTracker.detectChanges(schedule: schedule, labs: labs);
+    if (!mounted) return;
+
+    if (changes.scheduleChanged) {
+      await showInAppNoticeSheet(
+        context,
+        title: 'Расписание обновлено',
+        message: 'Появились изменения в расписании. Откройте вкладку «Расписание».',
+        icon: PhosphorIconsRegular.calendarBlank,
+      );
+    } else if (changes.labsChanged) {
+      await showInAppNoticeSheet(
+        context,
+        title: 'Moodle',
+        message: 'Обновились статусы лабораторных или комментарии преподавателя.',
+        icon: PhosphorIconsRegular.flask,
+        accent: AppConstants.terracottaDark,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,37 +157,30 @@ class MainNavigation extends StatelessWidget {
     return Scaffold(
       body: IndexedStack(
         index: nav.index,
-        children: _screens,
+        children: [
+          for (var i = 0; i < _screenCount; i++)
+            AppTabEnter(
+              active: nav.index == i,
+              child: switch (i) {
+                0 => const HomeScreen(),
+                1 => const ScheduleScreen(),
+                2 => const ShowcaseScreen(),
+                _ => const ProfileScreen(),
+              },
+            ),
+        ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFFE8E8E6))),
-        ),
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE8E8E6)))),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           currentIndex: nav.index,
           onTap: (index) => context.read<MainNavProvider>().setTab(index),
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(PhosphorIconsRegular.house),
-              activeIcon: Icon(PhosphorIconsFill.house),
-              label: 'главная',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(PhosphorIconsRegular.calendarBlank),
-              activeIcon: Icon(PhosphorIconsFill.calendarBlank),
-              label: 'расписание',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(PhosphorIconsRegular.squaresFour),
-              activeIcon: Icon(PhosphorIconsFill.squaresFour),
-              label: 'витрина',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(PhosphorIconsRegular.user),
-              activeIcon: Icon(PhosphorIconsFill.user),
-              label: 'профиль',
-            ),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(PhosphorIconsRegular.house), activeIcon: Icon(PhosphorIconsFill.house), label: 'главная'),
+            BottomNavigationBarItem(icon: Icon(PhosphorIconsRegular.calendarBlank), activeIcon: Icon(PhosphorIconsFill.calendarBlank), label: 'расписание'),
+            BottomNavigationBarItem(icon: Icon(PhosphorIconsRegular.squaresFour), activeIcon: Icon(PhosphorIconsFill.squaresFour), label: 'витрина'),
+            BottomNavigationBarItem(icon: Icon(PhosphorIconsRegular.user), activeIcon: Icon(PhosphorIconsFill.user), label: 'профиль'),
           ],
         ),
       ),

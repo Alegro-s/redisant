@@ -1,0 +1,15 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "ChairUp watch module" },
+    { "name": "EntryAbility_desc", "value": "ChairUp" },
+    { "name": "EntryAbility_label", "value": "ChairUp" },
+    { "name": "micro_title", "value": "2 minutes" },
+    { "name": "start_micro", "value": "Start" },
+    { "name": "done_micro", "value": "Done" },
+    { "name": "wave_label", "value": "Wave 6" },
+    { "name": "start_strength", "value": "Rest 60s" },
+    { "name": "strength_rest_title", "value": "Rest" },
+    { "name": "strength_rest_hint", "value": "next set" },
+    { "name": "skip_rest", "value": "Done" }
+  ]
+}

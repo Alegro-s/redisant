@@ -4,14 +4,26 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
+import '../../core/profile_photo_store.dart';
 import '../../core/providers/main_nav_provider.dart';
+import '../widgets/even_width_row.dart';
 import '../../core/providers/student_provider.dart';
 import '../../data/models/student.dart';
 import '../widgets/app_logout.dart';
+import '../widgets/app_motion.dart';
 import '../widgets/app_settings_sheet.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  int _photoTick = 0;
+
+  void _reloadPhoto() => setState(() => _photoTick++);
 
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
@@ -43,116 +55,121 @@ class ProfileScreen extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(child: _ProfileHeader(student: student)),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => showAppSettingsSheet(context),
-                      icon: const Icon(PhosphorIconsRegular.gear, color: AppConstants.blockBlack),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => studentProvider.loadStudentData(),
-                      icon: const Icon(PhosphorIconsRegular.arrowsClockwise, color: AppConstants.blockBlack),
-                    ),
-                  ],
-                ),
+              child: _ProfileHeader(
+                key: ValueKey(_photoTick),
+                student: student,
+                tick: _photoTick,
               ),
             ),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _PromoBanner(onTap: () => _openUrl(AppConstants.portalRegisterUrl)),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Сервисы',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: AppConstants.secondaryColor,
-                        letterSpacing: 0.3,
-                      ),
+              child: AppIntroColumn(
+                spacing: 20,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () async {
+                            final changed = await showAppSettingsSheet(context);
+                            if (changed == true && mounted) _reloadPhoto();
+                          },
+                          icon: const Icon(PhosphorIconsRegular.gear, color: AppConstants.blockBlack),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => studentProvider.loadStudentData(),
+                          icon: const Icon(PhosphorIconsRegular.arrowsClockwise, color: AppConstants.blockBlack),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    _ServiceChipsRow(
-                      onSchedule: () => context.read<MainNavProvider>().setTab(1),
-                      onShowcase: () => context.read<MainNavProvider>().setTab(2),
-                      onHome: () => context.read<MainNavProvider>().setTab(0),
-                      onSite: () => _openUrl(AppConstants.portalRegisterUrl),
-                      onStudy: () => _openUrl(AppConstants.portalStudyUrl),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    childrenPadding: const EdgeInsets.only(bottom: 8),
-                    title: const Text(
-                      'Мои данные',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppConstants.blockBlack,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Контакты, зачётка, стипендия',
-                      style: TextStyle(fontSize: 12, color: AppConstants.secondaryColor),
-                    ),
-                    children: [
-                      LayoutBuilder(
-                        builder: (context, c) {
-                          const gap = 12.0;
-                          final w = (c.maxWidth - gap) / 2;
-                          return Wrap(
-                            spacing: gap,
-                            runSpacing: gap,
-                            children: [
-                              for (final t in tiles)
-                                SizedBox(
-                                  width: w,
-                                  child: _FieldCard(label: t.$1, value: t.$2),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
                   ),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 40),
-                child: OutlinedButton(
-                  onPressed: () => showLogoutConfirmDialog(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFB91C1C),
-                    side: const BorderSide(color: Color(0x33B91C1C)),
-                    minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _PromoBanner(onTap: () => _openUrl(AppConstants.portalRegisterUrl)),
                   ),
-                  child: const Text('Выйти из аккаунта', style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Сервисы',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppConstants.secondaryColor,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _ServiceChipsRow(
+                          onSchedule: () => context.read<MainNavProvider>().setTab(1),
+                          onShowcase: () => context.read<MainNavProvider>().setTab(2),
+                          onHome: () => context.read<MainNavProvider>().setTab(0),
+                          onSite: () => _openUrl(AppConstants.portalRegisterUrl),
+                          onStudy: () => _openUrl(AppConstants.portalStudyUrl),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(bottom: 8),
+                        title: const Text(
+                          'Мои данные',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: AppConstants.blockBlack,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Контакты, зачётка, стипендия',
+                          style: TextStyle(fontSize: 12, color: AppConstants.secondaryColor),
+                        ),
+                        children: [
+                          LayoutBuilder(
+                            builder: (context, c) {
+                              const gap = 12.0;
+                              final w = (c.maxWidth - gap) / 2;
+                              return Wrap(
+                                spacing: gap,
+                                runSpacing: gap,
+                                children: [
+                                  for (final t in tiles)
+                                    SizedBox(
+                                      width: w,
+                                      child: _FieldCard(label: t.$1, value: t.$2),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+                    child: OutlinedButton(
+                      onPressed: () => showLogoutConfirmDialog(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFB91C1C),
+                        side: const BorderSide(color: Color(0x33B91C1C)),
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Выйти из аккаунта', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -193,101 +210,127 @@ List<(String, String)> _profileTiles(Student student) {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.student});
+  const _ProfileHeader({super.key, required this.student, required this.tick});
 
   final Student student;
+  final int tick;
+
+  static const _defaultGradient = [
+    AppConstants.blockBlack,
+    AppConstants.blockBlackElevated,
+    Color(0xFF2C2C2C),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          height: 124,
-          width: double.infinity,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppConstants.blockBlack,
-                      AppConstants.blockBlackElevated,
-                      Color(0xFF2C2C2C),
-                    ],
-                  ),
-                ),
-              ),
-              SafeArea(
-                bottom: false,
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8, top: 4),
-                    child: Icon(
-                      PhosphorIconsRegular.graduationCap,
-                      size: 72,
-                      color: Colors.white.withValues(alpha: 0.08),
+    return FutureBuilder(
+      key: ValueKey(tick),
+      future: ProfilePhotoStore.loadBytes(),
+      builder: (context, snap) {
+        final photo = snap.data;
+        return Column(
+          children: [
+            SizedBox(
+              height: 124,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (photo != null)
+                    Image.memory(photo, fit: BoxFit.cover)
+                  else
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: _defaultGradient,
+                        ),
+                      ),
+                    ),
+                  if (photo != null)
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.15),
+                            Colors.black.withValues(alpha: 0.45),
+                          ],
+                        ),
+                      ),
+                    ),
+                  SafeArea(
+                    bottom: false,
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8, top: 4),
+                        child: Icon(
+                          PhosphorIconsRegular.graduationCap,
+                          size: 72,
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
-        Transform.translate(
-          offset: const Offset(0, -44),
-          child: Column(
-            children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: AppConstants.surfaceWhite,
-                child: CircleAvatar(
-                  radius: 44,
-                  backgroundColor: AppConstants.surfaceMuted,
-                  backgroundImage: student.avatarUrl != null ? NetworkImage(student.avatarUrl!) : null,
-                  child: student.avatarUrl == null
-                      ? Icon(PhosphorIconsRegular.user, size: 44, color: AppConstants.secondaryColor)
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  student.fullName,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppConstants.blockBlack,
-                    height: 1.2,
+            ),
+            Transform.translate(
+              offset: const Offset(0, -44),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 48,
+                    backgroundColor: AppConstants.surfaceWhite,
+                    child: CircleAvatar(
+                      radius: 44,
+                      backgroundColor: AppConstants.surfaceMuted,
+                      backgroundImage: student.avatarUrl != null ? NetworkImage(student.avatarUrl!) : null,
+                      child: student.avatarUrl == null
+                          ? Icon(PhosphorIconsRegular.user, size: 44, color: AppConstants.secondaryColor)
+                          : null,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 14),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      student.fullName,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppConstants.blockBlack,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${student.group} · курс ${student.course}',
+                    style: TextStyle(fontSize: 14, color: AppConstants.secondaryColor),
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      student.specialty,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, height: 1.35, color: AppConstants.secondaryColor),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                '${student.group} · курс ${student.course}',
-                style: TextStyle(fontSize: 14, color: AppConstants.secondaryColor),
-              ),
-              const SizedBox(height: 4),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  student.specialty,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12, height: 1.35, color: AppConstants.secondaryColor),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-      ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
     );
   }
 }
@@ -305,14 +348,8 @@ class _PromoBanner extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          width: double.infinity,
+        child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
-          decoration: const BoxDecoration(
-            border: Border(
-              left: BorderSide(color: AppConstants.terracotta, width: 4),
-            ),
-          ),
           child: Row(
             children: [
               Expanded(
@@ -374,45 +411,40 @@ class _ServiceChipsRow extends StatelessWidget {
       (PhosphorIconsRegular.globe, 'Сайт', onSite),
       (PhosphorIconsRegular.graduationCap, 'Обучение', onStudy),
     ];
-    return SizedBox(
+    return EvenWidthRow(
+      gap: 12,
       height: 96,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 12),
-        itemBuilder: (context, i) {
-          final it = items[i];
-          return SizedBox(
-            width: 76,
-            child: InkWell(
-              onTap: it.$3,
-              borderRadius: BorderRadius.circular(16),
-              child: Column(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: AppConstants.surfaceMuted,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppConstants.borderSubtle),
-                    ),
-                    child: Icon(it.$1, color: AppConstants.terracottaDark, size: 26),
+      children: [
+        for (final it in items)
+          InkWell(
+            onTap: it.$3,
+            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppConstants.surfaceWhite,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppConstants.borderSubtle),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    it.$2,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, height: 1.1),
-                  ),
-                ],
-              ),
+                  child: Icon(it.$1, color: AppConstants.terracottaDark, size: 26),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  it.$2,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, height: 1.1),
+                ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 }

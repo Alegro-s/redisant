@@ -1,0 +1,42 @@
+{
+  "formatVersion": 3,
+  "id": "bootstrap",
+  "name": "Bootstrap",
+  "objects": [
+    {
+      "id": "autoload_marker",
+      "name": "AutoloadMarker",
+      "type": "empty",
+      "x": 24,
+      "y": 24,
+      "z": 0,
+      "active": true,
+      "visible": true,
+      "properties": {
+        "static": true,
+        "tint": 4288585374
+      }
+    }
+  ],
+  "layers": [
+    {
+      "id": "default",
+      "name": "Default",
+      "sortOrder": 0
+    }
+  ],
+  "camera": {
+    "x": 640,
+    "y": 360,
+    "zoom": 1
+  },
+  "backgroundColorArgb": 4278190080,
+  "physics": {
+    "gravityY": 980
+  },
+  "tilemaps": [],
+  "rooms": [],
+  "createdAt": "2026-06-02T22:25:12.000Z",
+  "modifiedAt": "2026-06-02T22:25:12.000Z",
+  "revision": 1
+}

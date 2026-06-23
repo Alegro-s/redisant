@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="desktop_bg">#1a1d24</color>
+    <color name="taskbar">#252830</color>
+    <color name="text_primary">#E8EAED</color>
+    <color name="text_secondary">#9AA0A6</color>
+    <color name="accent">#4285F4</color>
+    <color name="icon_bg">#333842</color>
+</resources>

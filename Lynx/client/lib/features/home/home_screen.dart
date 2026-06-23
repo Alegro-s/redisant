@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'lynx_launcher_modular_panels.dart';
+import 'lynx_launcher_profile_menu.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../app/providers/settings_provider.dart';
 import '../../app/themes/nexus_shell_theme.dart';
 import '../auth/providers/auth_provider.dart';
+import '../arcade/arcade_screen.dart';
 import 'home_content.dart';
 import '../messenger/messenger_screen.dart';
 import '../projects/screens/projects_screen.dart';
@@ -98,7 +100,9 @@ class _PlaceholderModule extends StatelessWidget {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String? initialModule;
+
+  const HomeScreen({super.key, this.initialModule});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -110,14 +114,27 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasUnreadMessenger = false;
   String? _lastSeenIncomingMessageId;
   Timer? _chatPollTimer;
+  final GlobalKey _profileAvatarKey = GlobalKey();
+  final GlobalKey _hubMenuKey = GlobalKey();
 
-  static const double _kWideShell = 960;
   static const double _kMediumShell = 600;
-  static const double _sidebarWidth = 252;
+  static const double _iconRailWidth = 68;
+
+  static const List<(String id, String label, IconData icon)> _mobileNavOrder = [
+    ('home', 'Главная', Icons.home_outlined),
+    ('messenger', 'Мессенджер', Icons.chat_bubble_outline),
+    ('store', 'Магазин', Icons.storefront_outlined),
+    ('projects', 'Проекты', Icons.folder_outlined),
+    ('news', 'Новости', Icons.newspaper_outlined),
+  ];
 
   @override
   void initState() {
     super.initState();
+    final module = widget.initialModule?.trim();
+    if (module != null && module.isNotEmpty) {
+      _selectedModuleId = module;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshUnreadMessenger();
       _chatPollTimer = Timer.periodic(
@@ -172,7 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildModuleScreen(String moduleId) {
     switch (moduleId) {
       case 'home':
-        return const HomeContent();
+        return HomeContent(
+          onSelectModule: (id) => setState(() => _selectedModuleId = id),
+        );
       case 'projects':
         return const ProjectsScreen();
       case 'messenger':
@@ -187,6 +206,8 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       case 'store':
         return const AssetStoreCatalogScreen();
+      case 'arcade':
+        return const ArcadeScreen();
       case 'library':
         return const LibraryScreen();
       case 'news':
@@ -230,38 +251,33 @@ class _HomeScreenState extends State<HomeScreen> {
     final cs = Theme.of(context).colorScheme;
 
     if (w >= _kMediumShell) {
-      final wide = w >= _kWideShell;
-      final gradientTop =
-          Color.lerp(shell.contentChrome, cs.primary, 0.045) ??
-          shell.contentChrome;
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [gradientTop, shell.contentChrome, shell.contentChrome],
-            stops: const [0.0, 0.38, 1.0],
-          ),
-        ),
+      final shell = context.nexusShell;
+      return ColoredBox(
+        color: shell.contentChrome,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: Row(
             children: [
-              _buildSidebar(
-                visibleModules,
-                settings,
-                shell,
-                showHeaderBrand: wide,
-              ),
-              VerticalDivider(
-                width: 1,
-                thickness: 1,
-                color: shell.sidebarBorder,
-              ),
+              _buildIconRail(visibleModules, shell),
               Expanded(
-                child: ColoredBox(
-                  color: Colors.transparent,
-                  child: _buildModuleScreen(_selectedModuleId),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 240),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, anim) {
+                    final slide = Tween<Offset>(
+                      begin: const Offset(0.02, 0),
+                      end: Offset.zero,
+                    ).animate(anim);
+                    return FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(position: slide, child: child),
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey(_selectedModuleId),
+                    child: _buildModuleScreen(_selectedModuleId),
+                  ),
                 ),
               ),
             ],
@@ -273,109 +289,59 @@ class _HomeScreenState extends State<HomeScreen> {
     return _buildMobileShell(visibleModules, settings, cs, shell);
   }
 
-  Widget _buildSidebar(
+  Widget _buildIconRail(
     List<Map<String, dynamic>> visibleModules,
-    SettingsProvider settings,
-    NexusShellTheme shell, {
-    required bool showHeaderBrand,
-  }) {
-    final cs = Theme.of(context).colorScheme;
+    NexusShellTheme shell,
+  ) {
+    final railBg = shell.sidebar;
     return SizedBox(
-      width: _sidebarWidth,
+      width: _iconRailWidth,
       child: ColoredBox(
-        color: shell.sidebar,
+        color: railBg,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: 14),
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                14,
-                showHeaderBrand ? 16 : 12,
-                14,
-                showHeaderBrand ? 8 : 4,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Lynx Hub',
-                    style: GoogleFonts.jetBrainsMono(
-                      fontSize: showHeaderBrand ? 16 : 14,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: cs.onSurface,
-                    ).copyWith(inherit: false),
-                  ),
-                  if (showHeaderBrand)
-                    Text(
-                      'создавайте и хостите игры',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                ],
-              ),
+              padding: const EdgeInsets.only(bottom: 10),
+              child: const LynxBrandMark(size: 28),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text(
-                'МОДУЛИ',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.1,
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
             Expanded(
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  canvasColor: shell.sidebar,
-                  shadowColor: Colors.transparent,
-                ),
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(
-                    context,
-                  ).copyWith(scrollbars: true),
-                  child: ReorderableListView.builder(
-                    buildDefaultDragHandles: false,
-                    padding: const EdgeInsets.only(bottom: 6),
-                    itemCount: visibleModules.length,
-                    onReorder: (int oldIndex, int newIndex) {
-                      setState(() {
-                        if (oldIndex < newIndex) newIndex -= 1;
-                        final copy = List<Map<String, dynamic>>.from(
-                          visibleModules,
-                        );
-                        final item = copy.removeAt(oldIndex);
-                        copy.insert(newIndex, item);
-                        settings.updateModulesOrder(
-                          copy
-                              .map((m) => m['id']?.toString() ?? '')
-                              .where((e) => e.isNotEmpty)
-                              .toList(),
-                        );
-                      });
-                    },
-                    itemBuilder: (ctx, i) {
-                      final mod = visibleModules[i];
-                      final mid = mod['id']?.toString() ?? 'idx_$i';
-                      return _SidebarModuleTile(
-                        key: ValueKey('mod_$mid'),
-                        index: i,
-                        module: mod,
-                        selected: _selectedModuleId == mid,
-                        shell: shell,
-                        onTap: () => setState(() => _selectedModuleId = mid),
-                      );
-                    },
-                  ),
-                ),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: visibleModules.length,
+                itemBuilder: (ctx, i) {
+                  final mod = visibleModules[i];
+                  final mid = mod['id']?.toString() ?? 'idx_$i';
+                  final selected = _selectedModuleId == mid;
+                  return _IconRailTile(
+                    module: mod,
+                    selected: selected,
+                    shell: shell,
+                    showBadge: mid == 'messenger' && _hasUnreadMessenger,
+                    onTap: () => setState(() => _selectedModuleId = mid),
+                  );
+                },
               ),
             ),
-            const Divider(height: 1),
+            LynxLauncherHubButton(
+              hubKey: _hubMenuKey,
+              onTap: () {
+                final box = _hubMenuKey.currentContext?.findRenderObject();
+                if (box is RenderBox) {
+                  showLynxLauncherHubMenu(context, anchor: box);
+                }
+              },
+            ),
+            LynxProfileAvatarButton(
+              avatarKey: _profileAvatarKey,
+              onTap: () {
+                final box = _profileAvatarKey.currentContext?.findRenderObject();
+                if (box is RenderBox) {
+                  showLynxLauncherProfileMenu(context, anchor: box);
+                }
+              },
+            ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -388,18 +354,34 @@ class _HomeScreenState extends State<HomeScreen> {
     ColorScheme cs,
     NexusShellTheme shell,
   ) {
-    List<Map<String, dynamic>> mainItems = [];
+    final enabledIds = settings.enabledModules;
+    final mainItems = <Map<String, dynamic>>[];
+    for (final spec in _mobileNavOrder) {
+      if (!enabledIds.contains(spec.$1)) continue;
+      final fromCatalog = visibleModules.cast<Map<String, dynamic>?>().firstWhere(
+        (m) => m?['id'] == spec.$1,
+        orElse: () => null,
+      );
+      mainItems.add({
+        'id': spec.$1,
+        'title': fromCatalog?['title'] ?? spec.$2,
+        'mobileLabel': spec.$2,
+        'icon': spec.$3,
+      });
+    }
+    final extraModules = visibleModules
+        .where((m) {
+          final id = m['id']?.toString() ?? '';
+          return id.isNotEmpty &&
+              !_mobileNavOrder.any((e) => e.$1 == id) &&
+              enabledIds.contains(id);
+        })
+        .toList();
     Map<String, dynamic>? moreItem;
-    if (visibleModules.length > 5) {
-      mainItems = visibleModules.sublist(0, 4);
-      moreItem = {'id': 'more', 'title': 'Ещё', 'icon': Icons.more_horiz};
-    } else {
-      mainItems = visibleModules;
+    if (extraModules.isNotEmpty) {
+      moreItem = {'id': 'more', 'title': 'Ещё', 'icon': Icons.more_horiz_outlined};
     }
 
-    final gradientTop =
-        Color.lerp(shell.contentChrome, cs.primary, 0.05) ??
-        shell.contentChrome;
     final destinations = _mobileDestinations(mainItems, moreItem);
     final navIndex = _mobileNavIndex(mainItems, moreItem);
     final safeNavIndex = destinations.isEmpty
@@ -407,16 +389,10 @@ class _HomeScreenState extends State<HomeScreen> {
         : navIndex.clamp(0, destinations.length - 1);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: shell.contentChrome,
       body: SafeArea(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [gradientTop, shell.contentChrome],
-            ),
-          ),
+        child: ColoredBox(
+          color: shell.contentChrome,
           child: _buildModuleScreen(_selectedModuleId),
         ),
       ),
@@ -431,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainItems[index]['id']?.toString() ?? 'home',
                   );
                 } else {
-                  _showMoreModulesSheet(visibleModules);
+                  _showMoreModulesSheet(extraModules.isEmpty ? visibleModules : extraModules);
                 }
               },
               destinations: destinations,
@@ -453,15 +429,23 @@ class _HomeScreenState extends State<HomeScreen> {
       ...mainItems.map(
         (m) => NavigationDestination(
           icon: _destinationIcon(m),
-          label: (m['title']?.toString() ?? '…').split(' ').first,
+          label: m['mobileLabel']?.toString() ??
+              m['title']?.toString() ??
+              '…',
         ),
       ),
       if (moreItem != null)
-        const NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Ещё'),
+        NavigationDestination(
+          icon: Icon(moreItem['icon'] as IconData? ?? Icons.more_horiz_outlined),
+          label: moreItem['title']?.toString() ?? 'Ещё',
+        ),
     ];
     if (out.isEmpty) {
       return const [
-        NavigationDestination(icon: Icon(Icons.home_work_outlined), label: 'Hub'),
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          label: 'Главная',
+        ),
       ];
     }
     return out;
@@ -534,80 +518,75 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _SidebarModuleTile extends StatelessWidget {
-  final int index;
+class _IconRailTile extends StatelessWidget {
   final Map<String, dynamic> module;
   final bool selected;
   final NexusShellTheme shell;
+  final bool showBadge;
   final VoidCallback onTap;
 
-  const _SidebarModuleTile({
-    super.key,
-    required this.index,
+  const _IconRailTile({
     required this.module,
     required this.selected,
     required this.shell,
     required this.onTap,
+    this.showBadge = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final icon = module['icon'] is IconData
+        ? module['icon'] as IconData
+        : Icons.widgets_outlined;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      child: Material(
-        color: selected ? shell.sidebarSelected : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
-          child: SizedBox(
-            height: 40,
-            child: Row(
-              children: [
-                Container(
-                  width: 3,
-                  height: 28,
-                  margin: const EdgeInsets.only(left: 4, right: 6),
-                  decoration: BoxDecoration(
-                    color: selected ? cs.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(2),
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Tooltip(
+        message: module['title']?.toString() ?? '',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              width: 48,
+              height: 48,
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: selected
+                    ? shell.sidebarSelected.withValues(alpha: 0.9)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 22,
+                    color: selected
+                        ? cs.primary
+                        : cs.onSurface.withValues(alpha: 0.72),
                   ),
-                ),
-                Icon(
-                  module['icon'] is IconData
-                      ? module['icon'] as IconData
-                      : Icons.widgets_outlined,
-                  size: 18,
-                  color: selected
-                      ? cs.primary
-                      : cs.onSurface.withValues(alpha: 0.75),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    module['title']?.toString() ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                      color: cs.onSurface,
+                  if (showBadge)
+                    Positioned(
+                      right: 2,
+                      top: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4C9AFF),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Icon(
-                      Icons.drag_indicator,
-                      size: 16,
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.45),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

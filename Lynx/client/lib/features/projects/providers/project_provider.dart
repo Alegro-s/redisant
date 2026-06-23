@@ -26,12 +26,19 @@ class ProjectProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<String?> createProject(String name, String? description, String visibility) async {
+  Future<String?> createProject(
+    String name,
+    String? description,
+    String visibility, {
+    String? lynxEngineVersion,
+  }) async {
     try {
       final response = await _auth.http.post('/projects', data: {
         'name': name,
         'description': description,
         'visibility': visibility,
+        if (lynxEngineVersion != null && lynxEngineVersion.isNotEmpty)
+          'lynx_engine_version': lynxEngineVersion,
       });
       if (response.statusCode == 200) {
         final project = Project.fromJson(response.data as Map<String, dynamic>);
