@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useHubAuth } from '../context/HubAuthContext';
-import { LYNX_CABINET_URL } from '../config/links';
+import { ENGINE_WEB_DEMO_URL, LYNX_CABINET_URL } from '../config/links';
 import { listHubDownloads, recordHubDownload, getLynxAuthToken } from '../lib/lynxAuth';
 
 type CatalogItem = {
@@ -212,11 +212,20 @@ export function AccountPage() {
         <section className="lynx-hub-account-section">
           <h2>Сообщения</h2>
           <p className="lynx-lead">
-            Личные и групповые чаты — во вкладке «Мессенджер» в <strong>Lynx Launcher</strong>.
+            Личные и групповые чаты доступны в <strong>Lynx Launcher</strong> (вкладка «Мессенджер») —
+            для Windows и Android. В браузере Hub работает редактор и облако; мессенджер пока только в
+            приложении.
           </p>
-          <Link to="/download" className="lynx-app-cta lynx-cta-lg">
-            Скачать Launcher
-          </Link>
+          <div className="lynx-hub-account-quick">
+            <Link to="/download" className="lynx-hub-account-tile">
+              <strong>Скачать Launcher</strong>
+              <span>Мессенджер, проекты и кнопка «Работать» с локальным ядром</span>
+            </Link>
+            <a href={ENGINE_WEB_DEMO_URL} className="lynx-hub-account-tile">
+              <strong>Редактор в браузере</strong>
+              <span>WASM-ядро без установки .lynxengine</span>
+            </a>
+          </div>
         </section>
       )}
     </div>

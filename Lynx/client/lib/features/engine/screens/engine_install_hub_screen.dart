@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:path/path.dart' as p;
 
 import '../../auth/providers/auth_provider.dart';
 import '../runtime/engine_binary_loader.dart';
@@ -103,6 +105,70 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
     }
   }
 
+  Future<void> _importFromInstallFolder() async {
+    if (kIsWeb) return;
+    final exeDir = File(Platform.resolvedExecutable).parent;
+    final candidates = <File>[];
+    for (final dir in [exeDir, Directory(p.join(exeDir.path, 'dist'))]) {
+      if (!await dir.exists()) continue;
+      await for (final ent in dir.list()) {
+        if (ent is File && ent.path.toLowerCase().endsWith('.lynxengine')) {
+          candidates.add(ent);
+        }
+      }
+    }
+    if (candidates.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Рядом с LynxLauncher.exe нет .lynxengine (проверьте папку dist/)'),
+        ),
+      );
+      return;
+    }
+    final file = candidates.length == 1
+        ? candidates.first
+        : await showDialog<File>(
+            context: context,
+            builder: (ctx) => SimpleDialog(
+              title: const Text('Импорт из папки установки'),
+              children: [
+                for (final f in candidates)
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(ctx, f),
+                    child: Text(p.basename(f.path)),
+                  ),
+              ],
+            ),
+          );
+    if (file == null || !mounted) return;
+    setState(() => _busyVersion = 'import');
+    try {
+      final bytes = await file.readAsBytes();
+      final path = await installLynxEngineFromBytes(bytes);
+      if (!mounted) return;
+      if (path != null) {
+        final runtime = await getInstalledRuntimeVersions();
+        setState(() {
+          _installedPath = path;
+          _installedVer = runtime.displayLabel;
+          _busyVersion = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Установлено: ${p.basename(file.path)}')),
+        );
+        await _refresh();
+      } else {
+        setState(() => _busyVersion = null);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busyVersion = null);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
   Future<void> _download(String version) async {
     if (kIsWeb) return;
     setState(() => _busyVersion = version);
@@ -145,7 +211,28 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
     if (kIsWeb) {
       return Scaffold(
         appBar: AppBar(title: const Text('Lynx Engine')),
-        body: const Center(child: Text('В браузере нативное ядро не устанавливается. Используйте десктоп-клиент.')),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'В браузере ядро WASM уже загружено — отдельный .lynxengine не нужен.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: () => context.go('/workspace'),
+                    child: const Text('Открыть редактор'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       );
     }
 
@@ -274,11 +361,22 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
                 if (_manifest == null || _manifest!.releases.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      _localVersions.isNotEmpty
-                          ? 'Онлайн-каталог недоступен — используйте установленную версию или импорт .lynxengine.'
-                          : 'Каталог пуст. Импортируйте Lynx-Engine-….lynxengine из дистрибутива.',
-                      style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _localVersions.isNotEmpty
+                              ? 'Онлайн-каталог недоступен — используйте установленную версию или импорт .lynxengine.'
+                              : 'Каталог пуст. Импортируйте Lynx-Engine-….lynxengine из дистрибутива.',
+                          style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _busyVersion != null ? null : _importFromInstallFolder,
+                          icon: const Icon(Icons.install_desktop_outlined, size: 18),
+                          label: const Text('Импорт из папки установки'),
+                        ),
+                      ],
                     ),
                   )
                 else
@@ -294,6 +392,7 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
                     );
                     final rec = _manifest!.recommendedVersion == ver;
                     final busy = _busyVersion == ver;
+                    final channel = rel.channel?.trim();
                     final subtitle = rel.displaySubtitle.isNotEmpty
                         ? rel.displaySubtitle
                         : (ok ? 'Есть артефакт для этой ОС' : 'Нет артефакта под вашу платформу');
@@ -309,6 +408,16 @@ class _EngineInstallHubScreenState extends State<EngineInstallHubScreen> {
                                 label: const Text('рекомендуется', style: TextStyle(fontSize: 11)),
                                 visualDensity: VisualDensity.compact,
                                 backgroundColor: cs.primary.withValues(alpha: 0.2),
+                              ),
+                            ],
+                            if (channel != null && channel.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Chip(
+                                label: Text(channel, style: const TextStyle(fontSize: 11)),
+                                visualDensity: VisualDensity.compact,
+                                backgroundColor: channel == 'beta'
+                                    ? cs.tertiary.withValues(alpha: 0.2)
+                                    : cs.surfaceContainerHighest,
                               ),
                             ],
                           ],

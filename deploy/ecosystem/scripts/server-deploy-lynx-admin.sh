@@ -47,7 +47,11 @@ if [[ -d "$PO_ROOT/Lynx/hub" ]]; then
   npm ci
   bash "$ECO/scripts/write-hub-env-production.sh" .env.production.local
   npm run build
-  rsync -a --delete dist/ /srv/lynx-hub/dist/
+  rsync -a --delete --exclude 'downloads/' dist/ /srv/lynx-hub/dist/
+  if [[ -d dist/dist/downloads ]]; then
+    mkdir -p /srv/lynx-hub/dist/downloads
+    cp -f dist/dist/downloads/*.json /srv/lynx-hub/dist/downloads/ 2>/dev/null || true
+  fi
   echo "    Hub -> /srv/lynx-hub/dist"
 fi
 

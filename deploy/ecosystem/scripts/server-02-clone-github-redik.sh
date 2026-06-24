@@ -162,12 +162,13 @@ fi
 if [[ -d "$PO_ROOT/Lynx/hub" ]]; then
   cd "$PO_ROOT/Lynx/hub"
   npm ci
-  cat > .env.production.local <<'EOF'
-VITE_LYNX_AUTH_URL=/auth
-VITE_LYNX_CABINET_URL=https://lynx-cloud.ru/cabinet
-EOF
+  bash "$ECO/scripts/write-hub-env-production.sh" .env.production.local
   npm run build
-  rsync -a --delete dist/ /srv/lynx-hub/dist/
+  mkdir -p /srv/lynx-hub/dist/downloads
+  rsync -a --delete --exclude 'downloads/' dist/ /srv/lynx-hub/dist/
+  if [[ -d dist/dist/downloads ]]; then
+    cp -f dist/dist/downloads/*.json /srv/lynx-hub/dist/downloads/ 2>/dev/null || true
+  fi
   if [[ ! -f /srv/lynx-hub/dist/engine-web/index.html ]]; then
     echo "WARN: /engine-web missing — run Lynx/scripts/build-lynx-engine-web.ps1 locally and push, or build Flutter on CI"
   fi

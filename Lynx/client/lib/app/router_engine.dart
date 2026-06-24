@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:client/app/engine_bootstrap.dart';
 import 'package:client/app/transitions/app_transitions.dart';
@@ -31,10 +33,18 @@ GoRouter createEngineRouter(AuthProvider auth) {
         }
         return null;
       }
+      if (path == '/workspace' || path == '/engine-home') {
+        final boot = EngineBootstrap.instance;
+        if (boot.hasProjectContext) return '/workspace';
+      }
       final loggedIn = auth.isAuthenticated;
       final onAuthPage =
           path == '/login' || path == '/register' || path == '/verify-email' || path == '/nexus-handoff';
       if (!loggedIn && !onAuthPage) {
+        final boot = EngineBootstrap.instance;
+        if (boot.hasProjectContext && (path == '/workspace' || path == '/login')) {
+          return '/workspace';
+        }
         return '/login';
       }
       if (loggedIn && (path == '/login' || path == '/register' || path == '/verify-email')) {
@@ -43,6 +53,9 @@ GoRouter createEngineRouter(AuthProvider auth) {
           return '/play-cart';
         }
         if (boot.hasProjectContext) {
+          return '/workspace';
+        }
+        if (kIsWeb) {
           return '/workspace';
         }
         return '/engine-home';
@@ -166,8 +179,54 @@ GoRouter createEngineRouter(AuthProvider auth) {
 class _EngineHomePlaceholder extends StatelessWidget {
   const _EngineHomePlaceholder();
 
+  static const _cloudCabinetUrl = 'https://lynx-cloud.ru/cabinet';
+
+  Future<void> _openCloudCabinet() async {
+    final uri = Uri.parse(_cloudCabinetUrl);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Lynx Engine')),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                const Text(
+                  'Редактор в браузере',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Стабильное ядро WASM уже в этой вкладке — скачивать .lynxengine '
+                  'не нужно. Откройте редактор или выберите облачный проект в Lynx Cloud.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => context.go('/workspace'),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Открыть редактор'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _openCloudCabinet,
+                  icon: const Icon(Icons.cloud_outlined),
+                  label: const Text('Проекты в Lynx Cloud'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Lynx Engine')),
       body: Center(
