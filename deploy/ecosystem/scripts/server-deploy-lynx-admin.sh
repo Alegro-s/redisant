@@ -45,12 +45,7 @@ echo "==> Build Hub (account + admin)"
 if [[ -d "$PO_ROOT/Lynx/hub" ]]; then
   cd "$PO_ROOT/Lynx/hub"
   npm ci
-  cat > .env.production.local <<'EOF'
-VITE_LYNX_AUTH_URL=/auth
-VITE_LYNX_API_BASE=/lynx
-VITE_LYNX_CABINET_URL=https://lynx-cloud.ru/cabinet
-VITE_LYNX_CLOUD_URL=https://lynx-cloud.ru
-EOF
+  bash "$ECO/scripts/write-hub-env-production.sh" .env.production.local
   npm run build
   rsync -a --delete dist/ /srv/lynx-hub/dist/
   echo "    Hub -> /srv/lynx-hub/dist"

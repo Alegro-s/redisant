@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { HubOpsStatusPanel } from '../components/HubOpsStatusPanel';
+import { useHubAuth } from '../context/HubAuthContext';
 import type { HubContent } from '../lib/hubContent';
 import { loadHubContent, saveHubContentOverride } from '../lib/hubContent';
 import {
@@ -15,13 +17,23 @@ import {
   LYNX_LAUNCHER_EXE_URL,
 } from '../config/links';
 
-type Tab = 'news' | 'engine' | 'store' | 'arcade' | 'releases';
+type Tab = 'status' | 'news' | 'engine' | 'store' | 'arcade' | 'releases';
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'status', label: 'Статус' },
+  { id: 'news', label: 'Новости' },
+  { id: 'engine', label: 'Движок' },
+  { id: 'store', label: 'Магазин' },
+  { id: 'arcade', label: 'Аркада' },
+  { id: 'releases', label: 'Релизы' },
+];
 
 export function AdminPage() {
+  const { user, isOps } = useHubAuth();
   const [content, setContent] = useState<HubContent | null>(null);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [tab, setTab] = useState<Tab>('news');
+  const [tab, setTab] = useState<Tab>('status');
   const [catalogJson, setCatalogJson] = useState('');
   const [arcadeTitle, setArcadeTitle] = useState('');
   const [arcadeCartId, setArcadeCartId] = useState('');
@@ -43,7 +55,11 @@ export function AdminPage() {
   }, []);
 
   if (!content) {
-    return <p className="lynx-admin-loading">Загрузка…</p>;
+    return (
+      <div className="lynx-hub-account">
+        <p className="lynx-hub-account-loading">Загрузка…</p>
+      </div>
+    );
   }
 
   function updateNews(i: number, field: 'title' | 'body' | 'date', value: string) {
@@ -92,26 +108,30 @@ export function AdminPage() {
     if (hubApiConfigured()) {
       const ok = await saveHubContentToApi(content);
       if (!ok) {
-        setSaveError('Локально сохранено; API отклонил запрос (проверьте VITE_HUB_ADMIN_TOKEN на сервере).');
+        setSaveError('Локально сохранено; API отклонил запрос — см. вкладку «Статус».');
         setSaved(false);
         return;
       }
+    } else {
+      setSaveError('API не настроен — только localStorage браузера.');
+      setSaved(false);
+      return;
     }
     setSaved(true);
   }
 
   async function handleSaveCatalog() {
     setSaveError('');
-    if (hubApiConfigured()) {
-      const ok = await saveMarketplaceCatalogToApi(catalogJson);
-      if (!ok) {
-        setSaveError('Не удалось сохранить каталог на сервере.');
-        return;
-      }
-      setSaved(true);
+    if (!hubApiConfigured()) {
+      setSaveError('Войдите как NEXUS или задайте VITE_HUB_ADMIN_TOKEN при сборке Hub.');
       return;
     }
-    setSaveError('Задайте VITE_HUB_ADMIN_TOKEN для публикации каталога на API.');
+    const ok = await saveMarketplaceCatalogToApi(catalogJson);
+    if (!ok) {
+      setSaveError('Не удалось сохранить каталог — проверьте токен и lynx-api.');
+      return;
+    }
+    setSaved(true);
   }
 
   async function handleUploadCart() {
@@ -130,53 +150,59 @@ export function AdminPage() {
     setArcadeMsg(result.ok ? `OK: ${result.message} (id: ${result.id})` : `Ошибка: ${result.message}`);
   }
 
+  const displayEmail = user?.email ?? '';
+
   return (
-    <div className="lynx-admin">
-      <header className="lynx-admin-head">
-        <h1>Админ-панель Lynx</h1>
-        <p>Новости, движок, магазин, аркада и релизы клиента.</p>
-        {!hubApiConfigured() ? (
-          <p className="lynx-admin-hint">
-            Для публикации на сервер задайте <code>VITE_HUB_ADMIN_TOKEN</code> (тот же{' '}
-            <code>LYNX_HUB_ADMIN_TOKEN</code> на lynx-api).
-          </p>
-        ) : null}
-        <nav className="lynx-admin-tabs">
-          {(
-            [
-              ['news', 'Новости'],
-              ['engine', 'Движок'],
-              ['store', 'Магазин'],
-              ['arcade', 'Аркада'],
-              ['releases', 'Релизы'],
-            ] as const
-          ).map(([t, label]) => (
-            <button
-              key={t}
-              type="button"
-              className={tab === t ? 'lynx-admin-tab is-active' : 'lynx-admin-tab'}
-              onClick={() => setTab(t)}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-        <div className="lynx-admin-actions">
-          {tab !== 'store' && tab !== 'arcade' && tab !== 'releases' ? (
-            <button type="button" className="lynx-app-cta" onClick={handleSave}>
-              Сохранить
-            </button>
-          ) : null}
-          {saved ? <span className="lynx-admin-ok">Сохранено</span> : null}
-          {saveError ? <span className="lynx-admin-login-error">{saveError}</span> : null}
-          <Link to="/" className="lynx-link-accent">
-            ← На главную
+    <div className="lynx-hub-account lynx-hub-ops">
+      <header className="lynx-hub-account-hero">
+        <div className="lynx-hub-account-identity">
+          <span className="lynx-hub-account-avatar" aria-hidden>
+            OP
+          </span>
+          <div>
+            <p className="lynx-pill">Operations</p>
+            <h1>Операции Hub</h1>
+            <p className="lynx-hub-account-email">{displayEmail || 'Администратор'}</p>
+          </div>
+        </div>
+        <div className="lynx-hub-account-status">
+          <span className="lynx-hub-account-badge lynx-hub-account-badge--ops">NEXUS</span>
+          <Link to="/account" className="lynx-app-cta-ghost">
+            Аккаунт
           </Link>
+          <a href="https://lynx-cloud.ru/admin" target="_blank" rel="noreferrer" className="lynx-app-cta-ghost">
+            Cloud Admin ↗
+          </a>
         </div>
       </header>
 
+      <nav className="lynx-hub-account-tabs" aria-label="Разделы операций">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={tab === t.id ? 'is-active' : undefined}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      {(tab === 'news' || tab === 'engine') && (
+        <div className="lynx-hub-ops-toolbar">
+          <button type="button" className="lynx-app-cta" onClick={handleSave}>
+            Сохранить на сервер
+          </button>
+          {saved ? <span className="lynx-admin-ok">Сохранено</span> : null}
+          {saveError ? <span className="lynx-admin-login-error">{saveError}</span> : null}
+        </div>
+      )}
+
+      {tab === 'status' && <HubOpsStatusPanel isOps={isOps} />}
+
       {tab === 'news' && (
-        <section>
+        <section className="lynx-hub-account-section">
           <div className="lynx-admin-section-head">
             <h2>Новости</h2>
             <button type="button" className="lynx-btn-outline" onClick={addNews}>
@@ -203,14 +229,14 @@ export function AdminPage() {
       )}
 
       {tab === 'engine' && (
-        <section>
-          <h2>Ядра движка (информация Hub)</h2>
-          <p className="lynx-admin-hint">
-            Операционная политика релизов (manifest URL, recommended) — в{' '}
+        <section className="lynx-hub-account-section">
+          <h2>Ядра движка (витрина Hub)</h2>
+          <p className="lynx-lead">
+            Политика релизов (manifest, recommended) — в{' '}
             <a href="https://lynx-cloud.ru/admin" target="_blank" rel="noreferrer">
               Lynx Cloud Admin
             </a>
-            . Здесь только текст для витрины Hub.
+            .
           </p>
           {content.engineCores.map((core, i) => (
             <article key={core.id} className="lynx-admin-card">
@@ -232,11 +258,10 @@ export function AdminPage() {
       )}
 
       {tab === 'store' && (
-        <section>
+        <section className="lynx-hub-account-section">
           <h2>Каталог магазина (JSON)</h2>
-          <p className="lynx-admin-hint">
-            Игры с <code>kind: &quot;game&quot;</code> и опубликованные <code>.lynxcart</code> в аркаде — разные
-            контуры. Для Play в Launcher используйте вкладку «Аркада».
+          <p className="lynx-lead">
+            Публикуется на lynx-api. Игры Arcade — отдельно, вкладка «Аркада».
           </p>
           <textarea
             className="lynx-admin-json"
@@ -248,18 +273,17 @@ export function AdminPage() {
             }}
           />
           <button type="button" className="lynx-app-cta" style={{ marginTop: 12 }} onClick={handleSaveCatalog}>
-            Опубликовать каталог на API
+            Опубликовать каталог
           </button>
+          {saveError && tab === 'store' ? <p className="lynx-admin-login-error">{saveError}</p> : null}
+          {saved && tab === 'store' ? <p className="lynx-admin-ok">Сохранено</p> : null}
         </section>
       )}
 
       {tab === 'arcade' && (
-        <section>
-          <h2>Публикация игры в Arcade</h2>
-          <p className="lynx-admin-hint">
-            Загрузите готовый <strong>.lynxcart</strong> (упакованный проект с сценой и логикой). Игроки запускают
-            его в Launcher → Аркада → Play (тот же runtime, что и Play в редакторе).
-          </p>
+        <section className="lynx-hub-account-section">
+          <h2>Публикация в Arcade</h2>
+          <p className="lynx-lead">Загрузите готовый <strong>.lynxcart</strong> для Launcher → Аркада → Play.</p>
           <article className="lynx-admin-card">
             <label>
               Название
@@ -278,42 +302,35 @@ export function AdminPage() {
               <input ref={cartFileRef} type="file" accept=".lynxcart,application/octet-stream" />
             </label>
             <button type="button" className="lynx-app-cta" onClick={handleUploadCart}>
-              Опубликовать в Arcade
+              Опубликовать
             </button>
-            {arcadeMsg ? <p className="lynx-admin-hint">{arcadeMsg}</p> : null}
+            {arcadeMsg ? <p className="lynx-lead">{arcadeMsg}</p> : null}
           </article>
-          <p className="lynx-admin-hint">
-            Из редактора: меню проекта → «Выложить cart в Arcade» (нужен <code>cloudPublish.enabled</code> в
-            project.json). Или: <code>dart run tool/pack_lynx_cart.dart &lt;project&gt; out.lynxcart</code>
-          </p>
         </section>
       )}
 
       {tab === 'releases' && (
-        <section>
-          <h2>Релизы Launcher (EXE / APK)</h2>
-          <p className="lynx-admin-hint">
-            Соберите на ПК скриптом <code>push-lynx-update-to-server.ps1</code> — файлы попадут в{' '}
-            <code>/downloads/</code> на Hub.
+        <section className="lynx-hub-account-section">
+          <h2>Релизы Launcher</h2>
+          <p className="lynx-lead">
+            Сборка: <code>push-lynx-update-to-server.ps1</code> → <code>/downloads/</code> на Hub.
           </p>
-          <ul className="lynx-admin-hint">
+          <ul className="lynx-hub-ops-release-list">
             <li>
-              Windows EXE: {LYNX_LAUNCHER_EXE_URL || <em>не задан VITE_LYNX_LAUNCHER_EXE_URL</em>}
+              <strong>Windows EXE</strong>
+              <span>{LYNX_LAUNCHER_EXE_URL || 'не задан VITE_LYNX_LAUNCHER_EXE_URL'}</span>
             </li>
             <li>
-              Android APK: {LYNX_LAUNCHER_APK_URL || <em>не задан VITE_LYNX_LAUNCHER_APK_URL</em>}
+              <strong>Android APK</strong>
+              <span>{LYNX_LAUNCHER_APK_URL || 'не задан VITE_LYNX_LAUNCHER_APK_URL'}</span>
             </li>
             <li>
-              Манифест движка: {ENGINE_MANIFEST_URL || <em>не задан</em>}
+              <strong>Манифест движка</strong>
+              <span>{ENGINE_MANIFEST_URL || 'не задан VITE_ENGINE_MANIFEST_URL'}</span>
             </li>
           </ul>
-          <p className="lynx-admin-hint">
-            Облачный проект в редакторе: создайте проект в Launcher → облако, откройте в Engine — сессия движка через{' '}
-            <code>POST /me/engine/session</code> (Waypoint Lynx Cloud → Engine).
-          </p>
         </section>
       )}
-
     </div>
   );
 }

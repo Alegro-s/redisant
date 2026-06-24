@@ -854,3 +854,198 @@
   font-size: 1.05rem;
   color: var(--lynx-text);
 }
+
+/* Hub — Operations (/admin) */
+.lynx-hub-ops .lynx-admin-card {
+  margin-bottom: 1rem;
+}
+
+.lynx-hub-ops-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.lynx-admin-json {
+  width: 100%;
+  font-family: var(--lynx-mono);
+  font-size: 0.82rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--lynx-border);
+  background: var(--lynx-surface);
+  color: var(--lynx-text);
+  resize: vertical;
+}
+
+.lynx-hub-ops-gate {
+  max-width: 32rem;
+}
+
+.lynx-hub-ops-dev-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 auto 1rem;
+  max-width: var(--lynx-content-max);
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--lynx-accent-border);
+  background: var(--lynx-accent-dim);
+  font-size: 0.85rem;
+  color: var(--lynx-accent-soft);
+}
+
+.lynx-hub-ops-dev-banner button {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--lynx-border);
+  background: transparent;
+  color: var(--lynx-text);
+  cursor: pointer;
+}
+
+.lynx-hub-ops-status-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lynx-hub-ops-status-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lynx-hub-ops-status-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--lynx-border);
+  background: rgba(22, 27, 34, 0.55);
+}
+
+.lynx-hub-ops-status-list li.is-ok {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.lynx-hub-ops-status-list li.is-fail {
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+.lynx-hub-ops-status-list li.is-warn {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.lynx-hub-ops-status-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  margin-top: 0.45rem;
+  background: var(--lynx-muted);
+}
+
+.lynx-hub-ops-status-list li.is-ok .lynx-hub-ops-status-dot {
+  background: var(--lynx-green);
+}
+
+.lynx-hub-ops-status-list li.is-fail .lynx-hub-ops-status-dot {
+  background: #f87171;
+}
+
+.lynx-hub-ops-status-list li.is-warn .lynx-hub-ops-status-dot {
+  background: #fbbf24;
+}
+
+.lynx-hub-ops-status-list strong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--lynx-text);
+  font-size: 0.92rem;
+}
+
+.lynx-hub-ops-status-list p {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: var(--lynx-muted);
+  line-height: 1.45;
+}
+
+.lynx-hub-ops-status-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lynx-muted);
+}
+
+.lynx-hub-ops-req {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(248, 113, 113, 0.15);
+  color: #fca5a5;
+}
+
+.lynx-hub-ops-deploy-note {
+  font-size: 0.85rem;
+  color: var(--lynx-muted);
+  border: 1px solid var(--lynx-border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: var(--lynx-surface);
+}
+
+.lynx-hub-ops-deploy-note summary {
+  cursor: pointer;
+  color: var(--lynx-accent-soft);
+  font-weight: 500;
+}
+
+.lynx-hub-ops-deploy-note ol {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+.lynx-hub-ops-release-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+.lynx-hub-ops-release-list li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--lynx-border);
+}
+
+.lynx-hub-ops-release-list strong {
+  color: var(--lynx-text);
+}
+
+.lynx-hub-ops-release-list span {
+  font-size: 0.82rem;
+  color: var(--lynx-muted);
+  word-break: break-all;
+}
