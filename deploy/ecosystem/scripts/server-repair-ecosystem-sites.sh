@@ -13,6 +13,14 @@ DIAGNOSE_ONLY="${1:-}"
 
 [[ $EUID -eq 0 ]] || { echo "Run: sudo bash $0 [--diagnose]"; exit 1; }
 
+if [[ -f "$ECO/scripts/server-git-sync.sh" ]]; then
+  bash "$ECO/scripts/server-git-sync.sh"
+elif [[ -d "$PO_ROOT/.git" ]]; then
+  git -C "$PO_ROOT" fetch origin
+  git -C "$PO_ROOT" checkout -f main
+  git -C "$PO_ROOT" pull --ff-only origin main || git -C "$PO_ROOT" reset --hard origin/main
+fi
+
 bad_title() {
   local t="${1:-}"
   [[ -z "$t" ]] && return 1

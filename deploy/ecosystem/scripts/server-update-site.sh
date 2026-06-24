@@ -10,13 +10,8 @@ SMTP_FILE="${SMTP_FILE:-$DEPLOY_ROOT/smtp.env}"
 
 [[ $EUID -eq 0 ]] || { echo "Запуск: sudo bash $0"; exit 1; }
 
-echo "==> Git pull"
-if [[ -d "$PO_ROOT/.git" ]]; then
-  git -C "$PO_ROOT" fetch origin
-  git -C "$PO_ROOT" checkout -f main
-  git pull --ff-only origin main || git -C "$PO_ROOT" reset --hard origin/main
-  echo "    HEAD: $(git -C "$PO_ROOT" rev-parse --short HEAD) $(git -C "$PO_ROOT" log -1 --format=%s)"
-fi
+echo "==> Git sync"
+bash "$ECO/scripts/server-git-sync.sh"
 
 if [[ -f "$SMTP_FILE" ]]; then
   python3 - <<PY
