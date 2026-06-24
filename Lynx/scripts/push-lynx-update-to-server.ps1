@@ -13,6 +13,7 @@ param(
     [switch]$SkipMsi,
     [switch]$SkipGitPush,
     [switch]$RemoteOnly,
+    [switch]$SkipVpsDeploy,
     [switch]$PublishEngine,
     [string]$EngineVersion = '0.15.0',
     [ValidateSet('stable', 'beta')]
@@ -155,7 +156,11 @@ if ((Test-Path (Join-Path $HubDir 'dist')) -and -not $SkipHub) {
 }
 
 Write-Step "Деплой на VPS (git pull + docker + sites)"
-ssh $ServerHost "bash $RemotePoRoot/deploy/ecosystem/scripts/deploy-lynx-from-git.sh"
+if (-not $SkipVpsDeploy) {
+    ssh $ServerHost "bash $RemotePoRoot/deploy/ecosystem/scripts/deploy-lynx-from-git.sh"
+} else {
+    Write-Host "  SkipVpsDeploy — вызовите server-deploy-lynx-hub.sh отдельно"
+}
 
 Write-Host ""
 Write-Host "Готово:" -ForegroundColor Green

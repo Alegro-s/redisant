@@ -53,6 +53,7 @@ $pushArgs = @{
     RemotePoRoot   = $RemotePoRoot
     SkipGitPush    = $true
     SkipHub        = $true
+    SkipVpsDeploy  = $true
 }
 if ($SkipLauncher) {
     $pushArgs.BuildTarget = 'none'
