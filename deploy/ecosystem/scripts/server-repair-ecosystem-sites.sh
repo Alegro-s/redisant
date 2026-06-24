@@ -64,13 +64,34 @@ for f in "${!EXPECT[@]}"; do
 done
 
 echo ""
+echo "==> Lynx Cloud :3001 (proxied — not static /srv)"
+ss -tlnp 2>/dev/null | grep ':3001 ' || echo "  (nothing on :3001)"
+html3001="$(curl -fsS http://127.0.0.1:3001/ 2>/dev/null || true)"
+if [[ -n "$html3001" ]]; then
+  t3001="$(echo "$html3001" | grep -oP '(?<=<title>)[^<]+' | head -1 || true)"
+  echo "  :3001 title=${t3001:-?}"
+  if bad_title "$t3001"; then
+    echo "    *** WRONG (medical on :3001 — run server-repair-lynx-cloud.sh) ***"
+    CONTAMINATED=$((CONTAMINATED + 1))
+  fi
+else
+  echo "  :3001 not responding"
+  CONTAMINATED=$((CONTAMINATED + 1))
+fi
+
+echo ""
 echo "==> nginx vhost smoke (local, by Host header)"
 for host in waypointclub.ru lynx-hub.ru metrika-waypoint.ru lynx-cloud.ru; do
   code="$(curl -sS -o /dev/null -w '%{http_code}' -H "Host: $host" http://127.0.0.1/ 2>/dev/null || echo err)"
-  snippet="$(curl -sS -H "Host: $host" http://127.0.0.1/ 2>/dev/null | grep -oP '(?<=<title>)[^<]+' | head -1 || true)"
-  echo "  Host $host → HTTP $code title=${snippet:-?}"
+  snippet="$(curl -sSL -H "Host: $host" http://127.0.0.1/ 2>/dev/null | grep -oP '(?<=<title>)[^<]+' | head -1 || true)"
+  loc="$(curl -sSI -H "Host: $host" http://127.0.0.1/ 2>/dev/null | grep -i '^location:' | head -1 || true)"
+  echo "  Host $host → HTTP $code title=${snippet:-?} ${loc:-}"
   if bad_title "$snippet"; then
     echo "    *** WRONG vhost response ***"
+    CONTAMINATED=$((CONTAMINATED + 1))
+  fi
+  if echo "$loc" | grep -qiE 'medical|accreditation'; then
+    echo "    *** redirects to medical ***"
     CONTAMINATED=$((CONTAMINATED + 1))
   fi
 done
@@ -147,6 +168,10 @@ if [[ -f "$ECO/scripts/server-deploy-all-sites.sh" ]]; then
 else
   bash "$ECO/scripts/server-update-site.sh"
 fi
+
+echo ""
+echo "==> Lynx Cloud :3001 (dedicated repair)"
+bash "$ECO/scripts/server-repair-lynx-cloud.sh"
 
 echo ""
 echo "==> After repair — titles"

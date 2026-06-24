@@ -32,12 +32,22 @@ for i in $(seq 1 45); do
   sleep 1
 done
 
+lynx_cloud_ok() {
+  local html
+  html="$(curl -fsS http://127.0.0.1:3001/ 2>/dev/null || true)"
+  [[ -n "$html" ]] || return 1
+  echo "$html" | grep -qiE 'medical|аккредитац|CRM аккредитации' && return 1
+  echo "$html" | grep -qE 'cloud-light|Lynx Cloud' && return 0
+  return 1
+}
+
 if [[ "$SKIP_CLOUD_REBUILD" == "1" ]]; then
   echo "==> Skip Lynx Cloud rebuild (SKIP_CLOUD_REBUILD=1)"
 elif [[ -d "$CLOUD_DIR" ]]; then
-  if curl -fsS http://127.0.0.1:3001/ 2>/dev/null | grep -qE 'cloud-light|background:#ffffff'; then
+  if lynx_cloud_ok; then
     echo "==> Lynx Cloud :3001 already OK"
   else
+    echo "==> Lynx Cloud :3001 wrong or down — hard restart"
     bash "$ECO/scripts/server-restart-lynx-cloud.sh"
   fi
 fi

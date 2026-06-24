@@ -63,8 +63,16 @@ if ! curl -fsS http://127.0.0.1:3001/ >/dev/null 2>&1; then
 fi
 
 HTML=$(curl -fsS http://127.0.0.1:3001/)
+if echo "$HTML" | grep -qiE 'medical|аккредитац|CRM аккредитации|Вход в CRM'; then
+  echo "ERROR: port 3001 serves medical-accreditation, not Lynx Cloud"
+  echo "  Process:"
+  ss -tlnp 2>/dev/null | grep ':3001 ' || true
+  exit 1
+fi
 if echo "$HTML" | grep -q 'cloud-light'; then
   echo "OK Lynx Cloud :3001 (cloud-light in HTML)"
+elif echo "$HTML" | grep -q 'Lynx Cloud'; then
+  echo "OK Lynx Cloud :3001 (Lynx Cloud in HTML)"
 elif echo "$HTML" | grep -q "background:#ffffff"; then
   echo "OK Lynx Cloud :3001 (inline white body)"
 else
