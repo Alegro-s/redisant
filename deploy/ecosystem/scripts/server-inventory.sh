@@ -23,7 +23,18 @@ REPORT="${1:-/tmp/lynx-server-inventory.md}"
   ls -la /etc/nginx/sites-enabled 2>/dev/null || true
   echo '```'
   echo ""
-  echo "## /srv"
+  echo "## Static titles"
+  for f in \
+    /srv/waypointclub/web/index.html \
+    /srv/waypointmetric/dist/index.html \
+    /srv/lynx-hub/dist/index.html; do
+    if [[ -f "$f" ]]; then
+      echo "- $f: $(grep -oP '(?<=<title>)[^<]+' "$f" 2>/dev/null | head -1 || echo '?')"
+    else
+      echo "- MISSING $f"
+    fi
+  done
+  echo ""
   echo '```'
   du -sh /srv/* 2>/dev/null || true
   ls -la /srv 2>/dev/null || true

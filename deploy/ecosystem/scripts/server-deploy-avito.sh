@@ -66,24 +66,7 @@ done
 echo "==> nginx (yalgsi path on waypointclub.ru)"
 if [[ -f "$ECO/nginx/includes/yalgsi-locations.conf" ]]; then
   cp -f "$ECO/nginx/includes/yalgsi-locations.conf" /etc/nginx/waypoint-ecosystem/
-  if grep -q 'yalgsi-locations' /etc/nginx/waypoint-ecosystem/club-locations.conf 2>/dev/null; then
-    echo "    club-locations already includes yalgsi"
-  else
-  python3 - <<'PY'
-from pathlib import Path
-p = Path("/etc/nginx/waypoint-ecosystem/club-locations.conf")
-text = p.read_text(encoding="utf-8")
-needle = "location / {\n    try_files"
-insert = "include /etc/nginx/waypoint-ecosystem/yalgsi-locations.conf;\n\n"
-if "yalgsi-locations" not in text and needle in text:
-    text = text.replace(needle, insert + needle, 1)
-    p.write_text(text, encoding="utf-8")
-    print("    patched club-locations.conf")
-PY
-  fi
-  if grep -q 'upstream avito_api' "$ECO/nginx/waypoint-ecosystem.conf" 2>/dev/null; then
-    cp -f "$ECO/nginx/waypoint-ecosystem.conf" /etc/nginx/sites-available/waypoint-ecosystem.conf 2>/dev/null || true
-  fi
+  cp -f "$ECO/nginx/includes/club-locations.conf" /etc/nginx/waypoint-ecosystem/
   nginx -t && systemctl reload nginx
 fi
 
