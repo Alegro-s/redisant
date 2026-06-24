@@ -1,31 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 :root,
-body.lynx-cloud-site {
-  --lynx-bg: #0d1117;
-  --lynx-surface: #161b22;
-  --lynx-card: #21262d;
-  --lynx-border: #30363d;
-  --lynx-text: #f0f6fc;
-  --lynx-muted: #8b949e;
-  --lynx-body: #d4d4d8;
-  --lynx-accent: #c084fc;
-  --lynx-accent-soft: #d8b4fe;
-  --lynx-accent-border: rgba(192, 132, 252, 0.28);
-  --lynx-green: #22c55e;
-  --lynx-radius: 14px;
-  --font: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-display: Syne, sans-serif;
-  --mono: ui-monospace, 'Cascadia Code', monospace;
-}
-
-body.lynx-cloud-site:not(.cloud-light) {
-  background: var(--lynx-bg);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.18), transparent),
-    radial-gradient(ellipse 40% 30% at 100% 50%, rgba(124, 58, 237, 0.12), transparent);
-}
-
+body.lynx-cloud-site,
 body.lynx-cloud-site.cloud-light {
   --lynx-bg: #ffffff;
   --lynx-surface: #ffffff;
@@ -38,6 +14,10 @@ body.lynx-cloud-site.cloud-light {
   --lynx-accent-soft: #1a73e8;
   --lynx-accent-border: rgba(26, 115, 232, 0.2);
   --lynx-green: #248a3d;
+  --lynx-radius: 14px;
+  --font: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-display: Syne, sans-serif;
+  --mono: ui-monospace, 'Cascadia Code', monospace;
   background: #ffffff;
   background-image: none;
   color: var(--lynx-body);
@@ -109,7 +89,7 @@ a:hover {
   top: 0;
   z-index: 20;
   backdrop-filter: blur(14px);
-  background: rgba(22, 27, 34, 0.92);
+  background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--lynx-border);
 }
 

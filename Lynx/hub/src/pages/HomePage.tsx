@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LynxLauncherPreview } from '../components/LynxLauncherPreview';
-import { LynxEngineStack } from '../components/LynxEngineStack';
 import {
   ENGINE_MANIFEST_URL,
   ENGINE_WEB_DEMO_URL,
@@ -45,15 +44,6 @@ export function HomePage() {
         </div>
         <LynxLauncherPreview />
       </section>
-
-      <section className="lynx-launch-engine-stack" aria-label="Архитектура Lynx">
-        <h2 className="lynx-launch-feed-title">Launcher → Engine → Build</h2>
-        <LynxEngineStack />
-      </section>
-
-      <p className="lynx-launch-kicker" aria-hidden>
-        ◆ Launcher · Engine · Chat · Build ◆
-      </p>
 
       <section className="lynx-launch-feed" aria-labelledby="lynx-feed-h">
         <h2 id="lynx-feed-h" className="lynx-launch-feed-title">

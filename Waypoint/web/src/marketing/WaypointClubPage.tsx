@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import '../styles/club.css';
 import { LINKS, productSiteUrl, desktopDocsUrl, clubPath, isExternalUrl } from './links';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { useClubScrollReveal } from '../hooks/useClubScrollReveal';
 
 type CatalogItem = {
   name: string;
@@ -53,7 +52,6 @@ function catalogHref(item: CatalogItem): string {
 
 export function WaypointClubPage() {
   useDocumentTitle('Waypoint Club — экосистема Waypoint');
-  useClubScrollReveal();
   return (
     <div className="club-root">
       <header className="club-nav">
@@ -117,7 +115,7 @@ export function WaypointClubPage() {
         <p className="club-section-title club-reveal" id="flow">
           Серия Waypoint
         </p>
-        <div className="club-scroll-stack club-flow club-reveal">
+        <div className="club-flow club-reveal">
           {flow.map((s) => (
             <article key={s.n} className="club-flow-card">
               <span className="club-flow-num">{s.n}</span>
@@ -130,7 +128,7 @@ export function WaypointClubPage() {
         <p className="club-section-title club-reveal" id="products">
           Продукты
         </p>
-        <div className="club-scroll-stack club-products-grid club-reveal">
+        <div className="club-products-grid club-reveal">
           {products.map((p) => {
             const cls = 'club-product-card';
             const inner = (

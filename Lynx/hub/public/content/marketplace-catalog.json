@@ -1,6 +1,6 @@
 {
   "apiVersion": 1,
-  "updatedAt": "2026-06-22T12:00:00Z",
+  "updatedAt": "2026-06-02T12:00:00Z",
   "items": [
     {
       "id": "lynx.3d",
@@ -13,39 +13,58 @@
       "builtin": true,
       "pluginId": "lynx.3d",
       "rating": 4.8,
-      "description": "3D-сцены, GLB, orbit viewport.",
-      "tags": ["3d", "gltf"]
+      "description": "3D-сцены, GLB, orbit viewport, Play overlay. Полный PBR — волна 12+.",
+      "tags": ["3d", "gltf", "plugin"]
+    },
+    {
+      "id": "template-empty",
+      "kind": "template",
+      "title": "Пустой 2D проект",
+      "author": "Lynx",
+      "category": "templates",
+      "templateId": "empty",
+      "rating": 4.5,
+      "description": "Сцена main и структура assets/ без контента."
     },
     {
       "id": "template-platformer",
       "kind": "template",
       "title": "Platformer Demo",
-      "author": "Lynx Team",
+      "author": "Lynx",
       "category": "templates",
-      "templateId": "platformer-demo",
-      "description": "2D платформер с Box2D и Lua."
+      "templateId": "platformer",
+      "rating": 4.9,
+      "description": "Эталонный 2D платформер с тайлмапами и AnimationPlayer."
     },
     {
-      "id": "game-tetris-demo",
-      "kind": "game",
-      "title": "Tetris Demo",
-      "author": "Alegro",
-      "category": "games",
-      "version": "1.0.0",
-      "description": "Классический тетрис на Lynx Engine.",
-      "rating": 4.5,
-      "tags": ["puzzle", "arcade"]
+      "id": "template-platformer-wave2",
+      "kind": "template",
+      "title": "Platformer + меню (волна 2)",
+      "author": "Lynx",
+      "category": "templates",
+      "templateId": "platformer-wave2",
+      "rating": 4.7,
+      "description": "Меню, autoload, input map, load_scene."
     },
     {
-      "id": "game-wave2",
-      "kind": "game",
-      "title": "Wave Runner",
-      "author": "Community",
-      "category": "games",
-      "version": "0.3.1",
-      "description": "Беги по волнам — демо от сообщества.",
-      "rating": 4.2,
-      "tags": ["platformer"]
+      "id": "template-3d-room",
+      "kind": "template",
+      "title": "3D Room Demo",
+      "author": "Lynx",
+      "category": "3d",
+      "templateId": "platformer-3d-room",
+      "rating": 4.6,
+      "description": "Комната + crate.glb, плагин lynx.3d включён.",
+      "tags": ["3d", "demo"]
+    },
+    {
+      "id": "lynx-core-stable",
+      "kind": "engine_core",
+      "title": "Lynx Core Stable",
+      "author": "Lynx",
+      "category": "tools",
+      "version": "1.2.0",
+      "description": "Рекомендуемое ядро для продакшена. Скачать с Hub → Download."
     }
   ]
 }

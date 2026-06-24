@@ -529,6 +529,84 @@
   max-width: 32rem;
 }
 
+/* Маркетплейс Hub */
+.lynx-marketplace-page .lynx-lead {
+  max-width: 40rem;
+  margin-bottom: 1.5rem;
+}
+
+.lynx-marketplace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.lynx-marketplace-card {
+  padding: 1.25rem 1.35rem;
+  border-radius: 12px;
+  border: 1px solid var(--lynx-border);
+  background: rgba(22, 27, 34, 0.55);
+}
+
+.lynx-marketplace-kind {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lynx-accent-soft);
+  margin-bottom: 0.5rem;
+}
+
+.lynx-marketplace-card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  color: var(--lynx-text);
+}
+
+.lynx-marketplace-author {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--lynx-muted);
+}
+
+.lynx-marketplace-desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--lynx-muted);
+}
+
+.lynx-marketplace-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  color: var(--lynx-muted);
+  margin-bottom: 0.5rem;
+}
+
+.lynx-marketplace-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.lynx-marketplace-tags span {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--lynx-border);
+  color: var(--lynx-muted);
+}
+
+.lynx-marketplace-foot {
+  margin: 0 0 1.25rem;
+  font-size: 0.92rem;
+  color: var(--lynx-muted);
+}
+
 .lynx-price-foot a {
   color: var(--lynx-accent-soft);
 }
