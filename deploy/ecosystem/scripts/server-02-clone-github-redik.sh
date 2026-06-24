@@ -197,27 +197,7 @@ fi
 
 echo "==> Lynx Cloud (Next.js)"
 if [[ -d "$PO_ROOT/Lynx/cloud" ]]; then
-  cd "$PO_ROOT/Lynx/cloud"
-  npm ci
-  cat > .env.production.local <<'EOF'
-NEXT_PUBLIC_LYNX_AUTH_URL=/auth
-NEXT_PUBLIC_LYNX_API_BASE=/lynx
-NEXT_PUBLIC_LYNX_HUB_URL=https://lynx-hub.ru
-NEXT_PUBLIC_LYNX_CABINET_URL=/cabinet
-EOF
-  rm -rf .next
-  npm run build
-  pkill -f "next start.*3001" 2>/dev/null || true
-  sleep 1
-  export NODE_ENV=production
-  nohup npm run start -- -H 0.0.0.0 >> /var/log/lynx-cloud.log 2>&1 &
-  sleep 2
-  if curl -fsS http://127.0.0.1:3001/ >/dev/null 2>&1; then
-    echo "Lynx Cloud :3001 OK"
-  else
-    echo "WARN: Lynx Cloud failed — tail /var/log/lynx-cloud.log"
-    tail -15 /var/log/lynx-cloud.log 2>/dev/null || true
-  fi
+  bash "$ECO/scripts/server-restart-lynx-cloud.sh"
 fi
 
 echo "==> nginx"

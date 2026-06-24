@@ -34,27 +34,11 @@ done
 
 if [[ "$SKIP_CLOUD_REBUILD" == "1" ]]; then
   echo "==> Skip Lynx Cloud rebuild (SKIP_CLOUD_REBUILD=1)"
-else
-  echo "==> Lynx Cloud :3001"
-  if [[ -d "$CLOUD_DIR" ]]; then
-    cd "$CLOUD_DIR"
-    if [[ ! -d node_modules ]]; then npm ci; fi
-    if [[ ! -d .next ]]; then
-      cat > .env.production.local <<'EOF'
-NEXT_PUBLIC_LYNX_AUTH_URL=/auth
-NEXT_PUBLIC_LYNX_API_BASE=/lynx
-NEXT_PUBLIC_LYNX_HUB_URL=https://lynx-hub.ru
-NEXT_PUBLIC_LYNX_CABINET_URL=/cabinet
-EOF
-      rm -rf .next
-      npm run build
-    fi
-    pkill -f 'next-server' 2>/dev/null || true
-    pkill -f 'next start' 2>/dev/null || true
-    fuser -k 3001/tcp 2>/dev/null || true
-    sleep 2
-    nohup npm run start -- -H 0.0.0.0 -p 3001 >>/var/log/lynx-cloud.log 2>&1 &
-    sleep 2
+elif [[ -d "$CLOUD_DIR" ]]; then
+  if curl -fsS http://127.0.0.1:3001/ 2>/dev/null | grep -qE 'cloud-light|background:#ffffff'; then
+    echo "==> Lynx Cloud :3001 already OK"
+  else
+    bash "$ECO/scripts/server-restart-lynx-cloud.sh"
   fi
 fi
 
