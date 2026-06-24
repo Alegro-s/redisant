@@ -15,8 +15,12 @@ bash "$ECO/scripts/server-legacy-cleanup.sh"
 echo "==> Waypoint + Lynx sites"
 bash "$ECO/scripts/server-update-site.sh"
 
-echo "==> Ensure APIs + Lynx Cloud"
-bash "$ECO/scripts/server-ensure-lynx-services.sh"
+# server-update-site already builds Cloud and starts APIs with smtp.env.
+# Repair APIs only if health check failed (do not rebuild Cloud twice).
+if ! curl -fsS http://127.0.0.1:8082/health >/dev/null 2>&1; then
+  echo "==> Repair APIs (lynx-api down)"
+  SKIP_CLOUD_REBUILD=1 bash "$ECO/scripts/server-ensure-lynx-services.sh"
+fi
 
 if [[ "$WITH_TSPUT" == "1" ]] && [[ -f "$PO_ROOT/tsput_profile/docker-compose.yml" ]]; then
   echo "==> TSPUT profile"

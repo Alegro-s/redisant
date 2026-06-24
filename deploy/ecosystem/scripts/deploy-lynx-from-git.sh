@@ -6,6 +6,7 @@ set -euo pipefail
 DEPLOY_ROOT="${DEPLOY_ROOT:-/opt/waypoint}"
 PO_ROOT="${PO_ROOT:-$DEPLOY_ROOT/redik}"
 ECO="${ECO:-$PO_ROOT/deploy/ecosystem}"
+SMTP_FILE="${SMTP_FILE:-$DEPLOY_ROOT/smtp.env}"
 
 [[ $EUID -eq 0 ]] || { echo "Запуск: sudo bash $0"; exit 1; }
 
@@ -20,15 +21,7 @@ fi
 export SKIP_SMTP_CHECK="${SKIP_SMTP_CHECK:-1}"
 chmod +x "$ECO/scripts/"*.sh 2>/dev/null || true
 
-echo "==> Lynx API (arcade + hub content)"
-cd "$ECO"
-docker compose -f docker-compose.apis.yml build lynx-api
-docker compose -f docker-compose.apis.yml up -d lynx-api
-
-echo "==> Ensure Lynx Cloud + API (fix 502)"
-bash "$ECO/scripts/server-ensure-lynx-services.sh"
-
-echo "==> Все сайты и API"
+echo "==> Все сайты и API (Hub, Cloud, docker APIs)"
 bash "$ECO/scripts/server-update-site.sh"
 
 echo ""
@@ -39,5 +32,7 @@ curl -fsS http://127.0.0.1:8090/health && echo "  auth-api OK" || echo "  auth-a
 echo ""
 echo "Готово. Проверьте:"
 echo "  https://lynx-hub.ru/"
-echo "  https://lynx-hub.ru/lynx/v1/arcade/catalog"
-echo "  https://lynx-hub.ru/admin"
+echo "  https://lynx-hub.ru/engine-web/"
+echo "  https://lynx-cloud.ru/"
+echo "  https://lynx-cloud.ru/admin"
+echo "  https://api.lynx-cloud.ru/engine/manifest"
