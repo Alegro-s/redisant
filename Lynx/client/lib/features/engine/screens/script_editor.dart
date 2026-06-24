@@ -105,11 +105,7 @@ class _ScriptEditorState extends State<ScriptEditor> {
   Future<void> _loadScript() async {
     final manager = _mgr!;
     final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
-    final file = File('${manager.rootPath}/${asset.path}');
-    String content = '';
-    if (await file.exists()) {
-      content = await file.readAsString();
-    }
+    final content = await manager.readAssetText(asset.path) ?? '';
     _originalContent = content;
     final ctr = CodeController(
       text: content,
@@ -130,11 +126,9 @@ class _ScriptEditorState extends State<ScriptEditor> {
     final rev = manager.studioAssetRefreshRevision(cid);
     if (rev == _lastAppliedStudioRev) return;
     if (_dirty) return;
-    final filePath =
-        '${manager.rootPath}/${manager.assets.firstWhere((a) => a.id == widget.assetId).path}';
-    final file = File(filePath);
-    if (!await file.exists()) return;
-    final text = await file.readAsString();
+    final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
+    final text = await manager.readAssetText(asset.path);
+    if (text == null) return;
     final c = _controller;
     if (c == null || !mounted) return;
     if (text == c.fullText) {
@@ -166,8 +160,7 @@ class _ScriptEditorState extends State<ScriptEditor> {
     if (text == _originalContent) return;
     final manager = _mgr!;
     final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
-    final file = File('${manager.rootPath}/${asset.path}');
-    await file.writeAsString(text);
+    await manager.writeAssetText(asset.path, text);
     _originalContent = text;
     _dirty = false;
     final bytes = Uint8List.fromList(utf8.encode(text));

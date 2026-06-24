@@ -5,14 +5,18 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'collab/collab_presence.dart';
 import 'collab/scene_collab_crdt.dart';
 import 'collab/script_studio_presence.dart';
 import '../plugins/lynx_plugin_contract.dart';
 import '../plugins/lynx_plugin_host.dart';
 import 'models/engine_models.dart';
+import 'runtime/lynx_cloud_web_store.dart';
+import 'runtime/lynx_sprite_atlas.dart';
 import 'providers/scene_provider.dart';
 
 class ProjectNode {
@@ -74,6 +78,116 @@ class ProjectManager extends ChangeNotifier {
   String? get rootPath => _rootPath;
   bool get isCloudReadOnly => _cloudReadOnly;
   String? get cloudSyncConflictMessage => _cloudSyncConflictMessage;
+
+  bool get isCloudProject =>
+      (_cloudApiDio != null || _cloudSyncDio != null) &&
+      (_projectSettings?.projectId.isNotEmpty ?? false);
+
+  String? get cloudProjectId =>
+      isCloudProject ? _projectSettings?.projectId : null;
+
+  bool get _usesWebCloudStore => kIsWeb && isLynxCloudWebRoot(_rootPath);
+
+  LynxCloudWebStore? get _webStore {
+    if (!_usesWebCloudStore || _rootPath == null) return null;
+    return lynxCloudWebSessionCache[cloudProjectIdFromWebRoot(_rootPath!)];
+  }
+
+  /// Read project asset bytes (web cloud store or local disk).
+  Future<Uint8List?> readAssetBytes(String relativePath) async {
+    final norm = _normAssetRel(relativePath);
+    if (_usesWebCloudStore) {
+      return _webStore?.readBytes(norm);
+    }
+    if (_rootPath == null) return null;
+    final file = File(path.join(_rootPath!, norm));
+    if (!await file.exists()) return null;
+    return file.readAsBytes();
+  }
+
+  Future<String?> readAssetText(String relativePath) async {
+    final bytes = await readAssetBytes(relativePath);
+    if (bytes == null) return null;
+    return utf8.decode(bytes);
+  }
+
+  Future<void> writeAssetBytes(String relativePath, Uint8List bytes) async {
+    final norm = _normAssetRel(relativePath);
+    if (_usesWebCloudStore) {
+      _webStore?.writeBytes(norm, bytes);
+      return;
+    }
+    if (_rootPath == null) return;
+    final file = File(path.join(_rootPath!, norm));
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes);
+  }
+
+  Future<void> writeAssetText(String relativePath, String text) async {
+    await writeAssetBytes(
+      relativePath,
+      Uint8List.fromList(utf8.encode(text)),
+    );
+  }
+
+  void clearCloudSyncConflict() {
+    if (_cloudSyncConflictMessage == null) return;
+    _cloudSyncConflictMessage = null;
+    notifyListeners();
+  }
+
+  Future<String?> reloadCloudProjectFromServer() async {
+    final pid = _projectSettings?.projectId;
+    final http = _cloudApiDio ?? _cloudSyncDio;
+    if (pid == null || pid.isEmpty || http == null) {
+      return 'Облачный проект не загружен';
+    }
+    final name = _projectSettings!.displayName;
+    final ro = _cloudReadOnly;
+    return loadCloudProject(
+      pid,
+      http,
+      displayName: name,
+      readOnly: ro,
+    );
+  }
+
+  Future<String?> exportCloudProjectBackup() async {
+    if (_rootPath == null) return null;
+    try {
+      final support = await getApplicationSupportDirectory();
+      final pid = _projectSettings?.projectId ?? 'cloud';
+      final stamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+      final dest = path.join(support.path, 'Lynx', 'cloud_backups', '${pid}_$stamp');
+      await _copyDirectoryRecursive(Directory(_rootPath!), Directory(dest));
+      return dest;
+    } catch (e) {
+      debugPrint('exportCloudProjectBackup: $e');
+      return null;
+    }
+  }
+
+  static Future<void> _copyDirectoryRecursive(Directory src, Directory dest) async {
+    await dest.create(recursive: true);
+    await for (final ent in src.list(recursive: false, followLinks: false)) {
+      final name = path.basename(ent.path);
+      if (ent is File) {
+        await ent.copy(path.join(dest.path, name));
+      } else if (ent is Directory) {
+        await _copyDirectoryRecursive(ent, Directory(path.join(dest.path, name)));
+      }
+    }
+  }
+
+  Future<String> _resolveCloudCacheRoot(String projectId) async {
+    final support = await getApplicationSupportDirectory();
+    final lynx = path.join(support.path, 'lynx_cloud_cache', projectId);
+    final legacy = path.join(support.path, 'nexus_cloud_cache', projectId);
+    if (await Directory(legacy).exists() && !await Directory(lynx).exists()) {
+      return legacy;
+    }
+    return lynx;
+  }
   GameProject? get projectSettings => _projectSettings;
   List<ProjectAsset> get assets => _assets;
   List<Scene> get scenes => _scenes;
@@ -187,8 +301,25 @@ class ProjectManager extends ChangeNotifier {
     final a = _assets[idx];
     if (a.type != 'script' && a.type != 'sprite' && a.type != 'sound') return null;
     if (_cloudAssetMutationBusy) return cloudAssetIdForProjectAssetId(projectAssetId);
-    final file = File(path.join(_rootPath!, a.path));
-    if (!await file.exists()) return null;
+    Uint8List? rawBytes;
+    String? scriptText;
+    if (_usesWebCloudStore) {
+      if (a.type == 'script') {
+        scriptText = await readAssetText(a.path);
+        if (scriptText == null) return null;
+      } else {
+        rawBytes = await readAssetBytes(a.path);
+        if (rawBytes == null) return null;
+      }
+    } else {
+      final file = File(path.join(_rootPath!, a.path));
+      if (!await file.exists()) return null;
+      if (a.type == 'script') {
+        scriptText = await file.readAsString();
+      } else {
+        rawBytes = await file.readAsBytes();
+      }
+    }
     _cloudAssetMutationBusy = true;
     _cloudAssetMutationMessage = 'Копирование «${a.name}» на сервер…';
     notifyListeners();
@@ -198,13 +329,13 @@ class ProjectManager extends ChangeNotifier {
       final Uint8List bytes;
       final String filename;
       if (a.type == 'script') {
-        bytes = Uint8List.fromList(utf8.encode(await file.readAsString()));
+        bytes = Uint8List.fromList(utf8.encode(scriptText ?? ''));
         filename = baseName.toLowerCase().endsWith('.lua') ? baseName : '$baseName.lua';
       } else if (a.type == 'sprite') {
-        bytes = await file.readAsBytes();
+        bytes = rawBytes!;
         filename = baseName.toLowerCase().endsWith('.png') ? baseName : '$baseName.png';
       } else if (a.type == 'sound') {
-        bytes = await file.readAsBytes();
+        bytes = rawBytes!;
         filename = baseName;
       } else {
         return null;
@@ -263,14 +394,19 @@ class ProjectManager extends ChangeNotifier {
     final pid = _projectSettings?.projectId;
     if (pid == null || pid.isEmpty) return;
     try {
-      final support = await getApplicationSupportDirectory();
-      final dir = Directory(path.join(support.path, 'nexus_cloud_maps'));
-      if (!await dir.exists()) await dir.create(recursive: true);
-      final f = File(path.join(dir.path, '$pid.json'));
       final enc = <String, String>{};
       for (final e in _cloudAssetIdByPath.entries) {
         enc[e.key] = e.value;
       }
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('nexus_cloud_maps_$pid', jsonEncode(enc));
+        return;
+      }
+      final support = await getApplicationSupportDirectory();
+      final dir = Directory(path.join(support.path, 'nexus_cloud_maps'));
+      if (!await dir.exists()) await dir.create(recursive: true);
+      final f = File(path.join(dir.path, '$pid.json'));
       await f.writeAsString(jsonEncode(enc));
     } catch (e) {
       debugPrint('_saveCloudAssetMapToSupport: $e');
@@ -279,6 +415,19 @@ class ProjectManager extends ChangeNotifier {
 
   Future<void> _mergeCloudAssetMapFromSupport(String projectId) async {
     try {
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString('nexus_cloud_maps_$projectId');
+        if (raw == null || raw.isEmpty) return;
+        final j = jsonDecode(raw) as Map<String, dynamic>;
+        for (final e in j.entries) {
+          final k = _normAssetRel(e.key.toString());
+          if (!_cloudAssetIdByPath.containsKey(k)) {
+            _cloudAssetIdByPath[k] = e.value.toString();
+          }
+        }
+        return;
+      }
       final support = await getApplicationSupportDirectory();
       final f = File(path.join(support.path, 'nexus_cloud_maps', '$projectId.json'));
       if (!await f.exists()) return;
@@ -414,12 +563,19 @@ class ProjectManager extends ChangeNotifier {
 
   Future<SpriteAssetMeta?> _readSpriteMeta(String assetRelativePath) async {
     if (_rootPath == null) return null;
-    final metaPath = path.join(_rootPath!, _spriteMetaRelativePath(assetRelativePath));
-    final file = File(metaPath);
-    if (!await file.exists()) return null;
+    final metaRel = _spriteMetaRelativePath(assetRelativePath);
     try {
-      final raw = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-      return SpriteAssetMeta.fromJson(raw);
+      String? raw;
+      if (_usesWebCloudStore) {
+        raw = _webStore?.readText(metaRel);
+      } else {
+        final metaPath = path.join(_rootPath!, metaRel);
+        final file = File(metaPath);
+        if (!await file.exists()) return null;
+        raw = await file.readAsString();
+      }
+      if (raw == null) return null;
+      return SpriteAssetMeta.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }
@@ -525,6 +681,21 @@ class ProjectManager extends ChangeNotifier {
     if (_cloudReadOnly) return;
     if (_rootPath == null) return;
     scene.bumpRevision();
+    if (_usesWebCloudStore) {
+      final store = _webStore;
+      store?.writeText('scenes/${scene.id}.json', jsonEncode(scene.toJson()));
+      if (store != null) {
+        final i = store.scenes.indexWhere((s) => s.id == scene.id);
+        if (i >= 0) {
+          store.scenes[i] = scene;
+        } else {
+          store.scenes.add(scene);
+        }
+      }
+      notifyListeners();
+      await _pushSceneToCloud(scene);
+      return;
+    }
     final filePath = path.join(_rootPath!, 'scenes', '${scene.id}.json');
     final file = File(filePath);
     await file.parent.create(recursive: true);
@@ -597,6 +768,13 @@ class ProjectManager extends ChangeNotifier {
     _rootPath = projectPath;
     await _loadProjectFile();
     await _loadAssets();
+    final atlasJson = File(path.join(projectPath, LynxSpriteAtlasManifest.kAtlasJson));
+    final hasSprites = _assets.any(
+      (a) => a.type == 'sprite' && !a.path.endsWith('lynx_atlas.png'),
+    );
+    if (!await atlasJson.exists() && hasSprites) {
+      await rebuildUnifiedSpriteAtlas();
+    }
     await _reindexAssetFolders();
     await _loadPrefabs();
     await _loadScenes();
@@ -734,6 +912,10 @@ class ProjectManager extends ChangeNotifier {
 
   Future<void> _saveSceneWithoutRevisionBump(Scene scene) async {
     if (_rootPath == null) return;
+    if (_usesWebCloudStore) {
+      _webStore?.writeText('scenes/${scene.id}.json', jsonEncode(scene.toJson()));
+      return;
+    }
     final filePath = path.join(_rootPath!, 'scenes', '${scene.id}.json');
     final file = File(filePath);
     await file.parent.create(recursive: true);
@@ -741,9 +923,12 @@ class ProjectManager extends ChangeNotifier {
   }
 
   void _buildTree() {
+    final rootLabel = _usesWebCloudStore
+        ? (_projectSettings?.displayName ?? 'Cloud')
+        : path.basename(_rootPath!);
     _treeRoot = ProjectNode(
       id: 'root',
-      name: path.basename(_rootPath!),
+      name: rootLabel,
       type: 'folder',
       path: '',
       children: [],
@@ -932,6 +1117,66 @@ class ProjectManager extends ChangeNotifier {
     _buildTree();
     notifyListeners();
     return asset;
+  }
+
+  /// Создаёт или обновляет PNG-спрайт по относительному пути в проекте.
+  Future<ProjectAsset?> upsertSpriteAtPath(String relPath, Uint8List bytes) async {
+    if (_cloudReadOnly) return null;
+    if (_rootPath == null) return null;
+    final norm = relPath.replaceAll('\\', '/');
+    final file = File(path.join(_rootPath!, norm));
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes);
+    const meta = SpriteAssetMeta();
+    await _writeSpriteMeta(norm, meta);
+    final id = norm.replaceAll('/', '_').replaceAll('\\', '_');
+    final idx = _assets.indexWhere((a) => a.id == id || a.path == norm);
+    final now = DateTime.now();
+    if (idx >= 0) {
+      final prev = _assets[idx];
+      _assets[idx] = ProjectAsset(
+        id: prev.id,
+        name: path.basename(norm),
+        type: 'sprite',
+        path: norm,
+        createdAt: prev.createdAt,
+        modifiedAt: now,
+        data: bytes,
+        spriteMeta: meta,
+      );
+    } else {
+      _assets.add(ProjectAsset(
+        id: id,
+        name: path.basename(norm),
+        type: 'sprite',
+        path: norm,
+        createdAt: now,
+        modifiedAt: now,
+        data: bytes,
+        spriteMeta: meta,
+      ));
+    }
+    _buildTree();
+    notifyListeners();
+    return _assets.firstWhere((a) => a.path == norm);
+  }
+
+  /// Wave 2 — единый атлас из всех PNG в assets/sprites.
+  Future<LynxSpriteAtlasManifest?> rebuildUnifiedSpriteAtlas() async {
+    if (_cloudReadOnly || _rootPath == null) return null;
+    final manifest = await LynxSpriteAtlasBuilder.build(projectRoot: _rootPath!);
+    if (manifest == null) return null;
+    await syncProjectTilesetToAtlas(projectRoot: _rootPath!, manifest: manifest);
+    final pngFile = File(path.join(_rootPath!, LynxSpriteAtlasManifest.kAtlasPng));
+    if (await pngFile.exists()) {
+      await upsertSpriteAtPath(
+        LynxSpriteAtlasManifest.kAtlasPng,
+        await pngFile.readAsBytes(),
+      );
+    }
+    await _loadProjectFile();
+    notifyListeners();
+    return manifest;
   }
 
   Future<void> reloadSpriteAsset(String assetId) async {
@@ -1223,7 +1468,19 @@ class ProjectManager extends ChangeNotifier {
     Dio http, {
     required String displayName,
     bool readOnly = false,
+    bool corporateLocalOnly = false,
   }) async {
+    if (corporateLocalOnly) {
+      return 'Корпоративный режим: облачная синхронизация отключена';
+    }
+    if (kIsWeb) {
+      return _loadCloudProjectWeb(
+        projectId,
+        http,
+        displayName: displayName,
+        readOnly: readOnly,
+      );
+    }
     _cloudReadOnly = false;
     _cloudSyncDio = null;
     _cloudSyncConflictMessage = null;
@@ -1235,8 +1492,7 @@ class ProjectManager extends ChangeNotifier {
       _hierarchyCollapsedBySceneId.clear();
       _cloudAssetIdByPath.clear();
       _cloudApiDio = null;
-      final support = await getApplicationSupportDirectory();
-      final root = path.join(support.path, 'nexus_cloud_cache', projectId);
+      final root = await _resolveCloudCacheRoot(projectId);
       final rootDir = Directory(root);
       if (await rootDir.exists()) {
         await rootDir.delete(recursive: true);
@@ -1323,6 +1579,197 @@ class ProjectManager extends ChangeNotifier {
     } catch (e, st) {
       debugPrint('loadCloudProject error: $e\n$st');
       return e.toString();
+    }
+  }
+
+  Future<String?> _loadCloudProjectWeb(
+    String projectId,
+    Dio http, {
+    required String displayName,
+    bool readOnly = false,
+  }) async {
+    _cloudReadOnly = false;
+    _cloudSyncDio = null;
+    _cloudSyncConflictMessage = null;
+    _saveTimer?.cancel();
+
+    try {
+      disposeSceneCollaboration();
+      disposeStudioCollaboration();
+      _hierarchyCollapsedBySceneId.clear();
+      _cloudAssetIdByPath.clear();
+      _cloudApiDio = null;
+      _assets.clear();
+      _scenes.clear();
+      _prefabs.clear();
+
+      final store = LynxCloudWebStore(
+        projectId: projectId,
+        settings: GameProject(
+          projectId: projectId,
+          displayName: displayName,
+        ),
+      );
+      lynxCloudWebSessionCache[projectId] = store;
+
+      final res = await http.get('/projects/$projectId/assets');
+      if (res.statusCode != 200) {
+        final err = res.data is Map ? (res.data as Map)['error']?.toString() : null;
+        return err ?? 'Ошибка списка ассетов (${res.statusCode})';
+      }
+      final list = res.data is List ? res.data as List<dynamic> : <dynamic>[];
+
+      for (final raw in list) {
+        if (raw is! Map<String, dynamic>) continue;
+        final id = raw['id']?.toString();
+        final name = raw['name']?.toString() ?? 'asset';
+        final type = raw['type']?.toString() ?? '';
+        if (id == null || id.isEmpty) continue;
+
+        final sub = switch (type) {
+          'sprite' => 'assets/sprites',
+          'script' => 'assets/scripts',
+          'sound' => 'assets/sounds',
+          _ => '',
+        };
+        if (sub.isEmpty) continue;
+
+        var base = _safeCloudFileName(name);
+        if (base.isEmpty) base = 'file';
+        final prefix = id.length >= 8 ? id.substring(0, 8) : id;
+        var fileName = '${prefix}_$base';
+        if (type == 'sprite' && !fileName.contains('.')) fileName = '$fileName.png';
+        if (type == 'script' && !fileName.toLowerCase().endsWith('.lua')) {
+          fileName = '$fileName.lua';
+        }
+        if (type == 'sound' &&
+            !RegExp(r'\.(mp3|wav|ogg|m4a)$', caseSensitive: false).hasMatch(fileName)) {
+          fileName = '$fileName.wav';
+        }
+
+        final bin = await http.get(
+          '/assets/$id',
+          options: Options(responseType: ResponseType.bytes),
+        );
+        if (bin.statusCode != 200 || bin.data == null) continue;
+        final data = bin.data;
+        List<int> bytes;
+        if (data is List<int>) {
+          bytes = data;
+        } else if (data is Uint8List) {
+          bytes = data;
+        } else {
+          continue;
+        }
+        final rel = _normAssetRel(path.join(sub, fileName));
+        store.writeBytes(rel, Uint8List.fromList(bytes));
+        _cloudAssetIdByPath[rel] = id;
+      }
+      await _mergeCloudAssetMapFromSupport(projectId);
+
+      _rootPath = lynxCloudWebRoot(projectId);
+      _projectSettings = store.settings;
+      store.writeText('project.json', jsonEncode(_projectSettings!.toJson()));
+
+      _cloudReadOnly = readOnly;
+      _cloudApiDio = http;
+      _cloudSyncDio = readOnly ? null : http;
+
+      await _pullCloudScenesWeb(projectId, http, store);
+      _buildAssetsFromWebStore(store);
+      _buildTree();
+      await _saveCloudAssetMapToSupport();
+      notifyListeners();
+      return null;
+    } catch (e, st) {
+      debugPrint('_loadCloudProjectWeb error: $e\n$st');
+      return e.toString();
+    }
+  }
+
+  void _buildAssetsFromWebStore(LynxCloudWebStore store) {
+    _assets.clear();
+    final now = DateTime.now();
+    for (final rel in store.assetFilePaths()) {
+      final baseName = path.basename(rel);
+      final ext = path.extension(rel).toLowerCase();
+      String type;
+      if (ext == '.png' || ext == '.jpg' || ext == '.jpeg') {
+        type = 'sprite';
+      } else if (ext == '.lua' || ext == '.lynxscript') {
+        type = 'script';
+      } else if (ext == '.mp3' || ext == '.wav' || ext == '.ogg' || ext == '.m4a') {
+        type = 'sound';
+      } else if (ext == '.glb' || ext == '.gltf') {
+        type = 'model';
+      } else {
+        continue;
+      }
+      SpriteAssetMeta? meta;
+      if (type == 'sprite') {
+        final metaRel = _spriteMetaRelativePath(rel);
+        final metaRaw = store.readText(metaRel);
+        if (metaRaw != null) {
+          try {
+            meta = SpriteAssetMeta.fromJson(
+              jsonDecode(metaRaw) as Map<String, dynamic>,
+            );
+          } catch (_) {}
+        }
+      }
+      _assets.add(ProjectAsset(
+        id: rel.replaceAll('/', '_').replaceAll('\\', '_'),
+        name: baseName,
+        type: type,
+        path: rel,
+        createdAt: now,
+        modifiedAt: now,
+        data: store.readBytes(rel),
+        spriteMeta: meta,
+      ));
+    }
+  }
+
+  Future<void> _pullCloudScenesWeb(
+    String projectId,
+    Dio http,
+    LynxCloudWebStore store,
+  ) async {
+    _scenes.clear();
+    store.scenes.clear();
+    try {
+      final listRes = await http.get('/projects/$projectId/scenes');
+      if (listRes.statusCode == 200) {
+        final rawList = listRes.data;
+        if (rawList is List) {
+          for (final raw in rawList) {
+            if (raw is! Map) continue;
+            final sid = raw['scene_id']?.toString();
+            if (sid == null || sid.isEmpty) continue;
+            final getRes = await http.get('/projects/$projectId/scenes/$sid');
+            if (getRes.statusCode != 200 || getRes.data is! Map<String, dynamic>) {
+              continue;
+            }
+            final body = getRes.data as Map<String, dynamic>;
+            final content = body['content'];
+            if (content is! Map<String, dynamic>) continue;
+            final rev = (body['revision'] as num?)?.toInt() ?? 1;
+            final scene = Scene.fromJson(content);
+            scene.cloudRevision = rev;
+            _scenes.add(scene);
+            store.scenes.add(scene);
+            store.writeText('scenes/$sid.json', jsonEncode(scene.toJson()));
+          }
+        }
+      }
+    } catch (e, st) {
+      debugPrint('_pullCloudScenesWeb: $e\n$st');
+    }
+    if (_scenes.isEmpty && !_cloudReadOnly) {
+      final defaultScene = _newDefaultScene();
+      _scenes.add(defaultScene);
+      store.scenes.add(defaultScene);
+      await _pushSceneToCloud(defaultScene);
     }
   }
 

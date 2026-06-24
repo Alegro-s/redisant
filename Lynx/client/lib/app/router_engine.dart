@@ -55,9 +55,6 @@ GoRouter createEngineRouter(AuthProvider auth) {
         if (boot.hasProjectContext) {
           return '/workspace';
         }
-        if (kIsWeb) {
-          return '/workspace';
-        }
         return '/engine-home';
       }
       return null;
@@ -179,7 +176,7 @@ GoRouter createEngineRouter(AuthProvider auth) {
 class _EngineHomePlaceholder extends StatelessWidget {
   const _EngineHomePlaceholder();
 
-  static const _cloudCabinetUrl = 'https://lynx-cloud.ru/cabinet';
+  static const _cloudCabinetUrl = 'https://lynx-cloud.ru/cabinet/projects';
 
   Future<void> _openCloudCabinet() async {
     final uri = Uri.parse(_cloudCabinetUrl);
@@ -204,8 +201,9 @@ class _EngineHomePlaceholder extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Стабильное ядро WASM уже в этой вкладке — скачивать .lynxengine '
-                  'не нужно. Откройте редактор или выберите облачный проект в Lynx Cloud.',
+                  'Облачные проекты хранятся на сервере Lynx Cloud. '
+                  'Откройте проект в кабинете — редактор подтянет сцены и ассеты по API. '
+                  'Ссылка вида: /engine-web/?project=cloud:<id>',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -361,41 +362,44 @@ class _SpriteEditorState extends State<SpriteEditor> {
 
   Future<void> _reloadPixelsFromDisk(ProjectManager manager) async {
     final asset = manager.assets.firstWhere((a) => a.id == widget.assetId);
-    final root = manager.rootPath;
-    if (root == null) return;
-    final docFile = File(
-      '$root/${SpriteDocCodec.docPathForAsset(asset.path)}',
-    );
-    final doc = await SpriteDocCodec.load(docFile);
-    if (doc != null && doc.frames.isNotEmpty) {
-      setState(() {
-        _gridW = doc.gridW;
-        _gridH = doc.gridH;
-        _frames = [
-          for (final fr in doc.frames)
-            [
-              for (final layer in fr.layers)
-                _SpriteLayer(
-                  name: layer.name,
-                  visible: layer.visible,
-                  pixels: spriteDocPixelsToColors(layer.pixelsArgb),
-                ),
-            ],
-        ];
-        _frameIndex = doc.activeFrame.clamp(0, _frames.length - 1);
-        _activeLayerIndex = doc.activeLayer.clamp(
-          0,
-          _currentFrameLayers.isEmpty ? 0 : _currentFrameLayers.length - 1,
+    final docPath = SpriteDocCodec.docPathForAsset(asset.path);
+    final docRaw = await manager.readAssetText(docPath);
+    if (docRaw != null) {
+      try {
+        final doc = SpriteDocFile.fromJson(
+          jsonDecode(docRaw) as Map<String, dynamic>,
         );
-        if (doc.frameDelaysMs.isNotEmpty) {
-          _animDelayMs = doc.frameDelaysMs[_frameIndex.clamp(0, doc.frameDelaysMs.length - 1)];
+        if (doc.frames.isNotEmpty) {
+          setState(() {
+            _gridW = doc.gridW;
+            _gridH = doc.gridH;
+            _frames = [
+              for (final fr in doc.frames)
+                [
+                  for (final layer in fr.layers)
+                    _SpriteLayer(
+                      name: layer.name,
+                      visible: layer.visible,
+                      pixels: spriteDocPixelsToColors(layer.pixelsArgb),
+                    ),
+                ],
+            ];
+            _frameIndex = doc.activeFrame.clamp(0, _frames.length - 1);
+            _activeLayerIndex = doc.activeLayer.clamp(
+              0,
+              _currentFrameLayers.isEmpty ? 0 : _currentFrameLayers.length - 1,
+            );
+            if (doc.frameDelaysMs.isNotEmpty) {
+              _animDelayMs =
+                  doc.frameDelaysMs[_frameIndex.clamp(0, doc.frameDelaysMs.length - 1)];
+            }
+          });
+          return;
         }
-      });
-      return;
+      } catch (_) {}
     }
-    final file = File('$root/${asset.path}');
-    if (!await file.exists()) return;
-    final bytes = await file.readAsBytes();
+    final bytes = await manager.readAssetBytes(asset.path);
+    if (bytes == null) return;
     final codec = await ui.instantiateImageCodec(bytes);
     final frame = await codec.getNextFrame();
     var img = frame.image;
@@ -993,7 +997,7 @@ class _SpriteEditorState extends State<SpriteEditor> {
                 ),
                 const Spacer(),
                 IconButton.filledTonal(
-                  tooltip: 'Экспорт PNG в файл (как в Aseprite)',
+                  tooltip: 'Сохранить спрайт в PNG',
                   onPressed: _exportPngCopy,
                   icon: const Icon(Icons.file_download_outlined, size: 22),
                 ),

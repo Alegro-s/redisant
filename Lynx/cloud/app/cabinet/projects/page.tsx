@@ -64,6 +64,15 @@ export default function CabinetProjectsPage() {
             <strong>{p.name}</strong>
             <span>{p.description ?? ''}</span>
             <span>{p.updated_at ? new Date(p.updated_at).toLocaleString() : ''}</span>
+            <a
+              href={`https://lynx-hub.ru/engine-web/?project=cloud:${encodeURIComponent(p.id)}&projectName=${encodeURIComponent(p.name)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="cloud-btn-primary"
+              style={{ marginLeft: '0.75rem', display: 'inline-block' }}
+            >
+              Открыть в браузере
+            </a>
           </li>
         ))}
       </ul>

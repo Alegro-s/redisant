@@ -10,7 +10,9 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../app/providers/settings_provider.dart';
 import '../../arcade/arcade_publish_service.dart';
 import '../../../app/widgets/lynx_external_links.dart';
 import '../../../app/widgets/lynx_logo.dart';
@@ -18,12 +20,12 @@ import '../project_git.dart';
 import '../project_manager.dart';
 import '../providers/engine_workspace_provider.dart';
 import '../providers/scene_provider.dart';
-import '../runtime/lynx_cart_io.dart';
-import '../widgets/console_mode_shell.dart';
 import '../widgets/engine_shell_tab_bar.dart';
 import '../runtime/engine_binary_loader.dart';
-import '../widgets/embedded_game_preview.dart';
 import '../widgets/engine_bottom_dock.dart';
+import '../widgets/unified_asset_workspace.dart';
+import '../widgets/tic_console_map_editor.dart';
+import '../runtime/tic_grid_codec.dart';
 import '../runtime/nexus_play_snapshot.dart';
 import '../runtime/project_build.dart';
 import '../widgets/nexus_editor_theme.dart';
@@ -34,18 +36,19 @@ import '../widgets/lynx_plugin_chips_bar.dart';
 import '../widgets/lynx_export_sheet.dart';
 import '../widgets/lynx_scene_plugins_panel.dart';
 import '../../plugins/lynx_plugin_host.dart';
-import '../../plugins/lynx_3d/lynx_3d_editor_viewport.dart';
 import '../../plugins/lynx_plugin_manifest.dart';
 import '../widgets/scene_hierarchy_panel.dart';
 import '../widgets/scene_minimap_panel.dart';
 import '../widgets/scene_rooms_editor_dialog.dart';
-import '../widgets/sound_asset_panel.dart';
 import '../widgets/scene_editor.dart';
 import '../widgets/engine_scene_viewport_controller.dart';
 import '../runtime/lynx_blueprint_service.dart';
 import '../widgets/engine_editor_shortcuts_dialog.dart';
 import '../widgets/scene_object_inspector.dart';
-import 'sprite_editor.dart';
+import '../../cloud/lynx_cloud_sync.dart';
+import '../widgets/scene_physics_panel.dart';
+import '../../plugins/lynx_3d/lynx3d_core_viewport.dart';
+import '../../plugins/lynx_3d/lynx_3d_codec.dart';
 import 'script_editor.dart';
 import '../models/engine_models.dart';
 
@@ -139,8 +142,6 @@ class EngineMainPage extends StatefulWidget {
 
 const double _kEngineCompactLayoutMaxSide = 600;
 
-enum _AssetsSidebarMode { all, sprites, coding, sounds, share }
-
 class _EngineMainPageState extends State<EngineMainPage> {
   String? _selectedAssetId;
   bool _bootStarted = false;
@@ -149,13 +150,9 @@ class _EngineMainPageState extends State<EngineMainPage> {
 
   int _mobileWorkspaceTab = 1;
 
-  _AssetsSidebarMode _assetsMode = _AssetsSidebarMode.all;
-
-  int _workspaceViewTab = 0;
-
   bool _dockExpanded = true;
   int _dockTab = EngineBottomDock.kTabConsole;
-  int _engineShellTab = 1;
+  int _engineShellTab = 0;
   final EngineWorkspaceProvider _workspace = EngineWorkspaceProvider();
   final List<String> _consoleLines = [];
   String? _engineDockLabel;
@@ -217,38 +214,21 @@ class _EngineMainPageState extends State<EngineMainPage> {
 
   void _onEngineShellTab(int tab, ProjectManager manager) {
     setState(() => _engineShellTab = tab);
-    switch (tab) {
-      case 0:
-        setState(() => _workspaceViewTab = 0);
-        break;
-      case 1:
-        setState(() => _mobileWorkspaceTab = 1);
-        break;
-      case 2:
-        setState(() {
-          _assetsMode = _AssetsSidebarMode.coding;
-          _mobileWorkspaceTab = 2;
-        });
-        break;
-      case 3:
-        setState(() {
-          _assetsMode = _AssetsSidebarMode.all;
-          _mobileWorkspaceTab = 0;
-        });
-        break;
-      case 4:
-        final root = widget.projectPath ?? manager.rootPath;
-        if (root != null && _runtimeSupportedOnDevice) {
-          context.push('/play', extra: {'projectPath': root, 'freshPlay': true});
-        }
-        break;
-      case 5:
-        final root = widget.projectPath ?? manager.rootPath;
-        if (root != null) {
-          unawaited(showLynxExportSheet(context, projectRoot: root));
-        }
-        break;
+    _workspace.setMainTabIndex(tab);
+    if (tab == 2) {
+      setState(() => _mobileWorkspaceTab = 2);
+    } else if (tab == 0) {
+      setState(() => _mobileWorkspaceTab = 1);
+    } else if (tab == 3) {
+      setState(() => _mobileWorkspaceTab = 2);
     }
+  }
+
+  bool _isTicProject(ProjectManager manager) {
+    final mode = manager.projectSettings?.projectMode ?? LynxProjectMode.d2;
+    final tpl = manager.projectSettings?.gameTemplate ?? '';
+    return mode == LynxProjectMode.tic ||
+        projectUsesTicApi(gameTemplate: tpl, projectMode: mode.jsonValue);
   }
 
   Future<void> _publishCartToCloud(ProjectManager manager) async {
@@ -314,7 +294,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
 
     if (k == LogicalKeyboardKey.f5) {
       if (!mounted) return false;
-      setState(() => _workspaceViewTab = 1);
+      setState(() => _engineShellTab = 1);
       return true;
     }
 
@@ -379,22 +359,22 @@ class _EngineMainPageState extends State<EngineMainPage> {
     }
 
     if (k == LogicalKeyboardKey.digit1 || k == LogicalKeyboardKey.numpad1) {
-      setState(() => _workspaceViewTab = 0);
+      setState(() => _engineShellTab = 0);
       return true;
     }
     if (k == LogicalKeyboardKey.digit2 || k == LogicalKeyboardKey.numpad2) {
-      setState(() => _workspaceViewTab = 1);
+      setState(() => _engineShellTab = 1);
       return true;
     }
     if (k == LogicalKeyboardKey.digit3 || k == LogicalKeyboardKey.numpad3) {
-      setState(() => _workspaceViewTab = 2);
+      setState(() => _engineShellTab = 2);
       return true;
     }
 
     if (_isZoomInKey(k)) {
       if (shift) {
         _nudgeUiScale(0.08);
-      } else if (_workspaceViewTab == 0) {
+      } else if (_engineShellTab == 0) {
         _sceneViewportController.zoomIn();
       } else {
         _nudgeUiScale(0.08);
@@ -404,7 +384,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
     if (_isZoomOutKey(k)) {
       if (shift) {
         _nudgeUiScale(-0.08);
-      } else if (_workspaceViewTab == 0) {
+      } else if (_engineShellTab == 0) {
         _sceneViewportController.zoomOut();
       } else {
         _nudgeUiScale(-0.08);
@@ -414,7 +394,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
     if (_isZeroKey(k)) {
       if (shift) {
         _setUiScale(1.0);
-      } else if (_workspaceViewTab == 0) {
+      } else if (_engineShellTab == 0) {
         _sceneViewportController.resetView();
       } else {
         _setUiScale(1.0);
@@ -543,11 +523,13 @@ class _EngineMainPageState extends State<EngineMainPage> {
       return;
     }
     final manager = Provider.of<ProjectManager>(context, listen: false);
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     final err = await manager.loadCloudProject(
       widget.projectId!,
       auth.http,
       displayName: widget.projectName ?? 'Облако',
       readOnly: widget.cloudReadOnly,
+      corporateLocalOnly: settings.corporateLocalOnly,
     );
     if (!mounted) return;
     if (err != null) {
@@ -611,20 +593,9 @@ class _EngineMainPageState extends State<EngineMainPage> {
 
   bool _explorerNodeVisible(ProjectNode node) {
     if (node.type == 'scene') return true;
-    switch (_assetsMode) {
-      case _AssetsSidebarMode.all:
-        return node.type == 'sprite' ||
-            node.type == 'script' ||
-            node.type == 'sound';
-      case _AssetsSidebarMode.sprites:
-        return node.type == 'sprite';
-      case _AssetsSidebarMode.coding:
-        return node.type == 'script';
-      case _AssetsSidebarMode.sounds:
-        return node.type == 'sound';
-      case _AssetsSidebarMode.share:
-        return false;
-    }
+    return node.type == 'sprite' ||
+        node.type == 'script' ||
+        node.type == 'sound';
   }
 
   void _onProjectNodeSelected(
@@ -638,21 +609,21 @@ class _EngineMainPageState extends State<EngineMainPage> {
       sceneProvider.selectObject(null);
       setState(() {
         _selectedAssetId = node.id;
-        if (!narrow) _workspaceViewTab = 0;
+        _engineShellTab = 3;
         if (narrow) _mobileWorkspaceTab = 2;
       });
     } else if (node.type == 'script') {
       sceneProvider.selectObject(null);
       setState(() {
         _selectedAssetId = node.id;
-        _workspaceViewTab = 2;
+        _engineShellTab = 2;
         if (narrow) _mobileWorkspaceTab = 2;
       });
     } else if (node.type == 'sound') {
       sceneProvider.selectObject(null);
       setState(() {
         _selectedAssetId = node.id;
-        _workspaceViewTab = 0;
+        _engineShellTab = 3;
         if (narrow) _mobileWorkspaceTab = 2;
       });
     } else if (node.type == 'scene') {
@@ -665,7 +636,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
         match.isNotEmpty ? match.first : manager.scenes.first,
       );
       setState(() {
-        _workspaceViewTab = 0;
+        _engineShellTab = 0;
         if (narrow) _mobileWorkspaceTab = 1;
       });
     } else if (node.type == 'prefab') {
@@ -683,7 +654,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
       manager.instantiatePrefabIntoCurrentScene(def);
       if (!context.mounted) return;
       setState(() {
-        _workspaceViewTab = 0;
+        _engineShellTab = 0;
         if (narrow) _mobileWorkspaceTab = 1;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -817,40 +788,51 @@ class _EngineMainPageState extends State<EngineMainPage> {
         final panelBorder = cs.outline.withValues(alpha: 0.35);
         final useMobileWorkspace = _isCompactEngineLayout(context);
         final compactLandscape = _isCompactLandscape(context);
+        final showWebCloudHint = kIsWeb &&
+            widget.projectId == null &&
+            widget.projectPath == null &&
+            manager.rootPath == null;
 
         return ChangeNotifierProvider.value(
           value: _workspace,
-          child: ListenableBuilder(
-            listenable: _workspace,
-            builder: (context, _) {
-              if (_workspace.isConsole) {
-                return ChangeNotifierProvider.value(
-                  value: _workspace,
-                  child: NexusEditorTheme.scope(
-                  context,
-                  child: Scaffold(
-                    appBar: AppBar(
-                      title: Text(widget.projectName ?? 'Lynx Engine · Консоль'),
-                      leading: IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => _workspace.setMode(EngineWorkspaceMode.project),
-                      ),
-                    ),
-                    body: ConsoleModeShell(
-                      projectRoot: playPath,
-                      onExitConsole: () => _workspace.setMode(EngineWorkspaceMode.project),
-                      viewportController: _sceneViewportController,
-                      onConsoleLine: _appendConsoleLine,
-                      previewActive: true,
-                    ),
-                  ),
-                ),
-                );
-              }
-              return NexusEditorTheme.scope(
+          child: NexusEditorTheme.scope(
           context,
           child: Stack(
             children: [
+              if (showWebCloudHint)
+                Positioned(
+                  top: 56,
+                  left: 16,
+                  right: 16,
+                  child: Material(
+                    elevation: 2,
+                    borderRadius: BorderRadius.circular(12),
+                    color: cs.primaryContainer.withValues(alpha: 0.92),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Облачный проект не выбран. Откройте его из Lynx Cloud '
+                              '(ссылка с ?project=cloud:<id>) — данные хранятся на сервере.',
+                              style: TextStyle(color: cs.onPrimaryContainer, height: 1.35),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              final uri = Uri.parse(
+                                'https://lynx-cloud.ru/cabinet/projects',
+                              );
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            },
+                            child: const Text('Lynx Cloud'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               Scaffold(
               key: _scaffoldKey,
               backgroundColor: cs.surface,
@@ -887,11 +869,6 @@ class _EngineMainPageState extends State<EngineMainPage> {
                   ),
                 ),
                 actions: [
-                  IconButton(
-                    tooltip: 'Режим Консоль (TIC)',
-                    icon: Icon(_workspace.isConsole ? Icons.view_in_ar : Icons.sports_esports_outlined),
-                    onPressed: () => _workspace.toggleMode(),
-                  ),
                   if (!readOnly)
                     IconButton(
                       tooltip: 'Отменить (Ctrl+Z)',
@@ -935,16 +912,29 @@ class _EngineMainPageState extends State<EngineMainPage> {
                       onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
                     ),
                   if (syncWarn != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Center(
-                        child: Tooltip(
+                    IconButton(
+                      tooltip: syncWarn,
+                      icon: Icon(Icons.cloud_sync, color: Colors.orange.shade300),
+                      onPressed: () async {
+                        final action = await showLynxCloudConflictDialog(
+                          context,
                           message: syncWarn,
-                          child: Icon(
-                            Icons.cloud_off,
-                            color: Colors.orange.shade300,
-                          ),
-                        ),
+                          readOnly: readOnly,
+                        );
+                        if (action != null && context.mounted) {
+                          await handleLynxCloudConflictAction(context, manager, action);
+                        }
+                      },
+                    ),
+                  if (widget.projectId != null)
+                    IconButton(
+                      tooltip: 'Открыть в браузере',
+                      icon: const Icon(Icons.open_in_browser_outlined),
+                      onPressed: () => openCloudProjectInBrowser(
+                        context,
+                        projectId: widget.projectId!,
+                        projectName: widget.projectName,
+                        readOnly: readOnly,
                       ),
                     ),
                   if (!readOnly && manager.rootPath != null && !kIsWeb)
@@ -1015,10 +1005,10 @@ class _EngineMainPageState extends State<EngineMainPage> {
                             value: 'export_build',
                             child: Text('Сборка game_data (быстро)…'),
                           ),
-                          if (manager.projectSettings?.cloudPublish?.enabled == true)
+                          if (context.read<AuthProvider>().isAuthenticated)
                             const PopupMenuItem(
                               value: 'publish_arcade',
-                              child: Text('Выложить cart в Arcade…'),
+                              child: Text('Выложить cart в Аркаду…'),
                             ),
                         ],
                       ],
@@ -1359,7 +1349,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
                                               readOnly: readOnly,
                                               manager: manager,
                                               sceneProvider: sceneProvider,
-                                              showModeChips: true,
+                                              showModeChips: false,
                                             ),
                                           ),
                                         ),
@@ -1399,7 +1389,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
                                   readOnly: readOnly,
                                   manager: manager,
                                   sceneProvider: sceneProvider,
-                                  showModeChips: true,
+                                  showModeChips: false,
                                 ),
                               ),
                               Container(
@@ -1552,6 +1542,26 @@ class _EngineMainPageState extends State<EngineMainPage> {
                     )
                   : null,
             ),
+            if (syncWarn != null)
+              Positioned(
+                top: kToolbarHeight + 8,
+                left: 12,
+                right: 12,
+                child: LynxCloudSyncBanner(
+                  message: syncWarn,
+                  readOnly: readOnly,
+                  onResolve: () async {
+                    final action = await showLynxCloudConflictDialog(
+                      context,
+                      message: syncWarn,
+                      readOnly: readOnly,
+                    );
+                    if (action != null && context.mounted) {
+                      await handleLynxCloudConflictAction(context, manager, action);
+                    }
+                  },
+                ),
+              ),
             if (manager.cloudAssetMutationBusy) ...[
               const ModalBarrier(dismissible: false, color: Color(0x66000000)),
               Center(
@@ -1587,11 +1597,9 @@ class _EngineMainPageState extends State<EngineMainPage> {
               ),
             ],
           ],
-        ),
-        );
-            },
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -1642,13 +1650,16 @@ class _EngineMainPageState extends State<EngineMainPage> {
         await manager.ensureCloudIdForLocalAsset(asset.id);
       }
       if (!context.mounted) return;
-      setState(() => _selectedAssetId = asset.id);
+      setState(() {
+        _selectedAssetId = asset.id;
+        _engineShellTab = 3;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             manager.cloudAssetIdForProjectAssetId(asset.id) != null
-                ? '${asset.name} — редактор справа, копия в облаке'
-                : '${asset.name} — пиксельный редактор справа',
+                ? '${asset.name} — вкладка «Ассеты», копия в облаке'
+                : '${asset.name} — вкладка «Ассеты»',
           ),
         ),
       );
@@ -1726,13 +1737,16 @@ class _EngineMainPageState extends State<EngineMainPage> {
         await manager.ensureCloudIdForLocalAsset(asset.id);
       }
       if (!context.mounted) return;
-      setState(() => _selectedAssetId = asset.id);
+      setState(() {
+        _selectedAssetId = asset.id;
+        _engineShellTab = 2;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             manager.cloudAssetIdForProjectAssetId(asset.id) != null
-                ? '${asset.name} — редактор кода справа, копия в облаке'
-                : '${asset.name} — редактор кода справа',
+                ? '${asset.name} — вкладка «Код», копия в облаке'
+                : '${asset.name} — вкладка «Код»',
           ),
         ),
       );
@@ -1752,10 +1766,10 @@ class _EngineMainPageState extends State<EngineMainPage> {
       }
       setState(() {
         _selectedAssetId = asset.id;
-        _assetsMode = _AssetsSidebarMode.sounds;
+        _engineShellTab = 3;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${asset.name} — предпросмотр справа')),
+        SnackBar(content: Text('${asset.name} — вкладка «Ассеты»')),
       );
     } else if (action == 'new_scene') {
       final ctrl = TextEditingController(text: 'level_${manager.scenes.length + 1}');
@@ -1779,7 +1793,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
       if (ok != true || name.isEmpty || !context.mounted) return;
       final scene = await manager.createScene(name);
       sceneProvider.setCurrentScene(scene);
-      setState(() => _workspaceViewTab = 0);
+      setState(() => _engineShellTab = 0);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Сцена «$name» — отдельный холст')),
@@ -1852,6 +1866,132 @@ class _EngineMainPageState extends State<EngineMainPage> {
     }
   }
 
+  Widget _buildMainTabContent(
+    BuildContext context,
+    ProjectManager manager, {
+    required bool readOnly,
+    required bool canPlay,
+    required String? playPath,
+  }) {
+    switch (_engineShellTab) {
+      case 1:
+        return _buildGameViewTab(
+          context,
+          canPlay: canPlay,
+          playPath: playPath,
+          previewActive: true,
+        );
+      case 2:
+        return _buildCodeWorkspaceTab(context, manager, readOnly: readOnly);
+      case 3:
+        return UnifiedAssetWorkspace(
+          projectRoot: playPath,
+          selectedAssetId: _selectedAssetId,
+          readOnly: readOnly,
+          onAssetSelected: (id) => setState(() => _selectedAssetId = id),
+        );
+      case 4:
+        return _buildBuildTab(context, playPath);
+      case 0:
+      default:
+        return _buildSceneTab(context, manager, playPath: playPath);
+    }
+  }
+
+  Widget _buildSceneTab(
+    BuildContext context,
+    ProjectManager manager, {
+    required String? playPath,
+  }) {
+    final sp = context.watch<SceneProvider>();
+    final hasTic = playPath != null &&
+        File(p.join(playPath, 'assets', 'tic', 'sprites.bank.json')).existsSync();
+    final show3d = LynxPluginHost.instance.is3dActive &&
+        sp.show3dViewportPreview &&
+        playPath != null;
+
+    Lynx3dSceneExtension? ext3d;
+    if (show3d && sp.currentScene != null) {
+      ext3d = Lynx3dSceneExtension.fromMap(
+        sp.currentScene!.extensions['lynx.3d'] as Map<String, dynamic>?,
+      );
+      ext3d ??= const Lynx3dSceneExtension(
+        active: true,
+        gravity: [0, -9.81, 0],
+        ambientColor: '#404050',
+        camera: Lynx3dCameraSettings(),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (show3d && ext3d != null)
+          Expanded(
+            flex: 2,
+            child: Lynx3dCoreViewport(
+              extension: ext3d,
+              projectPath: playPath,
+              simulatePhysics: false,
+            ),
+          ),
+        Expanded(
+          flex: show3d ? 3 : (hasTic ? 3 : 1),
+          child: SceneEditor(viewportController: _sceneViewportController),
+        ),
+        if (hasTic) ...[
+          const Divider(height: 1),
+          Expanded(
+            flex: 2,
+            child: TicConsoleMapEditor(projectRoot: playPath),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildBuildTab(BuildContext context, String? playPath) {
+    final cs = Theme.of(context).colorScheme;
+    if (playPath == null) {
+      return Center(
+        child: Text(
+          'Откройте проект с диска для сборки.',
+          style: TextStyle(color: cs.onSurfaceVariant),
+        ),
+      );
+    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.build_circle_outlined, size: 56, color: cs.primary),
+            const SizedBox(height: 16),
+            Text(
+              'Сборка и экспорт',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Экспорт .lynxcart, веб-сборка, Windows Player и публикация в аркаду.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => showLynxExportSheet(context, projectRoot: playPath),
+              icon: const Icon(Icons.rocket_launch_outlined),
+              label: const Text('Открыть панель сборки'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCenterWorkspace(
     BuildContext context,
     ProjectManager manager, {
@@ -1859,81 +1999,12 @@ class _EngineMainPageState extends State<EngineMainPage> {
     required bool canPlay,
     required String? playPath,
   }) {
-    final cs = Theme.of(context).colorScheme;
-    final border = cs.outline.withValues(alpha: 0.35);
-    final sp = context.watch<SceneProvider>();
-    final mode = manager.projectSettings?.projectMode ?? LynxProjectMode.d2;
-    var show3d = LynxPluginHost.instance.is3dActive && mode != LynxProjectMode.d2;
-    if (show3d) {
-      final scene = sp.currentScene;
-      final block = scene?.extensions[Lynx3dPluginIds.sceneExtensionKey];
-      if (block is Map && block['active'] == false) show3d = false;
-    }
-    final tabs = show3d
-        ? const ['Сцена', 'Игра', 'Код', '3D']
-        : const ['Сцена', 'Игра', 'Код'];
-    final tabCount = tabs.length;
-    final tabIndex = _workspaceViewTab.clamp(0, tabCount - 1);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Material(
-          color: cs.surfaceContainerHigh.withValues(alpha: 0.55),
-          child: SizedBox(
-            height: 42,
-            child: Row(
-              children: List.generate(tabCount, (i) {
-                final sel = tabIndex == i;
-                return Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _workspaceViewTab = i),
-                    child: Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: sel ? cs.primary : Colors.transparent,
-                            width: 2.5,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        tabs[i],
-                        style: TextStyle(
-                          fontWeight: sel ? FontWeight.w800 : FontWeight.w600,
-                          fontSize: 13,
-                          color: sel ? cs.primary : cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ),
-        Divider(height: 1, color: border),
-        Expanded(
-          child: IndexedStack(
-            index: tabIndex,
-            children: [
-              SceneEditor(viewportController: _sceneViewportController),
-              _buildGameViewTab(
-                context,
-                canPlay: canPlay,
-                playPath: playPath,
-                previewActive: tabIndex == 1,
-              ),
-              _buildCodeWorkspaceTab(
-                context,
-                manager,
-                readOnly: readOnly,
-              ),
-              if (show3d) const Lynx3dEditorViewport(),
-            ],
-          ),
-        ),
-      ],
+    return _buildMainTabContent(
+      context,
+      manager,
+      readOnly: readOnly,
+      canPlay: canPlay,
+      playPath: playPath,
     );
   }
 
@@ -1945,11 +2016,51 @@ class _EngineMainPageState extends State<EngineMainPage> {
   }) {
     final cs = Theme.of(context).colorScheme;
     if (canPlay && playPath != null && !kIsWeb) {
-      return EmbeddedGamePreview(
-        projectPath: playPath,
-        freshPlay: false,
-        active: previewActive,
-        onConsoleLine: _appendConsoleLine,
+      return ColoredBox(
+        color: cs.surface,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.sports_esports_rounded, size: 72, color: cs.primary),
+                const SizedBox(height: 20),
+                Text(
+                  'Игра',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Play открывается в отдельном окне — как в Unity.\n'
+                  'Enter / тап — старт в logic-grid играх.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
+                ),
+                const SizedBox(height: 28),
+                FilledButton.icon(
+                  onPressed: () => context.push(
+                    '/play',
+                    extra: {'projectPath': playPath, 'freshPlay': false},
+                  ),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                  label: const Text('Играть в отдельном окне'),
+                ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: () => context.push(
+                    '/play',
+                    extra: {'projectPath': playPath, 'freshPlay': true},
+                  ),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('С начала'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
     return ColoredBox(
@@ -2012,15 +2123,34 @@ class _EngineMainPageState extends State<EngineMainPage> {
     required bool readOnly,
   }) {
     final cs = Theme.of(context).colorScheme;
+    final tic = _isTicProject(manager);
     if (_selectedAssetId == null) {
+      final scripts = manager.assets.where((a) => a.type == 'script').toList();
+      if (scripts.isNotEmpty) {
+        String? pickId;
+        if (tic) {
+          for (final hint in const ['game']) {
+            final hit = scripts
+                .where((a) => a.name.toLowerCase().contains(hint))
+                .firstOrNull;
+            if (hit != null) {
+              pickId = hit.id;
+              break;
+            }
+          }
+        }
+        pickId ??= scripts.first.id;
+        return ScriptEditor(assetId: pickId);
+      }
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Text(
             readOnly
                 ? 'Облако (только чтение): выберите скрипт в проводнике.'
-                : 'Выберите .lua в проводнике или нажмите «+» → новый скрипт.\n'
-                    'Редактирование — здесь, на вкладке «Код».',
+                : tic
+                    ? 'Создайте assets/scripts/game.lua — TIC API: spr(), map(), btn().'
+                    : 'Выберите .lua в проводнике или меню ⋮ → новый скрипт.',
             textAlign: TextAlign.center,
             style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
           ),
@@ -2049,63 +2179,13 @@ class _EngineMainPageState extends State<EngineMainPage> {
     return ScriptEditor(assetId: asset.id);
   }
 
-  void _onSidebarModeSelected(
-    BuildContext context,
-    _AssetsSidebarMode mode,
-    ProjectManager manager,
-    SceneProvider sceneProvider,
-  ) {
-    setState(() {
-      _assetsMode = mode;
-      _selectedAssetId = null;
-    });
-    switch (mode) {
-      case _AssetsSidebarMode.all:
-        setState(() => _workspaceViewTab = 0);
-        break;
-      case _AssetsSidebarMode.sprites:
-        setState(() => _workspaceViewTab = 0);
-        final sprite = manager.assets.where((a) => a.type == 'sprite').firstOrNull;
-        if (sprite != null) {
-          setState(() => _selectedAssetId = sprite.id);
-        } else {
-          unawaited(_workspaceAction(context, manager, sceneProvider, 'sprite'));
-        }
-        break;
-      case _AssetsSidebarMode.coding:
-        setState(() => _workspaceViewTab = 2);
-        final script = manager.assets.where((a) => a.type == 'script').firstOrNull;
-        if (script != null) {
-          setState(() => _selectedAssetId = script.id);
-        } else {
-          unawaited(_workspaceAction(context, manager, sceneProvider, 'script'));
-        }
-        break;
-      case _AssetsSidebarMode.sounds:
-        setState(() => _workspaceViewTab = 0);
-        final sound = manager.assets.where((a) => a.type == 'sound').firstOrNull;
-        if (sound != null) {
-          setState(() => _selectedAssetId = sound.id);
-        } else {
-          unawaited(_workspaceAction(context, manager, sceneProvider, 'sound'));
-        }
-        break;
-      case _AssetsSidebarMode.share:
-        final root = manager.rootPath;
-        if (root != null) {
-          unawaited(showLynxExportSheet(context, projectRoot: root));
-        }
-        break;
-    }
-  }
-
   Widget _buildAssetSidebarColumn(
     BuildContext context, {
     required ColorScheme cs,
     required Color panelBorder,
     required ProjectManager manager,
     required SceneProvider sceneProvider,
-    double width = 76,
+    double width = 56,
     bool showExitButton = true,
   }) {
     return Container(
@@ -2118,7 +2198,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
         children: [
           const SizedBox(height: 8),
           const LynxLogo(size: 28, compact: true),
-          const SizedBox(height: 6),
+          const Spacer(),
           if (showExitButton)
             IconButton(
               tooltip: 'Выход',
@@ -2131,81 +2211,7 @@ class _EngineMainPageState extends State<EngineMainPage> {
               },
               icon: const Icon(Icons.exit_to_app_outlined, size: 20),
             ),
-          if (showExitButton) const SizedBox(height: 8),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                children: [
-                  _sidebarModeButton(
-                    cs: cs,
-                    panelBorder: panelBorder,
-                    icon: Icons.dashboard_outlined,
-                    label: 'Все',
-                    selected: _assetsMode == _AssetsSidebarMode.all,
-                    onTap: () => _onSidebarModeSelected(
-                      context,
-                      _AssetsSidebarMode.all,
-                      manager,
-                      sceneProvider,
-                    ),
-                  ),
-                  _sidebarModeButton(
-                    cs: cs,
-                    panelBorder: panelBorder,
-                    icon: Icons.image_outlined,
-                    label: 'Спрайты',
-                    selected: _assetsMode == _AssetsSidebarMode.sprites,
-                    onTap: () => _onSidebarModeSelected(
-                      context,
-                      _AssetsSidebarMode.sprites,
-                      manager,
-                      sceneProvider,
-                    ),
-                  ),
-                  _sidebarModeButton(
-                    cs: cs,
-                    panelBorder: panelBorder,
-                    icon: Icons.code_outlined,
-                    label: 'Кодинг',
-                    selected: _assetsMode == _AssetsSidebarMode.coding,
-                    onTap: () => _onSidebarModeSelected(
-                      context,
-                      _AssetsSidebarMode.coding,
-                      manager,
-                      sceneProvider,
-                    ),
-                  ),
-                  _sidebarModeButton(
-                    cs: cs,
-                    panelBorder: panelBorder,
-                    icon: Icons.music_note_outlined,
-                    label: 'Звук',
-                    selected: _assetsMode == _AssetsSidebarMode.sounds,
-                    onTap: () => _onSidebarModeSelected(
-                      context,
-                      _AssetsSidebarMode.sounds,
-                      manager,
-                      sceneProvider,
-                    ),
-                  ),
-                  _sidebarModeButton(
-                    cs: cs,
-                    panelBorder: panelBorder,
-                    icon: Icons.share_outlined,
-                    label: 'Share',
-                    selected: _assetsMode == _AssetsSidebarMode.share,
-                    onTap: () => _onSidebarModeSelected(
-                      context,
-                      _AssetsSidebarMode.share,
-                      manager,
-                      sceneProvider,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -2218,121 +2224,15 @@ class _EngineMainPageState extends State<EngineMainPage> {
     required SceneProvider sceneProvider,
     bool showModeChips = false,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (showModeChips) _buildAssetsModeChips(context),
-        Expanded(
-          child: ProjectExplorerPanel(
-            readOnly: readOnly,
-            minimalPngBytes: kNexusMinimalPng,
-            nodeVisible: _explorerNodeVisible,
-            onNodeSelected: (node) => _onProjectNodeSelected(
-              context,
-              node,
-              manager,
-              sceneProvider,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAssetsModeChips(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    Widget chip(String label, _AssetsSidebarMode mode, IconData icon) {
-      final selected = _assetsMode == mode;
-      return Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: FilterChip(
-          label: Text(label),
-          avatar: Icon(icon, size: 16),
-          selected: selected,
-          showCheckmark: false,
-          onSelected: (_) {
-            final manager = Provider.of<ProjectManager>(context, listen: false);
-            final sp = Provider.of<SceneProvider>(context, listen: false);
-            _onSidebarModeSelected(context, mode, manager, sp);
-          },
-          labelStyle: TextStyle(
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-          ),
-        ),
-      );
-    }
-
-    return Material(
-      color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Row(
-          children: [
-            chip('Все', _AssetsSidebarMode.all, Icons.dashboard_outlined),
-            chip('Спрайты', _AssetsSidebarMode.sprites, Icons.image_outlined),
-            chip('Код', _AssetsSidebarMode.coding, Icons.code_outlined),
-            chip('Звук', _AssetsSidebarMode.sounds, Icons.music_note_outlined),
-            chip('Share', _AssetsSidebarMode.share, Icons.share_outlined),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sidebarModeButton({
-    required ColorScheme cs,
-    required Color panelBorder,
-    required IconData icon,
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    final bg = selected ? cs.primaryContainer.withValues(alpha: 0.18) : Colors.transparent;
-    final side = selected
-        ? BorderSide(color: cs.primary.withValues(alpha: 0.55), width: 1.0)
-        : BorderSide(color: panelBorder.withValues(alpha: 0.0), width: 1.0);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      child: Material(
-        color: bg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: side,
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: SizedBox(
-            width: 60,
-            height: 58,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 20,
-                  color: selected ? cs.secondary : cs.onSurfaceVariant,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: selected ? cs.onSurface : cs.onSurfaceVariant,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return ProjectExplorerPanel(
+      readOnly: readOnly,
+      minimalPngBytes: kNexusMinimalPng,
+      nodeVisible: _explorerNodeVisible,
+      onNodeSelected: (node) => _onProjectNodeSelected(
+        context,
+        node,
+        manager,
+        sceneProvider,
       ),
     );
   }
@@ -2344,11 +2244,6 @@ class _EngineMainPageState extends State<EngineMainPage> {
     required SceneProvider sceneProvider,
   }) {
     final sel = sceneProvider.selectedObject;
-    final scriptInCenter = _workspaceViewTab == 2 &&
-        _selectedAssetId != null &&
-        manager.assets.any(
-          (a) => a.id == _selectedAssetId && a.type == 'script',
-        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2393,102 +2288,23 @@ class _EngineMainPageState extends State<EngineMainPage> {
         Expanded(
           child: sel != null
               ? SceneObjectInspector(key: ValueKey(sel.id), object: sel)
-              : (_selectedAssetId == null
-                    ? (LynxPluginHost.instance.is3dActive
-                          ? const LynxScenePluginsPanel()
-                          : _EmptyAssetPanel(readOnly: readOnly))
-                    : (scriptInCenter
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Text(
-                                  readOnly
-                                      ? 'Скрипт открыт по центру (просмотр).'
-                                      : 'Lua редактируется во вкладке «Код» в центре. '
-                                          'Здесь остаются иерархия сцены и инспектор объекта.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                    height: 1.45,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : _buildEditor(_selectedAssetId!))),
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (LynxPluginHost.instance.is3dActive)
+                      const Expanded(
+                        flex: 2,
+                        child: LynxScenePluginsPanel(),
+                      ),
+                    const Expanded(
+                      flex: 3,
+                      child: ScenePhysicsPanel(),
+                    ),
+                  ],
+                ),
         ),
       ],
     );
-  }
-
-  Widget _buildEditor(String assetId) {
-    final manager = Provider.of<ProjectManager>(context, listen: false);
-    if (manager.isCloudReadOnly) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('Режим просмотра: редактирование отключено'),
-        ),
-      );
-    }
-    final asset = manager.assets.firstWhere(
-      (a) => a.id == assetId,
-      orElse: () => ProjectAsset(
-        id: '',
-        name: '',
-        type: '',
-        path: '',
-        createdAt: DateTime.now(),
-        modifiedAt: DateTime.now(),
-      ),
-    );
-    if (asset.type == 'sprite') {
-      return SpriteEditor(assetId: assetId);
-    } else if (asset.type == 'sound') {
-      return SoundAssetPanel(assetId: assetId);
-    } else if (asset.type == 'script') {
-      return ScriptEditor(assetId: assetId);
-    } else if (asset.type == 'model') {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.view_in_ar_outlined, size: 48),
-              const SizedBox(height: 12),
-              Text(asset.name, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(
-                asset.path,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                manager.isAssetPathDisabled(asset.path)
-                    ? 'Ассет отключён в project.json'
-                    : '3D-модель. Назначьте mesh в инспекторе объекта сцены.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: () => manager.setAssetPathEnabled(
-                  asset.path,
-                  manager.isAssetPathDisabled(asset.path),
-                ),
-                child: Text(
-                  manager.isAssetPathDisabled(asset.path) ? 'Включить' : 'Отключить',
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else {
-      return Center(child: Text('Cannot edit ${asset.type}'));
-    }
   }
 }
 
@@ -2514,10 +2330,8 @@ class _EmptyAssetPanel extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               readOnly
-                  ? 'Просмотр: выберите ассет в проводнике.'
-                  : 'Проводник: спрайт или звук — редактор справа.\n'
-                      'Lua / LynxScript — вкладка «Код». Blueprint: Ctrl+Shift+B.\n'
-                      'Меню ⋮: тайлмап, звук, новая сцена, экспорт.',
+                  ? 'Выберите объект на сцене.'
+                  : 'Выберите объект на сцене — свойства появятся здесь.',
               textAlign: TextAlign.center,
               style: TextStyle(color: cs.onSurfaceVariant, height: 1.4),
             ),
