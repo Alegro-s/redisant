@@ -1,5 +1,5 @@
 /* Токены Lynx Launcher (nexus_theme.dart darkPurple) */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 *,
 *::before,
@@ -31,7 +31,7 @@ svg {
   --lynx-radius: 14px;
   --lynx-font: 'IBM Plex Sans', system-ui, sans-serif;
   --lynx-font-display: Syne, sans-serif;
-  --lynx-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --lynx-mono: ui-monospace, 'Cascadia Code', monospace;
 }
 
 .lynx-launch-page,

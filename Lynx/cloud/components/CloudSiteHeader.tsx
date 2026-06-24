@@ -4,17 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LYNX_CABINET_URL } from '@/lib/links';
-
-function CloudIcon() {
-  return (
-    <svg className="cloud-icon-svg" width="28" height="28" viewBox="0 0 28 28" aria-hidden>
-      <path
-        fill="#007AFF"
-        d="M7 19.5h14a5 5 0 0 0 .8-9.94A6.2 6.2 0 0 0 8.2 8.5 4.8 4.8 0 0 0 7 19.5z"
-      />
-    </svg>
-  );
-}
+import { CloudIcon } from '@/components/CloudIcon';
 
 export function CloudSiteHeader() {
   const router = useRouter();

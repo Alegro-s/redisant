@@ -1,8 +1,8 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-import '../features/launcher/android_engine_intent.dart';
+import '../features/launcher/android_engine_intent_stub.dart'
+    if (dart.library.io) '../features/launcher/android_engine_intent.dart';
+import 'engine_platform.dart' as plat;
 import 'bootstrap_raw_stub.dart'
     if (dart.library.io) 'bootstrap_raw_io.dart' as raw;
 
@@ -44,6 +44,8 @@ class EngineBootstrap {
     this.engineVersion,
     this.cartPath,
     this.playOnly = false,
+    this.launcherSession,
+    this.allowStandalone = false,
   });
 
   static EngineBootstrap? _instance;
@@ -54,7 +56,7 @@ class EngineBootstrap {
       _instance = _bootstrapFromWebUri() ?? EngineBootstrap._(cloudReadOnly: false);
       return;
     }
-    if (Platform.isAndroid) {
+    if (plat.engineHostIsAndroid) {
       final m = await AndroidEngineIntent.read();
       _instance = _fromMap(m);
       return;
@@ -81,6 +83,8 @@ class EngineBootstrap {
         engineVersion: (m['engineVer'] as String?) ?? (m['engineVersion'] as String?),
         cartPath: m['cartPath'] as String?,
         playOnly: m['playOnly'] as bool? ?? false,
+        launcherSession: m['launcherSession'] as String?,
+        allowStandalone: m['allowStandalone'] as bool? ?? false,
       );
 
   final String? projectId;
@@ -91,6 +95,8 @@ class EngineBootstrap {
   final String? engineVersion;
   final String? cartPath;
   final bool playOnly;
+  final String? launcherSession;
+  final bool allowStandalone;
 
   bool get hasProjectContext =>
       (projectId != null && projectId!.isNotEmpty) ||

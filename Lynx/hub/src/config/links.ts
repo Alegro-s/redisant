@@ -16,6 +16,16 @@ export const WAYPOINT_METRIC_URL = import.meta.env.VITE_WAYPOINT_METRIC_URL ?? '
 
 export const ENGINE_MANIFEST_URL = import.meta.env.VITE_ENGINE_MANIFEST_URL ?? '';
 
+/** CDN fallback when API manifest is empty or unavailable. */
+export const ENGINE_MANIFEST_CDN_URL =
+  import.meta.env.VITE_ENGINE_MANIFEST_CDN_URL?.trim() ||
+  'https://lynx-hub.ru/dist/downloads/engine-manifest.json';
+
+/** Flutter Web editor (hosted on Hub static). */
+export const ENGINE_WEB_BASE = import.meta.env.VITE_ENGINE_WEB_BASE?.trim() || '/engine-web';
+
+export const ENGINE_WEB_DEMO_URL = `${ENGINE_WEB_BASE}/index.html`;
+
 
 export const LYNX_LAUNCHER_EXE_URL = import.meta.env.VITE_LYNX_LAUNCHER_EXE_URL ?? '';
 

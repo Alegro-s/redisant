@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import 'nexus_engine_manifest.dart';
@@ -23,3 +25,5 @@ Future<String?> resolveInstalledLynxEngineExecutable({String? preferredVersion})
 Future<bool> removeInstalledLynxEngineVersion(String version) async => false;
 
 bool engineReleaseSupportsCurrentHost(Map<String, dynamic> release) => false;
+
+Future<String?> installLynxEngineFromBytes(Uint8List bytes) async => null;

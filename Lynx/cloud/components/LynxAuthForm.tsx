@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { LYNX_CABINET_URL, LYNX_HUB_URL } from '@/lib/links';
 import { resolveLynxAuthBase } from '@/lib/authBase';
 
-type Props = { initialRegister?: boolean };
+type Props = { initialRegister?: boolean; onSuccess?: () => void };
 
-export function LynxAuthForm({ initialRegister = false }: Props) {
+export function LynxAuthForm({ initialRegister = false, onSuccess }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register'>(initialRegister ? 'register' : 'login');
   const [email, setEmail] = useState('');
@@ -43,7 +43,11 @@ export function LynxAuthForm({ initialRegister = false }: Props) {
         if (!data.token) throw new Error('Нет токена');
         localStorage.setItem('lynx_auth_token', data.token);
         localStorage.setItem('lynx_auth_login', email.trim());
-        router.push('/cabinet/dashboard');
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push('/cabinet/dashboard');
+        }
         return;
       }
 

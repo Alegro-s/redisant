@@ -12,7 +12,13 @@ param(
     [switch]$SkipHub,
     [switch]$SkipMsi,
     [switch]$SkipGitPush,
-    [switch]$RemoteOnly
+    [switch]$RemoteOnly,
+    [switch]$PublishEngine,
+    [string]$EngineVersion = '0.15.0',
+    [ValidateSet('stable', 'beta')]
+    [string]$EngineChannel = 'stable',
+    [switch]$EngineFullPack,
+    [switch]$EngineSkipFlutter
 )
 
 $ErrorActionPreference = 'Stop'
@@ -52,6 +58,22 @@ if (-not $RemoteOnly) {
         } finally {
             Pop-Location
         }
+        if (Test-Path (Join-Path $LynxRoot 'scripts\build-lynx-engine-web.ps1')) {
+            Write-Step "Flutter Web engine-web"
+            & (Join-Path $LynxRoot 'scripts\build-lynx-engine-web.ps1')
+        }
+    }
+
+    if ($PublishEngine) {
+        Write-Step "Lynx Engine $EngineVersion (локальная сборка + manifest)"
+        $engineArgs = @{
+            Version = $EngineVersion
+            Channel = $EngineChannel
+        }
+        if ($EngineFullPack) { $engineArgs.FullPack = $true }
+        if ($EngineSkipFlutter) { $engineArgs.SkipFlutter = $true }
+        & (Join-Path $LynxRoot 'scripts\publish-lynx-engine-to-server.ps1') @engineArgs
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
 
     if (-not $SkipGitPush) {
@@ -88,6 +110,16 @@ if (-not $ServerHost) {
 Write-Step "Выкладка на $ServerHost"
 ssh $ServerHost "mkdir -p /srv/lynx-hub/dist/downloads"
 
+if ($PublishEngine) {
+    Write-Step "Lynx Engine $EngineVersion -> CDN на сервере"
+    & (Join-Path $LynxRoot 'scripts\publish-lynx-engine-to-server.ps1') `
+        -Version $EngineVersion `
+        -Channel $EngineChannel `
+        -SkipBuild `
+        -ServerHost $ServerHost
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+
 $files = @()
 if (Test-Path $DistLauncher) {
     $files += Get-ChildItem $DistLauncher -File -ErrorAction SilentlyContinue |
@@ -101,6 +133,20 @@ if (Test-Path $releasesDir) {
 foreach ($f in $files) {
     scp $f.FullName "${ServerHost}:/srv/lynx-hub/dist/downloads/$($f.Name)"
     Write-Host "  -> downloads/$($f.Name)"
+}
+
+$engineManifest = Join-Path $HubDir 'public\dist\downloads\engine-manifest.json'
+if (Test-Path $engineManifest) {
+    scp $engineManifest "${ServerHost}:/srv/lynx-hub/dist/downloads/engine-manifest.json"
+    Write-Host "  -> downloads/engine-manifest.json"
+}
+$engineDir = Join-Path $HubDir 'public\dist\downloads\engine'
+if (Test-Path $engineDir) {
+    ssh $ServerHost "mkdir -p /srv/lynx-hub/dist/downloads/engine"
+    Get-ChildItem $engineDir -Filter '*.lynxengine' -File -ErrorAction SilentlyContinue | ForEach-Object {
+        scp $_.FullName "${ServerHost}:/srv/lynx-hub/dist/downloads/engine/$($_.Name)"
+        Write-Host "  -> downloads/engine/$($_.Name)"
+    }
 }
 
 if ((Test-Path (Join-Path $HubDir 'dist')) -and -not $SkipHub) {

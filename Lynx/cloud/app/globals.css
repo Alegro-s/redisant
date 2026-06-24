@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 :root,
 body.lynx-cloud-site {
@@ -16,14 +16,43 @@ body.lynx-cloud-site {
   --lynx-radius: 14px;
   --font: 'IBM Plex Sans', system-ui, sans-serif;
   --font-display: Syne, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --mono: ui-monospace, 'Cascadia Code', monospace;
 }
 
-body.lynx-cloud-site {
+body.lynx-cloud-site:not(.cloud-light) {
   background: var(--lynx-bg);
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.18), transparent),
     radial-gradient(ellipse 40% 30% at 100% 50%, rgba(124, 58, 237, 0.12), transparent);
+}
+
+body.lynx-cloud-site.cloud-light {
+  --lynx-bg: #ffffff;
+  --lynx-surface: #ffffff;
+  --lynx-card: #f5f5f7;
+  --lynx-border: #d2d2d7;
+  --lynx-text: #1d1d1f;
+  --lynx-muted: #6e6e73;
+  --lynx-body: #424245;
+  --lynx-accent: #1a73e8;
+  --lynx-accent-soft: #1a73e8;
+  --lynx-accent-border: rgba(26, 115, 232, 0.2);
+  --lynx-green: #248a3d;
+  background: #ffffff;
+  background-image: none;
+  color: var(--lynx-body);
+}
+
+body.lynx-cloud-site.cloud-light a {
+  color: var(--lynx-accent);
+}
+
+body.lynx-cloud-site.cloud-light a:hover {
+  color: #1557b0;
+}
+
+body.lynx-cloud-site.cloud-light .site-footer-brand {
+  font-family: var(--font-display);
 }
 
 @media (prefers-color-scheme: light) {
@@ -1113,3 +1142,97 @@ body.lynx-cloud-site .cloud-apple-cta p {
 body.cloud-light .shell.cloud-shell {
   padding-bottom: 0;
 }
+
+/* Lynx Cloud Admin (operations) */
+.cloud-admin-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 120px);
+  gap: 0;
+}
+
+@media (max-width: 800px) {
+  .cloud-admin-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cloud-admin-nav {
+  padding: 1.5rem 1.25rem;
+  border-right: 1px solid var(--lynx-border);
+  background: var(--lynx-surface);
+}
+
+.cloud-admin-nav nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 1.25rem 0;
+}
+
+.cloud-admin-nav nav a {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--lynx-body);
+  font-weight: 500;
+}
+
+.cloud-admin-nav nav a.is-active {
+  background: rgba(26, 115, 232, 0.12);
+  color: var(--lynx-accent);
+}
+
+.cloud-admin-brand {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--lynx-text);
+}
+
+.cloud-admin-back {
+  font-size: 0.85rem;
+}
+
+.cloud-admin-main {
+  padding: 1.75rem clamp(1rem, 3vw, 2.5rem) 3rem;
+}
+
+.cloud-admin-page h1 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  color: var(--lynx-text);
+}
+
+.cloud-admin-field {
+  display: block;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  color: var(--lynx-muted);
+}
+
+.cloud-admin-field input {
+  display: block;
+  width: 100%;
+  max-width: 36rem;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--lynx-border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.cloud-admin-pre {
+  background: var(--lynx-card);
+  border: 1px solid var(--lynx-border);
+  border-radius: 10px;
+  padding: 1rem;
+  overflow: auto;
+  font-size: 0.8rem;
+  max-height: 420px;
+}
+
+.cloud-admin-ok {
+  color: var(--lynx-green);
+}
+

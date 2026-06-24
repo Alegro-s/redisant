@@ -1,10 +1,18 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ENGINE_MANIFEST_URL,
+  ENGINE_MANIFEST_CDN_URL,
+  ENGINE_WEB_DEMO_URL,
   LYNX_LAUNCHER_EXE_URL,
   LYNX_LAUNCHER_APK_URL,
   LYNX_SOURCES_ZIP_URL,
 } from '../config/links';
+import {
+  fetchEngineManifest,
+  windowsEnginePackUrl,
+  type EngineManifest,
+} from '../lib/engineManifest';
 
 const platforms = [
   {
@@ -34,13 +42,22 @@ const platforms = [
 ];
 
 export function DownloadPage() {
+  const [manifest, setManifest] = useState<EngineManifest | null>(null);
+
+  useEffect(() => {
+    void fetchEngineManifest(ENGINE_MANIFEST_URL || ENGINE_MANIFEST_CDN_URL).then(setManifest);
+  }, []);
+
+  const enginePack = windowsEnginePackUrl(manifest);
+  const recommended = manifest?.recommended_version ?? '—';
+
   return (
     <div className="lynx-dl-page">
       <p className="lynx-pill">Lynx Launcher</p>
       <h1>Загрузки клиента</h1>
       <p className="lynx-dl-lead">
-        Лаунчер объединяет проекты, редактор, чат, движок и сборку. Ядро Lynx Core бесплатно; версии и changelog
-        публикуются на Hub после выхода релизов.
+        Лаунчер объединяет проекты, редактор, чат, движок и сборку. Рекомендуемая версия Engine:{' '}
+        <strong>{recommended}</strong>. Установка через Install Hub в Launcher или пакет .lynxengine ниже.
       </p>
 
       <div className="lynx-dl-platforms">
@@ -62,19 +79,40 @@ export function DownloadPage() {
         ))}
       </div>
 
+      <section className="lynx-dl-engine-section">
+        <h2>Lynx Engine</h2>
+        {enginePack ? (
+          <p>
+            Windows pack:{' '}
+            <a href={enginePack} className="lynx-launch-row-action" target="_blank" rel="noreferrer">
+              скачать .lynxengine
+            </a>
+          </p>
+        ) : (
+          <p className="lynx-launch-muted">Пакет движка появится после публикации манифеста.</p>
+        )}
+        <p>
+          <a href={ENGINE_WEB_DEMO_URL} className="lynx-launch-row-action">
+            Открыть редактор в браузере →
+          </a>
+        </p>
+      </section>
+
       <p className="lynx-dl-note-line">
+        Манифест:{' '}
+        <a href={ENGINE_MANIFEST_CDN_URL} target="_blank" rel="noreferrer" className="lynx-launch-row-action">
+          CDN JSON
+        </a>
         {ENGINE_MANIFEST_URL ? (
           <>
-            Манифест движка:{' '}
+            {' · '}
             <a href={ENGINE_MANIFEST_URL} target="_blank" rel="noreferrer" className="lynx-launch-row-action">
-              открыть
+              API
             </a>
           </>
-        ) : (
-          <>Манифест движка — скоро будет.</>
-        )}
+        ) : null}
         {' · '}
-        Новости и версии Core — в <Link to="/">разделах Hub</Link> после публикации.
+        <Link to="/">Главная Hub</Link>
       </p>
 
       <p className="lynx-launch-foot" style={{ marginTop: '2rem' }}>

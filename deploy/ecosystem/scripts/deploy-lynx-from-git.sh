@@ -25,6 +25,9 @@ cd "$ECO"
 docker compose -f docker-compose.apis.yml build lynx-api
 docker compose -f docker-compose.apis.yml up -d lynx-api
 
+echo "==> Ensure Lynx Cloud + API (fix 502)"
+bash "$ECO/scripts/server-ensure-lynx-services.sh"
+
 echo "==> Все сайты и API"
 bash "$ECO/scripts/server-update-site.sh"
 

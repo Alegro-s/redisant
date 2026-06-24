@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { SiteFooter } from '@/components/SiteFooter';
-import { CloudSiteHeader } from '@/components/CloudSiteHeader';
+import { CloudChrome } from '@/components/CloudChrome';
 
 export const metadata: Metadata = {
   title: 'Lynx Cloud — облако для разработчиков',
@@ -11,10 +10,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru">
-      <body className="lynx-cloud-site">
-        <CloudSiteHeader />
-        <div className="shell cloud-shell">{children}</div>
-        <SiteFooter />
+      <body className="lynx-cloud-site cloud-light">
+        <CloudChrome>{children}</CloudChrome>
       </body>
     </html>
   );

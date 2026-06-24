@@ -1,0 +1,43 @@
+{
+    "name": "Lynx Hub",
+    "short_name": "Lynx",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1a1028",
+    "theme_color": "#4c1d95",
+    "description": "Lynx Launcher — портал, проекты, аркада. Редактор: /engine-web (E25c PWA).",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Lynx Engine (Web)",
+            "short_name": "Engine",
+            "url": "/engine-web",
+            "description": "E25c — открыть веб-редактор"
+        }
+    ]
+}

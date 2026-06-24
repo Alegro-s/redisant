@@ -167,6 +167,9 @@ VITE_LYNX_AUTH_URL=/auth
 EOF
   npm run build
   rsync -a --delete dist/ /srv/lynx-hub/dist/
+  if [[ ! -f /srv/lynx-hub/dist/engine-web/index.html ]]; then
+    echo "WARN: /engine-web missing — run Lynx/scripts/build-lynx-engine-web.ps1 locally and push, or build Flutter on CI"
+  fi
 fi
 
 if [[ -d "$PO_ROOT/roza/web" ]]; then
@@ -201,6 +204,7 @@ NEXT_PUBLIC_LYNX_API_BASE=/lynx
 NEXT_PUBLIC_LYNX_HUB_URL=https://lynx-hub.ru
 NEXT_PUBLIC_LYNX_CABINET_URL=/cabinet
 EOF
+  rm -rf .next
   npm run build
   pkill -f "next start.*3001" 2>/dev/null || true
   sleep 1

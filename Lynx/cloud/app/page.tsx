@@ -62,7 +62,7 @@ export default function Home() {
       </section>
 
       <p className="cloud-intro-foot">
-        <Link href="/developer">Для разработчиков →</Link>
+        <Link href="/cabinet/sign-in">Для разработчиков →</Link>
       </p>
     </main>
   );

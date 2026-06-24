@@ -206,11 +206,11 @@ export function AdminPage() {
         <section>
           <h2>Ядра движка (информация Hub)</h2>
           <p className="lynx-admin-hint">
-            Версии для лаунчера и облачных сессий — в{' '}
-            <a href="https://metrika-waypoint.ru/dashboard/lynx-cloud/engine" target="_blank" rel="noreferrer">
-              Lynx Cloud → Engine
-            </a>{' '}
-            (манифест <code>/engine/manifest</code>, сессия <code>/me/engine/session</code>).
+            Операционная политика релизов (manifest URL, recommended) — в{' '}
+            <a href="https://lynx-cloud.ru/admin" target="_blank" rel="noreferrer">
+              Lynx Cloud Admin
+            </a>
+            . Здесь только текст для витрины Hub.
           </p>
           {content.engineCores.map((core, i) => (
             <article key={core.id} className="lynx-admin-card">

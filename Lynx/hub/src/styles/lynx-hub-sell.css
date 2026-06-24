@@ -12,10 +12,30 @@
   box-shadow: none;
 }
 
-.lynx-launch-page {
-  margin: 0 -0.25rem;
-  position: relative;
+.lynx-launch-engine-stack {
+  margin: 3rem 0;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(192, 132, 252, 0.15);
 }
+
+.lynx-launch-engine-stack .lynx-stack-diagram {
+  max-width: 420px;
+  margin: 1rem auto 0;
+}
+
+.lynx-dl-engine-section {
+  margin: 2.5rem 0;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(192, 132, 252, 0.2);
+  background: rgba(22, 27, 34, 0.5);
+}
+
+.lynx-dl-engine-section h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
 
 .lynx-launch-page::before {
   content: '';
