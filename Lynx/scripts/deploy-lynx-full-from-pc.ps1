@@ -1,6 +1,6 @@
-# Полный деплой Lynx Hub + downloads с Windows PC.
+# Full Lynx Hub deploy + downloads from Windows PC.
 #
-# Примеры:
+# Examples:
 #   & "d:\PO\Lynx\scripts\deploy-lynx-full-from-pc.ps1" -ServerHost root@72.56.244.26
 #   & "d:\PO\Lynx\scripts\deploy-lynx-full-from-pc.ps1" -ServerHost root@72.56.244.26 -SkipLauncher -SkipEngine
 #   & "d:\PO\Lynx\scripts\deploy-lynx-full-from-pc.ps1" -ServerHost root@72.56.244.26 -PublishEngine
@@ -37,7 +37,7 @@ if (-not $SkipEngineWeb) {
 }
 
 if (-not $SkipHub) {
-    Write-Step 'Сборка Lynx Hub (npm)'
+    Write-Step 'Build Lynx Hub (npm)'
     Push-Location $HubDir
     try {
         if (-not (Test-Path 'node_modules')) { npm ci }
@@ -96,7 +96,7 @@ if (-not $SkipGitPush) {
             git commit -m "fix(hub): web engine gate, downloads deploy script, preserve /downloads on rsync"
             git push origin HEAD
         } else {
-            Write-Host '  Нет staged hub/deploy изменений для коммита.'
+            Write-Host "  No staged hub/deploy changes to commit."
         }
     } catch {
         Write-Warning "  Git push: $_"
@@ -105,7 +105,7 @@ if (-not $SkipGitPush) {
     }
 }
 
-Write-Step "Выкладка downloads + Hub static на $ServerHost"
+Write-Step "Upload downloads + Hub static to $ServerHost"
 & (Join-Path $LynxRoot 'scripts\push-lynx-update-to-server.ps1') @pushArgs -RemoteOnly
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -117,9 +117,9 @@ if (-not $SkipHub) {
 Write-Step 'VPS: server-deploy-lynx-hub.sh'
 ssh $ServerHost "sudo bash $RemotePoRoot/deploy/ecosystem/scripts/server-deploy-lynx-hub.sh"
 
-Write-Host ''
-Write-Host 'Готово:' -ForegroundColor Green
-Write-Host '  https://lynx-hub.ru/'
-Write-Host '  https://lynx-hub.ru/engine-web/'
-Write-Host '  https://lynx-hub.ru/download'
-Write-Host '  https://lynx-hub.ru/downloads/'
+Write-Host ""
+Write-Host "Done:" -ForegroundColor Green
+Write-Host "  https://lynx-hub.ru/"
+Write-Host "  https://lynx-hub.ru/engine-web/"
+Write-Host "  https://lynx-hub.ru/download"
+Write-Host "  https://lynx-hub.ru/downloads/"
