@@ -173,6 +173,31 @@
   background: #0a0e14;
 }
 
+.lynx-launcher-nav button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--lynx-muted);
+  border: none;
+  border-left: 2px solid transparent;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.lynx-launcher-nav button:hover {
+  color: var(--lynx-text);
+}
+
+.lynx-launcher-nav button.is-active {
+  color: var(--lynx-text);
+  background: var(--lynx-card);
+  border-left-color: var(--lynx-accent);
+}
+
 .lynx-launcher-nav span {
   padding: 8px 12px;
   font-size: 0.78rem;
@@ -188,6 +213,7 @@
 
 .lynx-launcher-workspace {
   padding: 14px 16px;
+  animation: lynx-launcher-fade 0.2s ease;
 }
 
 .lynx-launcher-ws-label {
@@ -217,6 +243,117 @@
   margin: 0;
   font-size: 0.8rem;
   color: var(--lynx-muted);
+}
+
+@keyframes lynx-launcher-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lynx-launcher-ws-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lynx-launcher-ws-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 6px;
+  background: var(--lynx-card);
+  border: 1px solid var(--lynx-border);
+  font-size: 0.78rem;
+}
+
+.lynx-launcher-ws-list strong {
+  color: var(--lynx-text);
+  font-weight: 500;
+}
+
+.lynx-launcher-ws-list span {
+  color: var(--lynx-muted);
+  font-size: 0.72rem;
+}
+
+.lynx-launcher-ws-list-add,
+.lynx-launcher-ws-list-cta {
+  justify-content: center;
+  color: var(--lynx-accent-soft) !important;
+  border-style: dashed !important;
+  background: transparent !important;
+}
+
+.lynx-launcher-tag-ok {
+  color: var(--lynx-green) !important;
+  font-size: 0.68rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lynx-launcher-ws-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  min-height: 108px;
+}
+
+.lynx-launcher-chat-in,
+.lynx-launcher-chat-out {
+  max-width: 88%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.lynx-launcher-chat-in {
+  align-self: flex-start;
+  background: var(--lynx-card);
+  border: 1px solid var(--lynx-border);
+  color: var(--lynx-muted);
+}
+
+.lynx-launcher-chat-out {
+  align-self: flex-end;
+  background: var(--lynx-accent-dim);
+  border: 1px solid var(--lynx-accent-border);
+  color: var(--lynx-text);
+}
+
+.lynx-launcher-ws-build {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.lynx-launcher-ws-build span {
+  padding: 0.5rem 0.4rem;
+  text-align: center;
+  font-size: 0.72rem;
+  border-radius: 6px;
+  background: var(--lynx-card);
+  border: 1px solid var(--lynx-border);
+  color: var(--lynx-muted);
+}
+
+.lynx-launcher-ws-build-active {
+  color: var(--lynx-accent-soft) !important;
+  border-color: var(--lynx-accent-border) !important;
+  background: var(--lynx-accent-dim) !important;
 }
 
 /* Лента разделов */

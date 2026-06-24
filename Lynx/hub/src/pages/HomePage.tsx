@@ -27,8 +27,8 @@ export function HomePage() {
             Лаунчер с <em>движком</em>, чатом и сборкой
           </h1>
           <p className="lynx-hero-lead">
-            Lynx Engine <strong>{recommended}</strong> — отдельное окно Play, Install Hub с CDN, облачные проекты.
-            Launcher для Windows и Android: проекты, редактор сцен, чат, ядро 2D и экспорт игр.
+            Lynx Engine <strong>{recommended}</strong> — обновления и пакеты ядра с Hub. Один Launcher на Windows и
+            Android: проекты, редактор сцен, мессенджер и сборка игр — переключайте разделы в окне справа.
           </p>
           <div className="lynx-hero-btns">
             <Link to="/download" className="lynx-app-cta lynx-cta-lg">
