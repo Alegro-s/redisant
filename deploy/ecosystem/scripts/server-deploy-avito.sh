@@ -9,7 +9,16 @@ AVITO_DIR="${AVITO_DIR:-$PO_ROOT/avito-messenger}"
 AVITO_ENV="${AVITO_ENV:-/opt/waypoint/avito.env}"
 
 [[ $EUID -eq 0 ]] || { echo "Run: sudo bash $0"; exit 1; }
-[[ -d "$AVITO_DIR" ]] || { echo "Missing $AVITO_DIR — git pull first"; exit 1; }
+[[ -d "$PO_ROOT/.git" ]] || { echo "Missing $PO_ROOT"; exit 1; }
+
+echo "==> Git pull"
+git -C "$PO_ROOT" fetch origin
+git -C "$PO_ROOT" checkout -f main
+git -C "$PO_ROOT" pull --ff-only origin main || git -C "$PO_ROOT" reset --hard origin/main
+echo "    HEAD: $(git -C "$PO_ROOT" rev-parse --short HEAD)"
+chmod +x "$ECO/scripts/"*.sh 2>/dev/null || true
+
+[[ -d "$AVITO_DIR" ]] || { echo "Missing $AVITO_DIR after pull"; exit 1; }
 
 if [[ ! -f "$AVITO_ENV" ]]; then
   if [[ -f "$ECO/avito.env.example" ]]; then
