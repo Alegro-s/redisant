@@ -243,7 +243,7 @@ async function refresh(silent = false) {
     if (firstLoad) {
       hideLoader();
       if (!config.adminKey) {
-        toast("Откройте панель с ключом: /admin/?key=ВАШ_КЛЮЧ");
+        toast(`Откройте панель с ключом: ${config.adminEntryHint}`);
         logoutAdmin();
         return;
       }

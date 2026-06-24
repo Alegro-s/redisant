@@ -3,7 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <base href="/admin/" />
+  <script>
+    (function () {
+      var path = window.location.pathname || "";
+      var i = path.indexOf("/admin");
+      window.NT_ADMIN_BASE = i >= 0 ? path.slice(0, i + 6) + "/" : "/admin/";
+      var prefix = window.NT_ADMIN_BASE.replace(/\/admin\/$/, "");
+      var h = window.location.host;
+      var p = window.location.protocol;
+      if (h && p && p !== "file:") {
+        window.NT_API_BASE = (p + "//" + h + prefix).replace(/\/$/, "");
+      }
+      var b = document.createElement("base");
+      b.href = window.NT_ADMIN_BASE;
+      document.head.appendChild(b);
+    })();
+  </script>
   <title>Neural Trust</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -29,10 +44,8 @@
       }
       if (q.get("api")) {
         window.NT_API_URL = q.get("api").replace(/\/$/, "");
-      } else {
-        var h = window.location.host;
-        var p = window.location.protocol;
-        if (h && p && p !== "file:") window.NT_API_URL = p + "//" + h;
+      } else if (window.NT_API_BASE) {
+        window.NT_API_URL = window.NT_API_BASE;
       }
     })();
   </script>

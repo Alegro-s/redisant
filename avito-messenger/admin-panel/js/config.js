@@ -1,3 +1,5 @@
+import { adminEntryHint, resolveApiBase } from "./core/public-path.js";
+
 function resolveApiUrl() {
   if (typeof window === "undefined") return "";
   if (window.NT_API_URL) return String(window.NT_API_URL).replace(/\/$/, "");
@@ -6,12 +8,7 @@ function resolveApiUrl() {
   const fromQuery = params.get("api");
   if (fromQuery) return fromQuery.replace(/\/$/, "");
 
-  const host = window.location.host;
-  const proto = window.location.protocol;
-  if (host && proto && proto !== "file:") {
-    return `${proto}//${host}`.replace(/\/$/, "");
-  }
-  return "";
+  return resolveApiBase();
 }
 
 function resolveAdminKey() {
@@ -62,6 +59,9 @@ export const config = {
   },
   get sessionToken() {
     return getSessionToken();
+  },
+  get adminEntryHint() {
+    return adminEntryHint();
   },
   pollMs: 20_000,
 };

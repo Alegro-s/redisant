@@ -1,7 +1,13 @@
 (function () {
   function apiUrl() {
-    var u = window.NT_API_URL || window.location.origin;
-    return String(u).replace(/\/$/, "");
+    if (window.NT_API_URL) return String(window.NT_API_URL).replace(/\/$/, "");
+    if (window.NT_API_BASE) return String(window.NT_API_BASE).replace(/\/$/, "");
+    return String(window.location.origin).replace(/\/$/, "");
+  }
+
+  function adminEntryUrl() {
+    var base = window.NT_ADMIN_BASE || "/admin/";
+    return window.location.origin + base.replace(/\/$/, "") + "/?key=ВАШ_КЛЮЧ";
   }
 
   function getKey() {
@@ -26,7 +32,7 @@
     document.documentElement.classList.add(key ? "nt-has-key" : "nt-no-key");
     if (!key) {
       var sample = document.getElementById("login-no-key-url");
-      if (sample) sample.textContent = window.location.origin + "/admin/?key=ВАШ_КЛЮЧ";
+      if (sample) sample.textContent = adminEntryUrl();
     }
     return key;
   }
@@ -124,7 +130,7 @@
     var key = getKey();
     if (!key) {
       applyKeyUi();
-      showError("Откройте /admin/?key=ВАШ_КЛЮЧ один раз");
+      showError("Откройте " + adminEntryUrl().replace(window.location.origin, "") + " один раз");
       return;
     }
     clearError();
@@ -139,7 +145,7 @@
         if (!res.ok) {
           return res.json().catch(function () { return {}; }).then(function (err) {
             var msg = err.detail || "Не удалось создать QR";
-            if (res.status === 401) msg = "Неверный ключ — откройте /admin/?key=ПРАВИЛЬНЫЙ_КЛЮЧ";
+            if (res.status === 401) msg = "Неверный ключ — откройте " + adminEntryUrl().replace(window.location.origin, "").replace("ВАШ_КЛЮЧ", "ПРАВИЛЬНЫЙ_КЛЮЧ");
             throw new Error(msg);
           });
         }
@@ -183,7 +189,7 @@
     var key = getKey();
     if (!key) {
       applyKeyUi();
-      showError("Откройте /admin/?key=ВАШ_КЛЮЧ один раз");
+      showError("Откройте " + adminEntryUrl().replace(window.location.origin, "") + " один раз");
       return;
     }
     clearError();
@@ -205,7 +211,7 @@
             if (res.status === 401) {
               msg = err.detail === "Неверный логин или пароль"
                 ? "Неверный логин или пароль (root / root)"
-                : "Неверный ключ — откройте /admin/?key=ПРАВИЛЬНЫЙ_КЛЮЧ";
+                : "Неверный ключ — откройте " + adminEntryUrl().replace(window.location.origin, "").replace("ВАШ_КЛЮЧ", "ПРАВИЛЬНЫЙ_КЛЮЧ");
             }
             throw new Error(msg);
           });
