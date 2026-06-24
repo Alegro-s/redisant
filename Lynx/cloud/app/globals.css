@@ -1247,3 +1247,134 @@ body.lynx-cloud-site .cloud-apple-values p,
 body.lynx-cloud-site .cloud-apple-cta p {
   color: #6e6e73 !important;
 }
+
+/* Lynx ops shell (cabinet + admin) */
+.lynx-ops-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 120px);
+  gap: 0;
+}
+
+@media (max-width: 800px) {
+  .lynx-ops-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lynx-ops-sidebar {
+  padding: 1.5rem 1.25rem;
+  border-right: 1px solid var(--lynx-border);
+  background: #fbfbfd;
+}
+
+.lynx-ops-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 1.25rem 0;
+}
+
+.lynx-ops-sidebar nav a,
+.lynx-ops-sidebar nav button {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--lynx-body);
+  font-weight: 500;
+}
+
+.lynx-ops-sidebar nav a.is-active {
+  background: rgba(26, 115, 232, 0.12);
+  color: var(--lynx-accent);
+}
+
+.lynx-ops-brand {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--lynx-text);
+}
+
+.lynx-ops-user {
+  font-size: 0.85rem;
+  color: var(--lynx-muted);
+  margin: 0.35rem 0 0;
+  word-break: break-all;
+}
+
+.lynx-ops-link {
+  display: block;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.lynx-ops-signout {
+  margin-top: 1rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--lynx-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.lynx-ops-main {
+  padding: 1.75rem clamp(1rem, 3vw, 2.5rem) 3rem;
+}
+
+.lynx-ops-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.lynx-ops-kpi {
+  background: var(--lynx-card);
+  border: 1px solid var(--lynx-border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.lynx-ops-kpi strong {
+  display: block;
+  font-size: 1.5rem;
+  color: var(--lynx-text);
+}
+
+.lynx-ops-kpi span {
+  font-size: 0.8rem;
+  color: var(--lynx-muted);
+}
+
+.lynx-ops-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 80px;
+  margin: 1rem 0;
+}
+
+.lynx-ops-bar {
+  flex: 1;
+  background: rgba(26, 115, 232, 0.35);
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+}
+
+.lynx-data-table {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+.lynx-data-table li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #e8e8ed;
+  font-size: 0.9rem;
+}

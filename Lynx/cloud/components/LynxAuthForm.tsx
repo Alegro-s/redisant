@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LYNX_CABINET_URL, LYNX_HUB_URL } from '@/lib/links';
+import { fetchLynxProfile, isLynxOps } from '@/lib/adminClient';
 import { resolveLynxAuthBase } from '@/lib/authBase';
 
 type Props = { initialRegister?: boolean; onSuccess?: () => void };
@@ -46,7 +47,12 @@ export function LynxAuthForm({ initialRegister = false, onSuccess }: Props) {
         if (onSuccess) {
           onSuccess();
         } else {
-          router.push('/cabinet/dashboard');
+          const profile = await fetchLynxProfile();
+          if (profile && isLynxOps(profile) && window.location.pathname.startsWith('/admin')) {
+            router.push('/admin/engine');
+          } else {
+            router.push('/cabinet/dashboard');
+          }
         }
         return;
       }

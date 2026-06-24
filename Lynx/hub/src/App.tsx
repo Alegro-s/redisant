@@ -12,6 +12,7 @@ import { SignInPage } from './pages/SignInPage';
 import { LegalPage } from './pages/LegalPage';
 import { AdminPage } from './pages/AdminPage';
 import { AdminGate } from './components/AdminGate';
+import { AccountPage } from './pages/AccountPage';
 function GamingRoute({ children }: { children: React.ReactNode }) {
   return <GamingLayout>{children}</GamingLayout>;
 }
@@ -104,6 +105,14 @@ export function App() {
         element={
           <GamingRoute>
             <SignInPage />
+          </GamingRoute>
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <GamingRoute>
+            <AccountPage />
           </GamingRoute>
         }
       />

@@ -1,9 +1,11 @@
 import { FormEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LYNX_CABINET_URL } from '../config/links';
+import { fetchLynxProfile, isLynxOps } from '../lib/lynxAuth';
 import { resolveLynxAuthBase } from '../utils/authBase';
 
 export function SignInPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -36,7 +38,12 @@ export function SignInPage() {
       if (!data.token) throw new Error('Нет токена');
       localStorage.setItem('lynx_auth_token', data.token);
       localStorage.setItem('lynx_auth_login', email.trim());
-      window.location.href = `${LYNX_CABINET_URL.replace(/\/$/, '')}/dashboard`;
+      const profile = await fetchLynxProfile();
+      if (profile && isLynxOps(profile)) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/account', { replace: true });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка');
     } finally {

@@ -220,6 +220,7 @@ mod agent_integration;
 mod engine_download;
 mod arcade;
 mod hub_public;
+mod lynx_storage;
 mod scene_collab_crdt;
 mod scene_ws;
 mod studio_ws;

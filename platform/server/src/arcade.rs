@@ -7,10 +7,10 @@ use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use uuid::Uuid;
 
-use crate::{get_user_id_from_token, ErrorResponse};
+use crate::{get_user_id_from_token, AppState, ErrorResponse};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ArcadeCartMeta {
@@ -113,15 +113,6 @@ fn hub_admin_ok(req: &HttpRequest) -> bool {
     got == expected
 }
 
-fn bearer_user(req: &HttpRequest) -> Option<uuid::Uuid> {
-    let jwt = std::env::var("JWT_SECRET").ok()?;
-    get_user_id_from_token(req, &jwt)
-}
-
-fn can_upload(req: &HttpRequest) -> bool {
-    hub_admin_ok(req) || bearer_user(req).is_some()
-}
-
 pub async fn get_catalog() -> impl Responder {
     match load_catalog() {
         Ok(cat) => HttpResponse::Ok().json(ArcadeCatalogResponse {
@@ -140,8 +131,23 @@ pub async fn get_catalog() -> impl Responder {
     }
 }
 
-pub async fn upload_cart(req: HttpRequest, mut payload: Multipart) -> impl Responder {
-    if !can_upload(&req) {
+pub async fn upload_cart(
+    state: web::Data<AppState>,
+    req: HttpRequest,
+    mut payload: Multipart,
+) -> impl Responder {
+    let allowed = if hub_admin_ok(&req) {
+        true
+    } else if let Ok(jwt) = std::env::var("JWT_SECRET") {
+        if let Some(uid) = get_user_id_from_token(&req, &jwt) {
+            crate::authz::is_lynx_ops(&state.pool, uid).await
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+    if !allowed {
         return HttpResponse::Unauthorized().json(ErrorResponse {
             error: "Authorization required".into(),
         });
@@ -283,11 +289,19 @@ pub async fn upload_cart(req: HttpRequest, mut payload: Multipart) -> impl Respo
     })
 }
 
-pub async fn download_cart(path: web::Path<String>) -> impl Responder {
+pub async fn download_cart(
+    state: web::Data<AppState>,
+    req: HttpRequest,
+    path: web::Path<String>,
+) -> impl Responder {
     let id = path.into_inner();
     if id.contains("..") || id.contains('/') {
         return HttpResponse::BadRequest().finish();
     }
+    let user_id = std::env::var("JWT_SECRET")
+        .ok()
+        .and_then(|jwt| get_user_id_from_token(&req, &jwt));
+    crate::nexus_cloud::record_asset_download(&state.pool, "arcade_cart", &id, user_id).await;
     let file_path = carts_dir().join(format!("{id}.lynxcart"));
     match fs::read(&file_path) {
         Ok(bytes) => HttpResponse::Ok()

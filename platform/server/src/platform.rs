@@ -24,7 +24,7 @@ async fn auth_uid(req: &HttpRequest) -> Result<Uuid, HttpResponse> {
     })
 }
 
-async fn ensure_default_ingest_key(pool: &sqlx::PgPool, user_id: Uuid) -> Option<String> {
+pub(crate) async fn ensure_default_ingest_key(pool: &sqlx::PgPool, user_id: Uuid) -> Option<String> {
     let existing: Option<String> = sqlx::query_scalar(
         "SELECT key FROM api_keys WHERE user_id = $1 AND name = 'default' ORDER BY created_at ASC LIMIT 1",
     )

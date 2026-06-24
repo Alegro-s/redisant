@@ -257,6 +257,18 @@ macro_rules! po_lynx_routes {
             .route("/artifacts/manifest/{slug}", web::get().to(artifact_channels::manifest_by_slug))
             .route("/admin/engine/policy", web::get().to(engine_releases::admin_get_policy))
             .route("/admin/engine/policy", web::put().to(engine_releases::admin_put_policy))
+            .route(
+                "/admin/engine/artifacts",
+                web::post().to(lynx_storage::admin_register_engine_artifact),
+            )
+            .route(
+                "/admin/storage/presign",
+                web::post().to(lynx_storage::admin_presign),
+            )
+            .route(
+                "/admin/storage/upload",
+                web::post().to(lynx_storage::admin_upload_multipart),
+            )
             .route("/profile", web::get().to(get_profile))
             .route("/profile", web::put().to(update_profile))
             .route("/profile/avatar", web::post().to(upload_profile_avatar))
@@ -370,6 +382,18 @@ macro_rules! po_lynx_routes {
                 web::get().to(nexus_cloud_builds::list_project_builds),
             )
             .route("/me/lynx-cloud/builds", web::get().to(nexus_cloud_builds::list_my_builds))
+            .route(
+                "/me/lynx-cloud/overview",
+                web::get().to(nexus_cloud::get_overview),
+            )
+            .route(
+                "/me/lynx-cloud/analytics",
+                web::get().to(nexus_cloud::get_analytics),
+            )
+            .route(
+                "/me/lynx-cloud/telemetry",
+                web::post().to(nexus_cloud::post_telemetry),
+            )
             .route(
                 "/me/nexus-cloud/projects",
                 web::get().to(nexus_cloud::list_projects),

@@ -2,14 +2,24 @@ const API_BASE = (import.meta.env.VITE_LYNX_API_BASE ?? '/lynx').replace(/\/$/, 
 
 const ADMIN_TOKEN = import.meta.env.VITE_HUB_ADMIN_TOKEN ?? '';
 
-function adminHeaders(): HeadersInit {
+function authHeaders(): HeadersInit {
   const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  const bearer = localStorage.getItem('lynx_auth_token');
+  if (bearer) h.Authorization = `Bearer ${bearer}`;
+  if (ADMIN_TOKEN) h['X-Lynx-Hub-Admin-Token'] = ADMIN_TOKEN;
+  return h;
+}
+
+function uploadHeaders(): HeadersInit {
+  const h: Record<string, string> = {};
+  const bearer = localStorage.getItem('lynx_auth_token');
+  if (bearer) h.Authorization = `Bearer ${bearer}`;
   if (ADMIN_TOKEN) h['X-Lynx-Hub-Admin-Token'] = ADMIN_TOKEN;
   return h;
 }
 
 export function hubApiConfigured(): boolean {
-  return Boolean(ADMIN_TOKEN);
+  return Boolean(ADMIN_TOKEN) || Boolean(localStorage.getItem('lynx_auth_token'));
 }
 
 export async function fetchHubContentFromApi(): Promise<import('./hubContent').HubContent | null> {
@@ -23,10 +33,10 @@ export async function fetchHubContentFromApi(): Promise<import('./hubContent').H
 }
 
 export async function saveHubContentToApi(content: import('./hubContent').HubContent): Promise<boolean> {
-  if (!ADMIN_TOKEN) return false;
+  if (!hubApiConfigured()) return false;
   const res = await fetch(`${API_BASE}/v1/hub/content`, {
     method: 'PUT',
-    headers: adminHeaders(),
+    headers: authHeaders(),
     body: JSON.stringify(content),
   });
   return res.ok || res.status === 204;
@@ -44,7 +54,7 @@ export async function fetchMarketplaceCatalogFromApi(): Promise<string | null> {
 }
 
 export async function saveMarketplaceCatalogToApi(jsonText: string): Promise<boolean> {
-  if (!ADMIN_TOKEN) return false;
+  if (!hubApiConfigured()) return false;
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
@@ -53,7 +63,7 @@ export async function saveMarketplaceCatalogToApi(jsonText: string): Promise<boo
   }
   const res = await fetch(`${API_BASE}/v1/hub/marketplace-catalog`, {
     method: 'PUT',
-    headers: adminHeaders(),
+    headers: authHeaders(),
     body: JSON.stringify(parsed),
   });
   return res.ok || res.status === 204;
@@ -71,8 +81,8 @@ export async function uploadArcadeCart(file: File, meta: {
   tags?: string;
   description?: string;
 }): Promise<ArcadeUploadResult> {
-  if (!ADMIN_TOKEN) {
-    return { ok: false, message: 'VITE_HUB_ADMIN_TOKEN не задан' };
+  if (!hubApiConfigured()) {
+    return { ok: false, message: 'Войдите как NEXUS или задайте VITE_HUB_ADMIN_TOKEN' };
   }
   const form = new FormData();
   form.append('cart', file);
@@ -84,7 +94,7 @@ export async function uploadArcadeCart(file: File, meta: {
 
   const res = await fetch(`${API_BASE}/v1/arcade/carts`, {
     method: 'POST',
-    headers: { 'X-Lynx-Hub-Admin-Token': ADMIN_TOKEN },
+    headers: uploadHeaders(),
     body: form,
   });
   const data = await res.json().catch(() => ({}));

@@ -74,3 +74,53 @@ GET  /v1/marketplace/items/{id}/download (Bearer)
 Launcher: при авторизации — Cloud API; иначе bundled `assets/marketplace/default_catalog.json`.
 
 См. [CLOUD_API_WAVE8.md](CLOUD_API_WAVE8.md).
+
+## Кабинеты после входа (2026-06)
+
+| Сайт | URL после login | Назначение |
+|------|-----------------|------------|
+| **Lynx Hub** | `/account` (обычный пользователь) или `/admin` (NEXUS) | Маркетплейс, загрузки, ссылка на Messenger в Launcher |
+| **Lynx Cloud** | `/cabinet/dashboard` | Проекты, сборки, аналитика, доход, ключи |
+| **Lynx Cloud Ops** | `/admin` | Engine, S3-загрузки, все проекты (только NEXUS) |
+
+Один аккаунт (`lynx_auth_token` в localStorage **на каждом домене отдельно**). Hub не редиректит на Cloud после входа.
+
+### Роль NEXUS / ops
+
+- В БД: `users.role = 'nexus'`
+- Env fallback: `LYNX_OPS_EMAILS=rozalityai@gmail.com` (через запятую)
+- Миграция `20260623120000_lynx_analytics_storage.sql` повышает `rozalityai@gmail.com` до nexus
+
+### API кабинета (lynx-api)
+
+```
+GET  /me/lynx-cloud/overview     — KPI: проекты, сборки, скачивания, сессии, баланс
+GET  /me/lynx-cloud/analytics    — ряд за 30 дней
+POST /me/lynx-cloud/telemetry    — { project_id, duration_sec }
+POST /admin/storage/presign      — S3 presigned PUT (NEXUS)
+POST /admin/storage/upload       — multipart fallback
+POST /admin/engine/artifacts     — merge manifest после загрузки .lynxengine
+```
+
+### S3 (twcstorage)
+
+Env на lynx-api:
+
+```
+LYNX_S3_ENDPOINT=https://s3.twcstorage.ru
+LYNX_S3_BUCKET=bc39a46d-ee3d-4707-9e3f-9529afb602da
+LYNX_S3_ACCESS_KEY=...
+LYNX_S3_SECRET_KEY=...
+LYNX_S3_PUBLIC_BASE=https://lynx-hub.ru/dist/downloads
+LYNX_ENGINE_MANIFEST_S3_KEY=deploy/sites/latest/dist/downloads/engine-manifest.json
+```
+
+### Деплой на VPS
+
+```bash
+cd /opt/waypoint/redik && git pull
+sudo bash deploy/ecosystem/scripts/server-repair-apis.sh
+sudo bash deploy/ecosystem/scripts/server-restart-lynx-cloud.sh
+# Hub: пересборка статики с VITE_LYNX_API_BASE
+```
+

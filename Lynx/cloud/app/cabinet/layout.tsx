@@ -1,10 +1,7 @@
-import type { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Кабинет — Lynx Cloud',
-  description: 'Личный кабинет Lynx Cloud: проекты, сборки и ключи доступа.',
-};
+import { CabinetShell } from '@/components/CabinetShell';
 
 export default function CabinetLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <CabinetShell>{children}</CabinetShell>;
 }

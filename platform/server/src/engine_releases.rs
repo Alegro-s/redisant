@@ -18,6 +18,8 @@ pub struct EngineRelease {
     #[serde(default)]
     pub notes: Option<String>,
     #[serde(default)]
+    pub channel: Option<String>,
+    #[serde(default)]
     pub artifacts: std::collections::HashMap<String, EngineArtifact>,
 }
 
@@ -145,7 +147,7 @@ pub async fn public_manifest(state: web::Data<AppState>) -> impl Responder {
 }
 
 pub async fn admin_get_policy(state: web::Data<AppState>, req: HttpRequest) -> impl Responder {
-    if let Err(resp) = authz::require_staff(&state.pool, &req).await {
+    if let Err(resp) = authz::require_lynx_ops(&state.pool, &req).await {
         return resp;
     }
     let (manifest_url, recommended_version, updated_at) = load_policy(&state.pool).await;
@@ -161,7 +163,7 @@ pub async fn admin_put_policy(
     req: HttpRequest,
     body: web::Json<EnginePolicyUpdate>,
 ) -> impl Responder {
-    if let Err(resp) = authz::require_nexus(&state.pool, &req).await {
+    if let Err(resp) = authz::require_lynx_ops(&state.pool, &req).await {
         return resp;
     }
     let body = body.into_inner();
@@ -191,4 +193,8 @@ pub async fn admin_put_policy(
         recommended_version,
         updated_at,
     })
+}
+
+pub async fn load_manifest_for_admin(pool: &PgPool) -> EngineManifest {
+    build_manifest(pool).await
 }

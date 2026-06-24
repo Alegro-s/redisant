@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { LYNX_CLOUD_SITE_URL } from '../config/links';
 import '../styles/lynx-app.css';
 import '../styles/lynx-hub-sell.css';
+import '../styles/lynx-ops.css';
 
 const SIGN_IN_PATH = '/sign-in';
 

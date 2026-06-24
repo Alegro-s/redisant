@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-use crate::ErrorResponse;
+use crate::{authz, get_user_id_from_token, AppState, ErrorResponse};
 
 #[derive(Clone, Serialize, Deserialize, Default)]
 pub struct HubNewsPost {
@@ -57,6 +57,18 @@ fn hub_admin_ok(req: &HttpRequest) -> bool {
     got == expected
 }
 
+async fn hub_admin_or_ops(pool: &sqlx::PgPool, req: &HttpRequest) -> bool {
+    if hub_admin_ok(req) {
+        return true;
+    }
+    let jwt = std::env::var("JWT_SECRET").ok();
+    let Some(secret) = jwt else { return false };
+    let Some(uid) = get_user_id_from_token(req, &secret) else {
+        return false;
+    };
+    authz::is_lynx_ops(pool, uid).await
+}
+
 pub fn load_hub_content_disk() -> HubContent {
     let path = hub_content_path();
     if let Ok(raw) = fs::read_to_string(&path) {
@@ -89,8 +101,12 @@ pub async fn get_hub_content() -> impl Responder {
     HttpResponse::Ok().json(load_hub_content_disk())
 }
 
-pub async fn put_hub_content(req: HttpRequest, body: web::Json<HubContent>) -> impl Responder {
-    if !hub_admin_ok(&req) {
+pub async fn put_hub_content(
+    state: web::Data<AppState>,
+    req: HttpRequest,
+    body: web::Json<HubContent>,
+) -> impl Responder {
+    if !hub_admin_or_ops(&state.pool, &req).await {
         return HttpResponse::Forbidden().json(ErrorResponse {
             error: "Invalid admin token".into(),
         });
@@ -121,10 +137,11 @@ pub async fn get_marketplace_catalog() -> impl Responder {
 }
 
 pub async fn put_marketplace_catalog(
+    state: web::Data<AppState>,
     req: HttpRequest,
     body: web::Json<serde_json::Value>,
 ) -> impl Responder {
-    if !hub_admin_ok(&req) {
+    if !hub_admin_or_ops(&state.pool, &req).await {
         return HttpResponse::Forbidden().json(ErrorResponse {
             error: "Invalid admin token".into(),
         });
