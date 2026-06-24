@@ -1,0 +1,139 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: aishield-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aishield
+      POSTGRES_PASSWORD: aishield_dev
+      POSTGRES_DB: aishield
+    ports:
+      - "5433:5432"
+    volumes:
+      - aishield_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aishield -d aishield"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: aishield-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      MATTERMOST_URL: http://mattermost:8065
+      MATTERMOST_ALERT_CHANNEL_ID: 63tpra71f784i8we9114od6sbe
+      MATTERMOST_BOT_TOKEN: ${MATTERMOST_BOT_TOKEN:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALERT_CHAT_ID: ${TELEGRAM_ALERT_CHAT_ID:-}
+      TELEGRAM_ALERTS_ENABLED: ${TELEGRAM_ALERTS_ENABLED:-true}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      LM_STUDIO_URL: ${LM_STUDIO_URL:-}
+      LM_STUDIO_MODEL: ${LM_STUDIO_MODEL:-}
+      LM_STUDIO_API_TOKEN: ${LM_STUDIO_API_TOKEN:-}
+      LM_STUDIO_TIMEOUT: ${LM_STUDIO_TIMEOUT:-45}
+      LM_STUDIO_MIN_RISK: ${LM_STUDIO_MIN_RISK:-0.4}
+      WHISPER_URL: ${WHISPER_URL:-}
+      WHISPER_API_TOKEN: ${WHISPER_API_TOKEN:-}
+      WHISPER_TIMEOUT: ${WHISPER_TIMEOUT:-60}
+      MATTERMOST_DM_ALERTS: ${MATTERMOST_DM_ALERTS:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./admin-panel:/admin-panel
+      - ./data/profiles.json:/app/data/profiles.json:ro
+      - ./data/training:/app/data/training
+      - ./backend/data/profiles.json:/app/data/profiles.json:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      db:
+        condition: service_healthy
+      mattermost:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.scripts.provision_mattermost_users &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  mattermost-db:
+    image: postgres:16-alpine
+    container_name: mattermost-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mmuser
+      POSTGRES_PASSWORD: mmuser_password
+      POSTGRES_DB: mattermost
+    volumes:
+      - mattermost_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mmuser -d mattermost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mattermost:
+    image: mattermost/mattermost-team-edition:9.11
+    container_name: mattermost
+    restart: unless-stopped
+    depends_on:
+      mattermost-db:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 1000
+    read_only: false
+    tmpfs:
+      - /tmp
+    ports:
+      - "8065:8065"
+    volumes:
+      - mattermost_data:/mattermost/data
+      - mattermost_logs:/mattermost/logs
+      - mattermost_config:/mattermost/config
+      - mattermost_plugins:/mattermost/plugins
+      - mattermost_client_plugins:/mattermost/client/plugins
+      - ./scripts/provision_mattermost_users.sh:/scripts/provision_mattermost_users.sh:ro
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:mmuser_password@mattermost-db:5432/mattermost?sslmode=disable&connect_timeout=10
+      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+      MM_SERVICESETTINGS_ENABLELOCALMODE: "true"
+      MM_SERVICESETTINGS_ENABLEUSERACCESSTOKENS: "true"
+      MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS: "api host.docker.internal localhost 127.0.0.1"
+      MM_TEAMSETTINGS_ENABLEUSERCREATION: "false"
+      MM_TEAMSETTINGS_ENABLEOPENSERVER: "false"
+      MM_TEAMSETTINGS_ENABLECUSTOMBRAND: "false"
+      MM_FILESETTINGS_DRIVERNAME: local
+      MM_EMAILSETTINGS_SENDEMAILNOTIFICATIONS: "false"
+
+  ai-core:
+    profiles: ["ai"]
+    build:
+      context: ./ai-core
+      dockerfile: Dockerfile
+    container_name: aishield-ai-core
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ai-core/data:/app/data
+      - ./backend/data/profiles.json:/app/data/profiles.json
+
+volumes:
+  aishield_pgdata:
+  mattermost_pgdata:
+  mattermost_data:
+  mattermost_logs:
+  mattermost_config:
+  mattermost_plugins:
+  mattermost_client_plugins:

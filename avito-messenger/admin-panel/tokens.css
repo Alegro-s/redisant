@@ -1,0 +1,21 @@
+:root {
+  --md-primary: #1a73e8;
+  --md-primary-container: #d3e3fd;
+  --md-on-primary: #fff;
+  --md-surface: #f8f9fa;
+  --md-surface-container: #fff;
+  --md-surface-container-high: #f1f3f4;
+  --md-on-surface: #1f1f1f;
+  --md-on-surface-variant: #5f6368;
+  --md-outline: #dadce0;
+  --md-error: #d93025;
+  --md-warning: #f9ab00;
+  --md-success: #1e8e3e;
+
+  --rail-width: 256px;
+  --topbar-h: 64px;
+  --command-h: 120px;
+
+  --font: "Google Sans Flex", "Roboto", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", Consolas, monospace;
+}

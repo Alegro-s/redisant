@@ -1,0 +1,11 @@
+secrets/*
+!secrets/.gitkeep
+media/*
+!media/.gitkeep
+data/*
+!data/.gitkeep
+.env
+admin-panel/downloads/
+backend/data/training/
+secrets/*
+!secrets/.gitkeep

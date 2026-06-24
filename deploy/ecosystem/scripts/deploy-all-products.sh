@@ -6,6 +6,7 @@ PO_ROOT="${PO_ROOT:-/opt/waypoint/redik}"
 ECO="${ECO:-$PO_ROOT/deploy/ecosystem}"
 WITH_TSPUT="${WITH_TSPUT:-1}"
 WITH_POLI="${WITH_POLI:-0}"
+WITH_AVITO="${WITH_AVITO:-1}"
 
 [[ $EUID -eq 0 ]] || { echo "Run: sudo bash $0"; exit 1; }
 
@@ -33,6 +34,11 @@ if [[ "$WITH_POLI" == "1" ]] && [[ -f "$PO_ROOT/NGH/poli/deploy/server-update.sh
   bash "$PO_ROOT/NGH/poli/deploy/server-update.sh"
 fi
 
+if [[ "$WITH_AVITO" == "1" ]] && [[ -f "$PO_ROOT/avito-messenger/docker-compose.prod.yml" ]]; then
+  echo "==> YALGSI / AVITO hack messenger"
+  bash "$ECO/scripts/server-deploy-avito.sh"
+fi
+
 echo "==> Inventory"
 bash "$ECO/scripts/server-inventory.sh" "/tmp/lynx-deploy-inventory.md"
 
@@ -46,7 +52,7 @@ check https://lynx-cloud.ru/
 check https://api.lynx-cloud.ru/engine/manifest
 check https://metrika-waypoint.ru/
 check https://waypointclub.ru/
-check https://medical-accreditation.ru/ || true
+check https://waypointclub.ru/yalgsi/docs || check https://waypointclub.ru/yalgsi/admin || true
 
 if [[ "$FAIL" -ne 0 ]]; then
   echo "Some checks failed — see server-ensure-lynx-services.sh"

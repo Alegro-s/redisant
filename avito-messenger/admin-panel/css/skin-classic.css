@@ -1,0 +1,78 @@
+
+[data-skin="classic"] {
+  --nt-lime: #1a73e8;
+  --nt-lime-dim: #1557b0;
+  --nt-lime-glow: rgba(26, 115, 232, 0.2);
+  --nt-bg: #f8f9fa;
+  --nt-surface: #ffffff;
+  --nt-surface-2: #f1f3f4;
+  --nt-surface-elevated: #ffffff;
+  --nt-sidebar: #ffffff;
+  --nt-border: #dadce0;
+  --nt-text: #1f1f1f;
+  --nt-text-muted: #5f6368;
+  --nt-primary: #1a73e8;
+  --nt-primary-soft: #d3e3fd;
+  --nt-accent: #1a73e8;
+  --nt-accent-text: #ffffff;
+  --nt-shadow: none;
+  --nt-radius: 0;
+  --nt-radius-sm: 0;
+  --nt-radius-pill: 0;
+  --loader-bg: #e8f0fe;
+}
+
+[data-skin="classic"] .sidebar {
+  backdrop-filter: none;
+  background: var(--nt-sidebar);
+}
+
+[data-skin="classic"] .sidebar-logo,
+[data-skin="classic"] .btn-filled,
+[data-skin="classic"] .workspace-kpi--accent,
+[data-skin="classic"] .lead-card--high,
+[data-skin="classic"] .tag-pill--lime {
+  background: var(--nt-primary);
+  color: #fff;
+}
+
+[data-skin="classic"] .nav-item--active {
+  background: var(--nt-primary-soft);
+  color: #041e49;
+}
+
+[data-skin="classic"] .lead-card,
+[data-skin="classic"] .workspace-kpi,
+[data-skin="classic"] .card,
+[data-skin="classic"] .user-drawer__panel,
+[data-skin="classic"] .drawer-avatar,
+[data-skin="classic"] .user-card,
+[data-skin="classic"] .btn-icon,
+[data-skin="classic"] .btn-tonal,
+[data-skin="classic"] .meta-pill,
+[data-skin="classic"] .chip,
+[data-skin="classic"] .status-pill,
+[data-skin="classic"] .theme-modal__card,
+[data-skin="classic"] .login-card,
+[data-skin="classic"] .bottom-nav,
+[data-skin="classic"] .bottom-nav__item {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-skin="classic"] .sidebar--collapsed .nav-item--active {
+  border-radius: 0;
+}
+
+[data-skin="classic"] .mini-bar,
+[data-skin="classic"] .progress-fill {
+  background: var(--nt-primary);
+}
+
+[data-skin="classic"] .drawer-threat__bar span {
+  background: var(--nt-primary);
+}
+
+[data-skin="classic"] .threat-dots i.on {
+  background: var(--nt-primary);
+}

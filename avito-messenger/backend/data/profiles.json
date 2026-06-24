@@ -1,0 +1,78 @@
+{
+  "ceo": {
+    "avg_word_len": 4.2,
+    "exclamation_rate": 0.02,
+    "question_rate": 0.08,
+    "uppercase_rate": 0.02,
+    "polite_rate": 0.1,
+    "avg_sentence_len": 8,
+    "formality": 0.35,
+    "samples": ["ок", "сделаю", "перезвони", "гляну завтра", "давай на созвон в 15", "АК"]
+  },
+  "user2": {
+    "avg_word_len": 4.5,
+    "exclamation_rate": 0.1,
+    "question_rate": 0.12,
+    "uppercase_rate": 0.03,
+    "polite_rate": 0.2,
+    "avg_sentence_len": 11,
+    "formality": 0.4,
+    "samples": ["привет", "отправил файл", "когда дедлайн?", "созвон в 17 ок"]
+  },
+  "superadmin": {
+    "avg_word_len": 4.8,
+    "exclamation_rate": 0.05,
+    "question_rate": 0.1,
+    "uppercase_rate": 0.04,
+    "polite_rate": 0.25,
+    "avg_sentence_len": 12,
+    "formality": 0.5,
+    "samples": ["принято", "проверю логи", "алерт отправлен"]
+  },
+  "admin1": {
+    "avg_word_len": 5.0,
+    "exclamation_rate": 0.06,
+    "question_rate": 0.11,
+    "uppercase_rate": 0.03,
+    "polite_rate": 0.3,
+    "avg_sentence_len": 13,
+    "formality": 0.55,
+    "samples": ["согласовано", "нужен доступ", "посмотрите журнал"]
+  },
+  "scammer1": {
+    "avg_word_len": 6.8,
+    "exclamation_rate": 0.12,
+    "question_rate": 0.05,
+    "uppercase_rate": 0.01,
+    "polite_rate": 0.65,
+    "avg_sentence_len": 18,
+    "formality": 0.85,
+    "samples": [
+      "Уважаемый коллега, будьте добры срочно перевести средства.",
+      "Прошу конфиденциально перевести на указанный счёт до конца дня."
+    ]
+  },
+  "scammer2": {
+    "avg_word_len": 6.5,
+    "exclamation_rate": 0.1,
+    "question_rate": 0.04,
+    "uppercase_rate": 0.02,
+    "polite_rate": 0.6,
+    "avg_sentence_len": 16,
+    "formality": 0.8,
+    "samples": ["Добрый день, прошу оперативно согласовать перевод.", "Конфиденциально, только между нами."]
+  },
+  "scammer_ref": {
+    "avg_word_len": 6.8,
+    "exclamation_rate": 0.15,
+    "question_rate": 0.05,
+    "uppercase_rate": 0.01,
+    "polite_rate": 0.65,
+    "avg_sentence_len": 18,
+    "formality": 0.85,
+    "samples": [
+      "Уважаемый коллега, будьте добры срочно перевести средства.",
+      "Прошу конфиденциально перевести на указанный счёт до конца дня."
+    ]
+  }
+}

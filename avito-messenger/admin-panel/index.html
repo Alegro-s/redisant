@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark" data-skin="workspace" class="nt-no-key">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/admin/" />
+  <title>Neural Trust</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css?v=16" />
+  <link rel="stylesheet" href="css/base.css?v=16" />
+  <link rel="stylesheet" href="css/components.css?v=16" />
+  <link rel="stylesheet" href="css/skin-classic.css?v=16" />
+  <link rel="stylesheet" href="css/visual.css?v=16" />
+  <link rel="stylesheet" href="css/auth.css?v=16" />
+  <link rel="stylesheet" href="css/loader.css?v=16" />
+  <script>
+    (function () {
+      var q = new URLSearchParams(window.location.search);
+      var key = q.get("key") || q.get("adminKey");
+      if (!key) {
+        try { key = sessionStorage.getItem("nt_admin_key"); } catch (_) {}
+      }
+      document.documentElement.classList.remove("nt-no-key", "nt-has-key");
+      document.documentElement.classList.add(key ? "nt-has-key" : "nt-no-key");
+      if (key) {
+        try { sessionStorage.setItem("nt_admin_key", key); } catch (_) {}
+      }
+      if (q.get("api")) {
+        window.NT_API_URL = q.get("api").replace(/\/$/, "");
+      } else {
+        var h = window.location.host;
+        var p = window.location.protocol;
+        if (h && p && p !== "file:") window.NT_API_URL = p + "//" + h;
+      }
+    })();
+  </script>
+  <style>
+    html.nt-no-key #login-forms { display: none !important; }
+    html.nt-no-key #login-no-key { display: block !important; }
+    html.nt-has-key #login-no-key { display: none !important; }
+    html.nt-has-key #login-forms { display: block !important; }
+  </style>
+</head>
+<body>
+  <div class="sys-loader" id="sys-loader" aria-live="polite" aria-busy="false">
+    <div class="sys-loader__ring" aria-hidden="true"></div>
+    <div class="sys-loader__label" id="loader-label">Инициализация...</div>
+    <div class="sys-loader__track"><div class="sys-loader__fill" id="loader-fill"></div></div>
+    <div class="sys-loader__pct" id="loader-pct">0%</div>
+  </div>
+
+  <div class="login-gate" id="login-gate">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-logo">NT</div>
+        <div>
+          <h1>Neural Trust</h1>
+          <p>Панель управления защитой</p>
+        </div>
+      </div>
+      <div id="login-no-key" class="login-no-key">
+        <p>Добавьте ключ в адрес:</p>
+        <code id="login-no-key-url">/admin/?key=ВАШ_КЛЮЧ</code>
+      </div>
+      <div id="login-forms">
+        <div class="login-tabs">
+          <button type="button" class="login-tab login-tab--active" data-login-tab="password">Пароль</button>
+          <button type="button" class="login-tab" data-login-tab="qr">QR + отпечаток</button>
+        </div>
+        <p class="login-error" id="login-error" hidden></p>
+        <div data-login-panel="password">
+          <form id="login-form" class="login-form">
+            <label class="field">
+              <span class="field-label">Логин</span>
+              <input type="text" id="login-user" value="root" autocomplete="username" required />
+            </label>
+            <label class="field">
+              <span class="field-label">Пароль</span>
+              <input type="password" id="login-pass" autocomplete="current-password" required />
+            </label>
+            <button type="submit" class="btn-login">Войти</button>
+          </form>
+        </div>
+        <div data-login-panel="qr" hidden>
+          <p class="login-hint">Отсканируйте QR телефоном. На телефоне подтвердите вход отпечатком или Face ID.</p>
+          <div class="login-qr" id="login-qr-canvas"></div>
+          <p class="login-hint login-hint--small" id="login-qr-hint"></p>
+          <button type="button" class="btn-login btn-login--ghost" id="btn-qr-start">Обновить QR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="js/lib/qr-creator.min.js?v=10"></script>
+  <script src="js/auth/bootstrap.js?v=10"></script>
+
+  <div class="app app--locked" id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <span class="sidebar-logo">NT</span>
+        <div class="sidebar-brand-text">
+          <strong>Neural Trust</strong>
+          <span>SOC Workspace</span>
+        </div>
+        <button type="button" class="btn-icon" id="btn-sidebar-toggle" title="Свернуть меню">‹</button>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      <div class="sidebar-foot">
+        <div class="status-row" id="shell-status">
+          <span class="status-pill" id="conn-messenger"><i></i><span class="sidebar-foot-label">caht</span></span>
+          <span class="status-pill" id="conn-gateway"><i></i><span class="sidebar-foot-label">API</span></span>
+          <span class="status-pill" id="conn-core"><i></i><span class="sidebar-foot-label">Core</span></span>
+          <span class="status-pill" id="conn-db"><i></i><span class="sidebar-foot-label">DB</span></span>
+        </div>
+        <button type="button" class="btn-tonal btn-tonal--block" id="btn-theme">Оформление</button>
+        <button type="button" class="btn-text btn-text--block" id="btn-logout">Выход</button>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="workspace-header">
+        <div>
+          <h1 id="view-title">Обзор</h1>
+          <div class="workspace-header__meta" id="workspace-meta"></div>
+        </div>
+        <div class="workspace-header__meta">
+          <button type="button" class="btn-filled" id="btn-qa">Контроль</button>
+          <button type="button" class="btn-tonal" id="btn-refresh">Обновить</button>
+          <span class="shell-clock" id="clock"></span>
+        </div>
+      </header>
+      <div class="workspace-body">
+        <main class="viewport" id="viewport">
+          <div class="view view--active" id="view-overview" data-view="overview"></div>
+          <div class="view" id="view-ai-test" data-view="ai-test"></div>
+          <div class="view" id="view-shadow-mentor" data-view="shadow-mentor"></div>
+          <div class="view" id="view-users" data-view="users"></div>
+          <div class="view" id="view-alerts" data-view="alerts"></div>
+          <div class="view" id="view-journal" data-view="journal"></div>
+          <div class="view" id="view-notifications" data-view="notifications"></div>
+        </main>
+      </div>
+      <footer class="command-bar">
+        <form id="command-form" class="command-form" autocomplete="off">
+          <span class="command-prefix" aria-hidden="true">›</span>
+          <input type="text" id="command-input" spellcheck="false" autocomplete="off" aria-label="Командная строка" placeholder="обновить · алерты · help" />
+        </form>
+        <div class="command-log" id="command-log" aria-live="polite"></div>
+      </footer>
+    </div>
+
+    <nav class="bottom-nav" id="bottom-nav" aria-label="Навигация"></nav>
+  </div>
+
+  <div class="user-drawer" id="user-drawer" aria-hidden="true" inert>
+    <div class="user-drawer__backdrop" id="user-drawer-backdrop"></div>
+    <aside class="user-drawer__panel">
+      <div class="user-drawer__head">
+        <button type="button" class="btn-text" id="user-drawer-close">Закрыть</button>
+      </div>
+      <div class="user-drawer__body" id="user-drawer-body"></div>
+    </aside>
+  </div>
+
+  <div class="theme-modal" id="theme-modal" aria-hidden="true">
+    <div class="theme-modal__backdrop" id="theme-modal-backdrop"></div>
+    <div class="theme-modal__card">
+      <div class="theme-modal__head">
+        <h2>Оформление</h2>
+        <button type="button" class="btn-text" id="theme-modal-close">Закрыть</button>
+      </div>
+      <p class="muted">Классика — плоская бело-синяя. Workspace — лаймовые блоки как на макете.</p>
+      <div class="skin-grid" id="theme-skin-grid"></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+  <dialog class="modal modal--wide" id="modal-qa">
+    <div class="modal-inner">
+      <div class="modal-head">
+        <h2>Контроль системы</h2>
+        <button type="button" class="btn-text" id="qa-close">Закрыть</button>
+      </div>
+      <div id="qa-body"></div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="modal-block">
+    <form method="dialog" id="form-block" class="modal-inner">
+      <h2>Блокировка</h2>
+      <p class="modal-sub" id="modal-block-user"></p>
+      <label class="field">
+        <span class="field-label">Причина</span>
+        <input type="text" id="modal-block-reason" required />
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn-text" id="modal-cancel">Отмена</button>
+        <button type="submit" class="btn-filled btn-filled--danger">Заблокировать</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/app.js?v=16"></script>
+</body>
+</html>
