@@ -39,7 +39,16 @@ fi
 
 echo "==> Docker: YALGSI stack (API + Mattermost + Postgres)"
 cd "$AVITO_DIR"
-docker compose -f docker-compose.prod.yml --env-file "$AVITO_ENV" up -d --build
+COMPOSE=(docker compose -f docker-compose.prod.yml --env-file "$AVITO_ENV")
+"${COMPOSE[@]}" down 2>/dev/null || true
+# Orphan containers from a previous manual deploy (fixed container_name in compose)
+for name in aishield-db aishield-api mattermost mattermost-db; do
+  if docker inspect "$name" >/dev/null 2>&1; then
+    echo "    removing stale container $name"
+    docker rm -f "$name" >/dev/null
+  fi
+done
+"${COMPOSE[@]}" up -d --build
 
 echo "==> Wait API"
 for i in $(seq 1 90); do
