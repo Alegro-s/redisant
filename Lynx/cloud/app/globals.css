@@ -436,8 +436,8 @@ code {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(13, 17, 23, 0.94);
-  border-bottom: 2px solid var(--lynx-green);
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 2px solid var(--lynx-accent);
   backdrop-filter: blur(14px);
 }
 
@@ -1214,5 +1214,36 @@ body.cloud-light .shell.cloud-shell {
 
 .cloud-admin-ok {
   color: var(--lynx-green);
+}
+
+/* Светлая витрина — принудительно (старый next-server на VPS отдавал тёмный CSS) */
+html.cloud-light,
+html:has(body.lynx-cloud-site),
+body.lynx-cloud-site {
+  background: #ffffff !important;
+  color: #424245 !important;
+}
+
+body.lynx-cloud-site .shell.cloud-shell,
+body.lynx-cloud-site main.cloud-apple {
+  background: #ffffff !important;
+}
+
+body.lynx-cloud-site .cloud-apple-values article,
+body.lynx-cloud-site .cloud-apple-cta {
+  background: #f5f5f7 !important;
+  border: 1px solid #d2d2d7 !important;
+}
+
+body.lynx-cloud-site .cloud-apple-hero h1,
+body.lynx-cloud-site .cloud-apple-values h2,
+body.lynx-cloud-site .cloud-apple-cta h2 {
+  color: #1d1d1f !important;
+}
+
+body.lynx-cloud-site .cloud-intro-lead,
+body.lynx-cloud-site .cloud-apple-values p,
+body.lynx-cloud-site .cloud-apple-cta p {
+  color: #6e6e73 !important;
 }
 

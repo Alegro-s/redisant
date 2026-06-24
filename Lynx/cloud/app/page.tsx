@@ -13,8 +13,7 @@ export default function Home() {
             которое работает для вас.
           </h1>
           <p className="cloud-intro-lead">
-            Светлая витрина продукта. Проекты, сборки, статистика и продажи — только в{' '}
-            <strong>личном кабинете</strong> после входа.
+            Проекты, сборки и синхронизация с Lynx Launcher — в личном кабинете после входа.
           </p>
           <div className="cloud-intro-actions">
             <a className="cloud-btn-primary" href={LYNX_CABINET_URL}>
@@ -38,31 +37,16 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="cloud-apple-values">
-        <article>
-          <h2>Для автора игр</h2>
-          <p>Синхронизация с Lynx Launcher, хранение сцен и совместная работа — без дублирования на диске.</p>
-        </article>
-        <article>
-          <h2>Для команды</h2>
-          <p>Один профиль, роли и доступы. Рабочие экраны не дублируются на этой странице.</p>
-        </article>
-        <article>
-          <h2>Безопасность</h2>
-          <p>Данные в контуре вашего проекта. Управление ключами и политиками — в кабинете.</p>
-        </article>
-      </section>
-
       <section className="cloud-apple-cta">
-        <h2>Всё в личном кабинете</h2>
-        <p>Проекты, сборки, отзывы и аналитика открываются после авторизации.</p>
+        <h2>Проекты и сборки в одном кабинете</h2>
+        <p>Синхронизация с Launcher, ключи API и облачные build jobs.</p>
         <a className="cloud-btn-primary" href={LYNX_CABINET_URL}>
           Открыть личный кабинет
         </a>
       </section>
 
       <p className="cloud-intro-foot">
-        <Link href="/cabinet/sign-in">Для разработчиков →</Link>
+        <Link href="/cabinet/sign-in">Вход для разработчиков →</Link>
       </p>
     </main>
   );

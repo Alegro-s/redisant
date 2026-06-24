@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    <html lang="ru" className="cloud-light">
       <body className="lynx-cloud-site cloud-light">
         <CloudChrome>{children}</CloudChrome>
       </body>

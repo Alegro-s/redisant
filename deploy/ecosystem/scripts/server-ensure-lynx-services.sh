@@ -49,8 +49,10 @@ EOF
       rm -rf .next
       npm run build
     fi
-    pkill -f "next start.*3001" 2>/dev/null || true
-    sleep 1
+    pkill -f 'next-server' 2>/dev/null || true
+    pkill -f 'next start' 2>/dev/null || true
+    fuser -k 3001/tcp 2>/dev/null || true
+    sleep 2
     nohup npm run start -- -H 0.0.0.0 -p 3001 >>/var/log/lynx-cloud.log 2>&1 &
     sleep 2
   fi
