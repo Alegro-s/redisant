@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LYNX_CLOUD_SITE_URL } from '../config/links';
+import { useHubAuth } from '../context/HubAuthContext';
+import { getLynxAuthLogin } from '../lib/lynxAuth';
 import '../styles/lynx-app.css';
 import '../styles/lynx-hub-sell.css';
 import '../styles/lynx-ops.css';
@@ -13,8 +15,16 @@ const NAV = [
   { to: '/pricing', label: 'Подписки' },
 ];
 
+function userLabel(email: string, nickname: string): string {
+  if (nickname && nickname !== email) return nickname;
+  const local = email.split('@')[0];
+  return local || email;
+}
+
 export function GamingLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, loading, isAuthenticated, signOut } = useHubAuth();
 
   function isActive(item: { to: string; end?: boolean }) {
     if (item.end) return pathname === item.to;
@@ -22,6 +32,12 @@ export function GamingLayout({ children }: { children: ReactNode }) {
   }
 
   const onDocs = pathname.startsWith('/docs');
+  const onAccount = pathname.startsWith('/account');
+
+  function handleSignOut() {
+    signOut();
+    navigate('/sign-in', { replace: true });
+  }
 
   return (
     <div className="lynx-app">
@@ -51,9 +67,29 @@ export function GamingLayout({ children }: { children: ReactNode }) {
           <Link to="/docs" className={`lynx-app-cta-ghost lynx-nav-docs ${onDocs ? 'active' : ''}`}>
             Руководство
           </Link>
-          <Link to={SIGN_IN_PATH} className="lynx-app-cta-ghost">
-            Вход
-          </Link>
+          {!loading && isAuthenticated ? (
+            <>
+              <Link
+                to="/account"
+                className={`lynx-app-user-chip ${onAccount ? 'is-active' : ''}`}
+                title={user?.email ?? getLynxAuthLogin()}
+              >
+                <span className="lynx-app-user-avatar" aria-hidden>
+                  {((user?.nickname || user?.email || getLynxAuthLogin()).trim()[0] ?? '?').toUpperCase()}
+                </span>
+                <span className="lynx-app-user-label">
+                  {user ? userLabel(user.email, user.nickname) : getLynxAuthLogin() || 'Аккаунт'}
+                </span>
+              </Link>
+              <button type="button" className="lynx-app-cta-ghost" onClick={handleSignOut}>
+                Выйти
+              </button>
+            </>
+          ) : (
+            <Link to={SIGN_IN_PATH} className={`lynx-app-cta-ghost ${pathname === SIGN_IN_PATH ? 'active' : ''}`}>
+              Вход
+            </Link>
+          )}
           <Link to="/download" className="lynx-app-cta">
             Скачать
           </Link>

@@ -1,15 +1,23 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LYNX_CABINET_URL } from '../config/links';
-import { fetchLynxProfile, isLynxOps } from '../lib/lynxAuth';
+import { useHubAuth } from '../context/HubAuthContext';
+import { isLynxOps } from '../lib/lynxAuth';
 import { resolveLynxAuthBase } from '../utils/authBase';
 
 export function SignInPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, loading, refresh } = useHubAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate(user && isLynxOps(user) ? '/admin' : '/account', { replace: true });
+    }
+  }, [loading, isAuthenticated, user, navigate]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -38,7 +46,7 @@ export function SignInPage() {
       if (!data.token) throw new Error('Нет токена');
       localStorage.setItem('lynx_auth_token', data.token);
       localStorage.setItem('lynx_auth_login', email.trim());
-      const profile = await fetchLynxProfile();
+      const profile = await refresh();
       if (profile && isLynxOps(profile)) {
         navigate('/admin', { replace: true });
       } else {
@@ -49,6 +57,14 @@ export function SignInPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="lynx-launch-page lynx-auth-page-wrap">
+        <p className="lynx-hub-account-loading">Проверка сессии…</p>
+      </div>
+    );
   }
 
   return (

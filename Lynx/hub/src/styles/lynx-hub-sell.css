@@ -610,3 +610,247 @@
 .lynx-price-foot a {
   color: var(--lynx-accent-soft);
 }
+
+/* Hub — шапка: чип авторизованного пользователя */
+.lynx-app-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.65rem 0.35rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--lynx-border);
+  background: rgba(22, 27, 34, 0.85);
+  text-decoration: none;
+  color: var(--lynx-text);
+  max-width: 11rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.lynx-app-user-chip:hover,
+.lynx-app-user-chip.is-active {
+  border-color: var(--lynx-accent-border);
+  background: var(--lynx-accent-dim);
+}
+
+.lynx-app-user-avatar {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--lynx-text);
+  background: linear-gradient(145deg, var(--lynx-accent-soft), #7c3aed);
+  flex-shrink: 0;
+}
+
+.lynx-app-user-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hub — личный кабинет */
+.lynx-hub-account {
+  max-width: var(--lynx-content-max);
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+}
+
+.lynx-hub-account-loading {
+  color: var(--lynx-muted);
+  padding: 2rem 0;
+}
+
+.lynx-hub-account-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.75rem 0 1.25rem;
+  border-bottom: 1px solid var(--lynx-border);
+}
+
+.lynx-hub-account-identity {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.lynx-hub-account-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-family: var(--lynx-font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--lynx-text);
+  background: linear-gradient(145deg, rgba(192, 132, 252, 0.35), rgba(124, 58, 237, 0.25));
+  border: 1px solid var(--lynx-accent-border);
+}
+
+.lynx-hub-account-identity h1 {
+  margin: 0.25rem 0 0;
+  font-family: var(--lynx-font-display);
+  font-size: 1.5rem;
+  color: var(--lynx-text);
+}
+
+.lynx-hub-account-email {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  color: var(--lynx-muted);
+}
+
+.lynx-hub-account-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lynx-hub-account-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--lynx-green);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.lynx-hub-account-badge--ops {
+  background: var(--lynx-accent-dim);
+  color: var(--lynx-accent-soft);
+  border-color: var(--lynx-accent-border);
+}
+
+.lynx-hub-account-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 1.25rem 0 1.5rem;
+}
+
+.lynx-hub-account-tabs button {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--lynx-border);
+  background: transparent;
+  color: var(--lynx-muted);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.lynx-hub-account-tabs button.is-active {
+  color: var(--lynx-text);
+  border-color: var(--lynx-accent-border);
+  background: var(--lynx-accent-dim);
+}
+
+.lynx-hub-account-section h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--lynx-font-display);
+  font-size: 1.25rem;
+  color: var(--lynx-text);
+}
+
+.lynx-hub-account-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.lynx-hub-account-tile {
+  display: block;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid var(--lynx-border);
+  background: rgba(22, 27, 34, 0.55);
+  text-decoration: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.lynx-hub-account-tile:hover {
+  border-color: var(--lynx-accent-border);
+}
+
+.lynx-hub-account-tile strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--lynx-text);
+  font-size: 0.95rem;
+}
+
+.lynx-hub-account-tile span {
+  font-size: 0.82rem;
+  color: var(--lynx-muted);
+  line-height: 1.45;
+}
+
+.lynx-hub-account-tile--ops {
+  border-color: var(--lynx-accent-border);
+}
+
+.lynx-hub-account-hint {
+  font-size: 0.88rem;
+  color: var(--lynx-muted);
+  margin: 0;
+}
+
+.lynx-hub-account-hint a {
+  color: var(--lynx-accent-soft);
+}
+
+.lynx-hub-downloads {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+.lynx-hub-downloads li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--lynx-border);
+}
+
+.lynx-hub-downloads li div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.lynx-hub-downloads li strong {
+  color: var(--lynx-text);
+}
+
+.lynx-hub-downloads li span {
+  font-size: 0.82rem;
+  color: var(--lynx-muted);
+}
+
+.lynx-hub-downloads-empty {
+  color: var(--lynx-muted);
+  justify-content: flex-start !important;
+}
+
+.lynx-marketplace-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  color: var(--lynx-text);
+}

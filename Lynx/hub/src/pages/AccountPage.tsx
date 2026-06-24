@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useHubAuth } from '../context/HubAuthContext';
 import { LYNX_CABINET_URL } from '../config/links';
-import {
-  clearLynxAuth,
-  fetchLynxProfile,
-  getLynxAuthLogin,
-  getLynxAuthToken,
-  isLynxOps,
-  listHubDownloads,
-  recordHubDownload,
-} from '../lib/lynxAuth';
+import { listHubDownloads, recordHubDownload, getLynxAuthToken } from '../lib/lynxAuth';
 
 type CatalogItem = {
   id: string;
@@ -22,37 +15,40 @@ type CatalogItem = {
   builtin?: boolean;
 };
 
-type Tab = 'marketplace' | 'downloads' | 'messenger';
+type Tab = 'overview' | 'marketplace' | 'downloads' | 'messenger';
+
+function displayName(email: string, nickname: string): string {
+  if (nickname && nickname !== email) return nickname;
+  return email;
+}
+
+function userInitial(email: string, nickname: string): string {
+  const src = nickname || email;
+  return (src.trim()[0] ?? '?').toUpperCase();
+}
 
 export function AccountPage() {
   const navigate = useNavigate();
-  const [login, setLogin] = useState('');
-  const [tab, setTab] = useState<Tab>('marketplace');
+  const { user, loading, isOps, signOut } = useHubAuth();
+  const [tab, setTab] = useState<Tab>('overview');
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [downloads, setDownloads] = useState(listHubDownloads());
-  const [ops, setOps] = useState(false);
 
   useEffect(() => {
-    const token = getLynxAuthToken();
-    if (!token) {
+    if (!loading && !getLynxAuthToken()) {
       navigate('/sign-in', { replace: true });
-      return;
     }
-    setLogin(getLynxAuthLogin());
-    void fetchLynxProfile().then((p) => {
-      if (p) {
-        setLogin(p.email || p.nickname);
-        setOps(isLynxOps(p));
-      }
-    });
+  }, [loading, navigate]);
+
+  useEffect(() => {
     fetch('/content/marketplace-catalog.json')
       .then((r) => r.json())
       .then((data: { items?: CatalogItem[] }) => setItems(data.items ?? []))
       .catch(() => setItems([]));
-  }, [navigate]);
+  }, []);
 
-  function signOut() {
-    clearLynxAuth();
+  function handleSignOut() {
+    signOut();
     navigate('/sign-in', { replace: true });
   }
 
@@ -65,90 +61,164 @@ export function AccountPage() {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  if (loading) {
+    return (
+      <div className="lynx-hub-account">
+        <p className="lynx-hub-account-loading">Загрузка профиля…</p>
+      </div>
+    );
+  }
+
+  if (!loading && !getLynxAuthToken()) return null;
+
+  if (!user) {
+    return (
+      <div className="lynx-hub-account">
+        <p className="lynx-hub-account-loading">Загрузка профиля…</p>
+      </div>
+    );
+  }
+
+  const email = user.email;
+  const nickname = user.nickname ?? '';
+  const name = displayName(email, nickname);
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'overview', label: 'Обзор' },
+    { id: 'marketplace', label: 'Маркетплейс' },
+    { id: 'downloads', label: 'Загрузки' },
+    { id: 'messenger', label: 'Сообщения' },
+  ];
+
   return (
-    <div className="lynx-ops-shell">
-      <aside className="lynx-ops-sidebar">
-        <p className="lynx-pill">Lynx Hub</p>
-        <strong className="lynx-ops-brand">Аккаунт</strong>
-        <p className="lynx-ops-user">{login || '…'}</p>
-        <nav>
-          <button type="button" className={tab === 'marketplace' ? 'is-active' : ''} onClick={() => setTab('marketplace')}>
-            Маркетплейс
+    <div className="lynx-hub-account">
+      <header className="lynx-hub-account-hero">
+        <div className="lynx-hub-account-identity">
+          <span className="lynx-hub-account-avatar" aria-hidden>
+            {userInitial(email, nickname)}
+          </span>
+          <div>
+            <p className="lynx-pill">Личный кабинет</p>
+            <h1>{name}</h1>
+            <p className="lynx-hub-account-email">{email}</p>
+          </div>
+        </div>
+        <div className="lynx-hub-account-status">
+          <span className="lynx-hub-account-badge">Вы вошли</span>
+          {isOps ? <span className="lynx-hub-account-badge lynx-hub-account-badge--ops">NEXUS</span> : null}
+          <button type="button" className="lynx-app-cta-ghost" onClick={handleSignOut}>
+            Выйти
           </button>
-          <button type="button" className={tab === 'downloads' ? 'is-active' : ''} onClick={() => setTab('downloads')}>
-            Мои загрузки
+        </div>
+      </header>
+
+      <nav className="lynx-hub-account-tabs" aria-label="Разделы аккаунта">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={tab === t.id ? 'is-active' : undefined}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
           </button>
-          <button type="button" className={tab === 'messenger' ? 'is-active' : ''} onClick={() => setTab('messenger')}>
-            Сообщения
-          </button>
-        </nav>
-        {ops ? (
-          <Link to="/admin" className="lynx-ops-link">
-            Операции →
-          </Link>
-        ) : null}
-        <a className="lynx-ops-link" href={`${LYNX_CABINET_URL}/sign-in`}>
-          Кабинет разработчика
-        </a>
-        <button type="button" className="lynx-ops-signout" onClick={signOut}>
-          Выйти
-        </button>
-      </aside>
-      <main className="lynx-ops-main">
-        {tab === 'marketplace' && (
-          <>
-            <h1>Маркетплейс</h1>
-            <p className="lynx-lead">Скачивайте пакеты ассетов и шаблоны для Lynx Launcher.</p>
-            <div className="lynx-ops-grid">
-              {items.map((item) => (
-                <article key={item.id} className="lynx-stat-card">
-                  <h2>{item.title}</h2>
-                  <p>{item.description ?? item.kind ?? ''}</p>
-                  {item.version ? <p className="lynx-ops-meta">v{item.version}</p> : null}
-                  {item.builtin ? (
-                    <p className="lynx-ops-meta">Встроено в Launcher</p>
-                  ) : item.packageUrl ? (
-                    <button type="button" className="lynx-app-cta" onClick={() => downloadItem(item)}>
-                      Скачать
-                    </button>
-                  ) : (
-                    <p className="lynx-ops-meta">Скоро в Cloud</p>
-                  )}
-                </article>
-              ))}
-            </div>
-          </>
-        )}
-        {tab === 'downloads' && (
-          <>
-            <h1>Мои загрузки</h1>
-            <p className="lynx-lead">История скачиваний на этом устройстве.</p>
-            <ul className="lynx-data-table">
-              {downloads.length === 0 ? <li>Пока нет загрузок.</li> : null}
-              {downloads.map((d) => (
-                <li key={`${d.id}-${d.at}`}>
+        ))}
+      </nav>
+
+      {tab === 'overview' && (
+        <section className="lynx-hub-account-section">
+          <div className="lynx-hub-account-quick">
+            <Link to="/download" className="lynx-hub-account-tile">
+              <strong>Lynx Launcher</strong>
+              <span>Скачать приложение, регистрация и мессенджер</span>
+            </Link>
+            <a href={`${LYNX_CABINET_URL}/dashboard`} className="lynx-hub-account-tile" target="_blank" rel="noreferrer">
+              <strong>Кабинет разработчика</strong>
+              <span>Проекты, сборки и аналитика в Lynx Cloud</span>
+            </a>
+            <button type="button" className="lynx-hub-account-tile" onClick={() => setTab('marketplace')}>
+              <strong>Маркетплейс Hub</strong>
+              <span>Ассеты и шаблоны для Launcher</span>
+            </button>
+            {isOps ? (
+              <Link to="/admin" className="lynx-hub-account-tile lynx-hub-account-tile--ops">
+                <strong>Операции</strong>
+                <span>Админ-панель Hub и контент</span>
+              </Link>
+            ) : null}
+          </div>
+          <p className="lynx-hub-account-hint">
+            Один аккаунт Lynx работает в Hub, Cloud и Launcher. Настройки профиля — в{' '}
+            <a href={`${LYNX_CABINET_URL}/dashboard`} target="_blank" rel="noreferrer">
+              Lynx Cloud
+            </a>
+            .
+          </p>
+        </section>
+      )}
+
+      {tab === 'marketplace' && (
+        <section className="lynx-hub-account-section">
+          <h2>Маркетплейс</h2>
+          <p className="lynx-lead">Пакеты ассетов и шаблоны для Lynx Launcher.</p>
+          <div className="lynx-marketplace-grid">
+            {items.map((item) => (
+              <article key={item.id} className="lynx-marketplace-card">
+                {item.kind ? <span className="lynx-marketplace-kind">{item.kind}</span> : null}
+                <h3>{item.title}</h3>
+                <p className="lynx-marketplace-desc">{item.description ?? ''}</p>
+                {item.version ? (
+                  <p className="lynx-marketplace-meta">
+                    <span>v{item.version}</span>
+                  </p>
+                ) : null}
+                {item.builtin ? (
+                  <p className="lynx-marketplace-foot">Встроено в Launcher</p>
+                ) : item.packageUrl ? (
+                  <button type="button" className="lynx-app-cta" onClick={() => downloadItem(item)}>
+                    Скачать
+                  </button>
+                ) : (
+                  <p className="lynx-marketplace-foot">Скоро в Cloud</p>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === 'downloads' && (
+        <section className="lynx-hub-account-section">
+          <h2>Мои загрузки</h2>
+          <p className="lynx-lead">История скачиваний на этом устройстве.</p>
+          <ul className="lynx-hub-downloads">
+            {downloads.length === 0 ? <li className="lynx-hub-downloads-empty">Пока нет загрузок.</li> : null}
+            {downloads.map((d) => (
+              <li key={`${d.id}-${d.at}`}>
+                <div>
                   <strong>{d.title}</strong>
                   <span>{new Date(d.at).toLocaleString()}</span>
-                  <a href={d.url} target="_blank" rel="noreferrer">
-                    Открыть
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-        {tab === 'messenger' && (
-          <>
-            <h1>Сообщения</h1>
-            <p className="lynx-lead">
-              Личные и групповые чаты доступны в <strong>Lynx Launcher</strong> — вкладка «Мессенджер».
-            </p>
-            <Link to="/download" className="lynx-app-cta lynx-cta-lg">
-              Скачать Launcher
-            </Link>
-          </>
-        )}
-      </main>
+                </div>
+                <a href={d.url} target="_blank" rel="noreferrer" className="lynx-link-accent">
+                  Открыть
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {tab === 'messenger' && (
+        <section className="lynx-hub-account-section">
+          <h2>Сообщения</h2>
+          <p className="lynx-lead">
+            Личные и групповые чаты — во вкладке «Мессенджер» в <strong>Lynx Launcher</strong>.
+          </p>
+          <Link to="/download" className="lynx-app-cta lynx-cta-lg">
+            Скачать Launcher
+          </Link>
+        </section>
+      )}
     </div>
   );
 }
