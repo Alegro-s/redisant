@@ -36,7 +36,7 @@ export function SignInPage() {
       if (!data.token) throw new Error('Нет токена');
       localStorage.setItem('lynx_auth_token', data.token);
       localStorage.setItem('lynx_auth_login', email.trim());
-      window.location.href = `${LYNX_CABINET_URL}/cabinet/dashboard`;
+      window.location.href = `${LYNX_CABINET_URL.replace(/\/$/, '')}/dashboard`;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка');
     } finally {

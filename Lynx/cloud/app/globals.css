@@ -436,8 +436,8 @@ code {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(255, 255, 255, 0.94);
-  border-bottom: 2px solid var(--lynx-accent);
+  background: rgba(13, 17, 23, 0.94);
+  border-bottom: 2px solid var(--lynx-green);
   backdrop-filter: blur(14px);
 }
 
@@ -1216,17 +1216,17 @@ body.cloud-light .shell.cloud-shell {
   color: var(--lynx-green);
 }
 
-/* Светлая витрина — принудительно (старый next-server на VPS отдавал тёмный CSS) */
-html.cloud-light,
-html:has(body.lynx-cloud-site),
-body.lynx-cloud-site {
-  background: #ffffff !important;
-  color: #424245 !important;
+/* === Light shell: wins over stale dark CSS on CDN/browser cache === */
+html:has(body.lynx-cloud-site) {
+  color-scheme: light;
+  background: #ffffff;
 }
 
+body.lynx-cloud-site,
 body.lynx-cloud-site .shell.cloud-shell,
 body.lynx-cloud-site main.cloud-apple {
   background: #ffffff !important;
+  background-image: none !important;
 }
 
 body.lynx-cloud-site .cloud-apple-values article,
@@ -1237,7 +1237,8 @@ body.lynx-cloud-site .cloud-apple-cta {
 
 body.lynx-cloud-site .cloud-apple-hero h1,
 body.lynx-cloud-site .cloud-apple-values h2,
-body.lynx-cloud-site .cloud-apple-cta h2 {
+body.lynx-cloud-site .cloud-apple-cta h2,
+body.lynx-cloud-site .cloud-brand-min {
   color: #1d1d1f !important;
 }
 
@@ -1246,4 +1247,3 @@ body.lynx-cloud-site .cloud-apple-values p,
 body.lynx-cloud-site .cloud-apple-cta p {
   color: #6e6e73 !important;
 }
-

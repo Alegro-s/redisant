@@ -164,6 +164,7 @@ if [[ -d "$PO_ROOT/Lynx/hub" ]]; then
   npm ci
   cat > .env.production.local <<'EOF'
 VITE_LYNX_AUTH_URL=/auth
+VITE_LYNX_CABINET_URL=https://lynx-cloud.ru/cabinet
 EOF
   npm run build
   rsync -a --delete dist/ /srv/lynx-hub/dist/
@@ -206,12 +207,10 @@ NEXT_PUBLIC_LYNX_CABINET_URL=/cabinet
 EOF
   rm -rf .next
   npm run build
-  fuser -k 3001/tcp 2>/dev/null || true
-  pkill -f 'next-server' 2>/dev/null || true
-  pkill -f 'next start' 2>/dev/null || true
-  sleep 2
+  pkill -f "next start.*3001" 2>/dev/null || true
+  sleep 1
   export NODE_ENV=production
-  nohup npm run start -- -H 0.0.0.0 -p 3001 >> /var/log/lynx-cloud.log 2>&1 &
+  nohup npm run start -- -H 0.0.0.0 >> /var/log/lynx-cloud.log 2>&1 &
   sleep 2
   if curl -fsS http://127.0.0.1:3001/ >/dev/null 2>&1; then
     echo "Lynx Cloud :3001 OK"

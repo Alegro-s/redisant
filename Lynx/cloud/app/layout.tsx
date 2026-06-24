@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className="cloud-light">
-      <body className="lynx-cloud-site cloud-light">
+    <html lang="ru" style={{ background: '#ffffff', colorScheme: 'light' }}>
+      <body className="lynx-cloud-site cloud-light" style={{ background: '#ffffff', color: '#424245' }}>
         <CloudChrome>{children}</CloudChrome>
       </body>
     </html>
