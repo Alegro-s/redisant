@@ -51,10 +51,12 @@ services:
       LYNX_S3_SECRET_KEY: ${LYNX_S3_SECRET_KEY:-}
       LYNX_S3_PUBLIC_BASE: ${LYNX_S3_PUBLIC_BASE:-https://lynx-hub.ru/downloads}
       LYNX_ENGINE_MANIFEST_S3_KEY: ${LYNX_ENGINE_MANIFEST_S3_KEY:-deploy/sites/latest/dist/downloads/engine-manifest.json}
+      LYNX_ENGINE_MANIFEST_FILE: ${LYNX_ENGINE_MANIFEST_FILE:-/lynx-hub/downloads/engine-manifest.json}
     ports:
       - '127.0.0.1:8082:8082'
     volumes:
       - lynx_uploads:/app/uploads
+      - /srv/lynx-hub/dist/downloads:/lynx-hub/downloads:ro
     networks:
       - waypoint_net
 

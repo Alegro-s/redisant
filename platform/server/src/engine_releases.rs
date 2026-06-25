@@ -61,6 +61,16 @@ async fn load_policy(pool: &PgPool) -> (Option<String>, Option<String>, Option<c
     }
 }
 
+fn strip_utf8_bom(text: &str) -> &str {
+    text.strip_prefix('\u{feff}').unwrap_or(text)
+}
+
+fn parse_manifest_json(text: &str) -> Result<EngineManifest, String> {
+    let text = strip_utf8_bom(text.trim());
+    serde_json::from_str::<EngineManifest>(text)
+        .map_err(|e| format!("manifest JSON: {e}. Ожидается {{ \"releases\": [...] }}"))
+}
+
 fn manifest_from_env_json() -> Option<EngineManifest> {
     let raw = env::var("LYNX_ENGINE_MANIFEST_JSON")
         .ok()
@@ -70,20 +80,32 @@ fn manifest_from_env_json() -> Option<EngineManifest> {
                 .ok()
                 .filter(|s| !s.trim().is_empty())
         })?;
-    serde_json::from_str::<EngineManifest>(&raw).ok()
+    parse_manifest_json(&raw).ok()
 }
 
 pub async fn fetch_manifest_from_url(url: &str) -> Result<EngineManifest, String> {
     fetch_remote_manifest(url).await
 }
 
-async fn fetch_remote_manifest(url: &str) -> Result<EngineManifest, String> {
+async fn load_manifest_text(url: &str) -> Result<String, String> {
+    let trimmed = url.trim();
+    if let Some(path) = trimmed.strip_prefix("file://") {
+        return tokio::fs::read_to_string(path)
+            .await
+            .map_err(|e| format!("read manifest file {path}: {e}"));
+    }
+    if trimmed.starts_with('/') {
+        return tokio::fs::read_to_string(trimmed)
+            .await
+            .map_err(|e| format!("read manifest file {trimmed}: {e}"));
+    }
+
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(20))
         .build()
         .map_err(|e| e.to_string())?;
-    let text = client
-        .get(url)
+    client
+        .get(trimmed)
         .send()
         .await
         .map_err(|e| e.to_string())?
@@ -91,10 +113,20 @@ async fn fetch_remote_manifest(url: &str) -> Result<EngineManifest, String> {
         .map_err(|e| e.to_string())?
         .text()
         .await
-        .map_err(|e| e.to_string())?;
-    let mut m: EngineManifest =
-        serde_json::from_str(&text).map_err(|e| format!("manifest JSON: {e}. Ожидается {{ \"releases\": [...] }}"))?;
-    m.source = Some("remote".into());
+        .map_err(|e| e.to_string())
+}
+
+async fn fetch_remote_manifest(url: &str) -> Result<EngineManifest, String> {
+    let text = load_manifest_text(url).await?;
+    let mut m = parse_manifest_json(&text)?;
+    m.source = Some(
+        if url.trim().starts_with("file://") || url.trim().starts_with('/') {
+            "file"
+        } else {
+            "remote"
+        }
+        .into(),
+    );
     Ok(m)
 }
 
