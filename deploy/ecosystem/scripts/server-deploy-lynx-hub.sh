@@ -30,10 +30,19 @@ npm run build
 echo "==> Deploy static (keep $DOWNLOADS_DIR)"
 rsync -a --delete --exclude 'downloads/' dist/ "$STATIC_DIR/"
 
+REPO_DL="$PO_ROOT/Lynx/hub/public/dist/downloads"
+if [[ -d "$REPO_DL" ]]; then
+  echo "==> Sync downloads from repo (manifest + engine packs)"
+  mkdir -p "$DOWNLOADS_DIR" "$DOWNLOADS_DIR/engine"
+  cp -f "$REPO_DL"/*.json "$DOWNLOADS_DIR/" 2>/dev/null || true
+  cp -f "$REPO_DL/engine/"*.lynxengine "$DOWNLOADS_DIR/engine/" 2>/dev/null || true
+fi
+
 if [[ -d dist/dist/downloads ]]; then
-  echo "==> Sync download manifests"
-  mkdir -p "$DOWNLOADS_DIR"
+  echo "==> Sync download manifests (build output)"
+  mkdir -p "$DOWNLOADS_DIR" "$DOWNLOADS_DIR/engine"
   cp -f dist/dist/downloads/*.json "$DOWNLOADS_DIR/" 2>/dev/null || true
+  cp -f dist/dist/downloads/engine/*.lynxengine "$DOWNLOADS_DIR/engine/" 2>/dev/null || true
 fi
 
 if [[ ! -f "$STATIC_DIR/engine-web/index.html" ]]; then
@@ -45,8 +54,12 @@ curl -fsS http://127.0.0.1:8082/health >/dev/null && echo "  lynx-api OK" || ech
 curl -fsS http://127.0.0.1:8090/health >/dev/null && echo "  auth-api OK" || echo "  auth-api FAIL"
 
 if nginx -t 2>/dev/null; then
+  cp -f "$ECO/nginx/includes/lynx-hub-locations.conf" /etc/nginx/waypoint-ecosystem/ 2>/dev/null || true
   systemctl reload nginx 2>/dev/null || true
 fi
+
+echo "==> Engine catalog (manifest URL + API policy)"
+bash "$ECO/scripts/server-sync-engine-catalog.sh" || echo "WARN: engine catalog sync failed"
 
 echo ""
 echo "=============================================="

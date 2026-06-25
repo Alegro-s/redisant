@@ -4,6 +4,8 @@ dist/
 !Lynx/hub/public/dist/
 !Lynx/hub/public/dist/downloads/
 !Lynx/hub/public/dist/downloads/*.json
+!Lynx/hub/public/dist/downloads/engine/
+!Lynx/hub/public/dist/downloads/engine/*.lynxengine
 .next/
 out/
 target/
