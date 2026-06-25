@@ -1,18 +1,30 @@
-﻿{
-    "releases":  [
-                     {
-                         "version":  "0.15.0",
-                         "channel":  "stable",
-                         "notes":  "Lynx Engine 0.15.0 channel stable",
-                         "sizeBytes":  627442,
-                         "artifacts":  {
-                                           "windows":  {
-                                                           "url":  "https://lynx-hub.ru/dist/downloads/engine/lynx-engine-0.15.0-windows.lynxengine",
-                                                           "sha256":  "09c98765dcbcba6e5a18228961119452d25ec728577639efeaf15acb0ef716ff"
-                                                       }
-                                       }
-                     }
-                 ],
-    "recommended_version":  "0.15.0",
-    "publishedAt":  "2026-06-24"
+{
+  "releases": [
+    {
+      "version": "0.14.0",
+      "channel": "stable",
+      "notes": "Lynx Engine 0.14.0 channel stable",
+      "sizeBytes": 627442,
+      "artifacts": {
+        "windows": {
+          "url": "https://lynx-hub.ru/downloads/engine/lynx-engine-0.14.0-windows.lynxengine",
+          "sha256": "80ac31bf089411bbf801e3eb558a097fa3a51babec5c38c09ec6442984f0d312"
+        }
+      }
+    },
+    {
+      "version": "0.15.0",
+      "channel": "stable",
+      "notes": "Lynx Engine 0.15.0 channel stable",
+      "sizeBytes": 627442,
+      "artifacts": {
+        "windows": {
+          "url": "https://lynx-hub.ru/downloads/engine/lynx-engine-0.15.0-windows.lynxengine",
+          "sha256": "09c98765dcbcba6e5a18228961119452d25ec728577639efeaf15acb0ef716ff"
+        }
+      }
+    }
+  ],
+  "recommended_version": "0.14.0",
+  "publishedAt": "2026-06-25"
 }
